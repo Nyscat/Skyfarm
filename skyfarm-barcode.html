@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>SkyFarm — Barcode Scanner (Chemicals & Seeds)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+
+<!-- ZXing fallback (only used if BarcodeDetector not present) -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
+
+<style>
+  :root{ --bg:#f8faf9; --card:#fff; --muted:#6b7280; --text:#111827; --brand:#0B7A6E; --border:#e5e7eb; }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--border);background:#fff}
+  .topbar h1{font-size:1.1rem;margin:0 10px 0 0}
+  .status{margin-left:auto;font-size:.9rem}
+  .layout{display:grid;grid-template-columns: 1.1fr 1fr; gap:16px; padding:16px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .col{display:flex;flex-direction:column;gap:6px}
+  label{font-size:.85rem;color:var(--muted)}
+  input,select,button,textarea{
+    border:1px solid var(--border);border-radius:10px;background:#fff;padding:6px 10px;font:inherit;color:inherit
+  }
+  button{cursor:pointer}
+  .primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .danger{background:#b91c1c;color:#fff;border-color:#7f1d1d}
+  .muted{color:var(--muted)}
+  .hidden{display:none}
+  video{width:100%;border-radius:12px;border:1px solid var(--border);background:#000}
+  .result{font:14px/1.4 ui-monospace,Consolas,Menlo,monospace;background:#f3f4f6;border:1px dashed #cbd5e1;border-radius:10px;padding:8px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border-bottom:1px solid var(--border);padding:8px 6px;font-size:.92rem;text-align:left}
+  th{background:#fafafa;color:#374151}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>SkyFarm — Barcode Scanner</h1>
+  <div class="status">Firebase: <span id="fbStatus" class="muted">Connecting…</span></div>
+</div>
+
+<div class="layout">
+  <!-- LEFT: Scanner -->
+  <div class="card">
+    <h3 style="margin:0 0 8px 0;">Scan</h3>
+    <div class="row">
+      <div class="col">
+        <label>Mode</label>
+        <select id="modeSel">
+          <option value="chemicals">Chemicals</option>
+          <option value="seeds">Seeds</option>
+        </select>
+      </div>
+      <div class="col">
+        <label>Camera</label>
+        <select id="camSel"></select>
+      </div>
+      <button id="startBtn" class="primary">Start</button>
+      <button id="stopBtn">Stop</button>
+    </div>
+
+    <video id="video" playsinline muted></video>
+
+    <div class="row" style="margin-top:8px">
+      <div class="col" style="flex:1">
+        <label>Manual barcode (fallback/testing)</label>
+        <input id="manualCode" placeholder="Type or paste barcode then Search" />
+      </div>
+      <button id="manualBtn">Search</button>
+    </div>
+
+    <div style="margin-top:10px">
+      <div class="result" id="scanOut">Awaiting scan…</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Result + actions -->
+  <div class="card">
+    <h3 style="margin:0 0 8px 0;">Item</h3>
+    <div id="itemBox" class="muted">No item yet.</div>
+
+    <div id="linkBox" class="hidden" style="margin-top:10px">
+      <h4 style="margin:0 0 6px 0;">No item found — link barcode</h4>
+      <div class="row">
+        <div class="col" style="flex:1">
+          <label>Link to existing</label>
+          <select id="existingSel"><option value="">Loading…</option></select>
+        </div>
+        <button id="linkBtn" class="primary">Link</button>
+      </div>
+      <div class="muted" style="margin:6px 0">Or create a new minimal record:</div>
+      <div id="createChem" class="row hidden">
+        <input id="chemName" placeholder="Chemical name" />
+        <input id="chemUnit" placeholder="KG or L" style="width:100px" />
+        <select id="chemUseOn">
+          <option value="paddock">paddock</option>
+          <option value="stock">stock</option>
+        </select>
+        <input id="chemQty" type="number" step="0.01" placeholder="Start qty" style="width:130px" />
+        <select id="chemProp"></select>
+        <button id="createChemBtn">Create chemical</button>
+      </div>
+      <div id="createSeed" class="row hidden">
+        <select id="seedCrop">
+          <option>Oats</option>
+          <option>Sorghum</option>
+        </select>
+        <input id="seedVariety" placeholder="Variety" />
+        <input id="seedQty" type="number" step="0.01" placeholder="Start kg" style="width:130px" />
+        <select id="seedProp"></select>
+        <button id="createSeedBtn">Create seed</button>
+      </div>
+    </div>
+
+    <div id="adjBox" class="hidden" style="margin-top:10px">
+      <h4 style="margin:0 0 6px 0;">Adjust quantity</h4>
+      <div id="chemAdj" class="row hidden">
+        <input id="chemDelta" type="number" step="0.01" placeholder="e.g. -5 or 10" />
+        <button id="chemApply" class="primary">Apply to chemical</button>
+      </div>
+      <div id="seedAdj" class="row hidden">
+        <input id="seedDelta" type="number" step="0.01" placeholder="e.g. -250 or 100" />
+        <button id="seedApply" class="primary">Apply to seed (kg)</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <strong>Log</strong>
+      <div id="log" class="muted" style="white-space:pre-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ===== Firebase ===== */
+  const cfg = {
+    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+    authDomain: "consentes-pastoral.firebaseapp.com",
+    projectId: "consentes-pastoral",
+    appId: "1:494858780013:web:d87497b370c82eeab06e64",
+  };
+  let db;
+  firebase.initializeApp(cfg);
+  firebase.auth().signInAnonymously().then(()=>{ db=firebase.firestore(); byId('fbStatus').textContent='Connected'; init(); })
+    .catch(e=>{ byId('fbStatus').textContent='Connect failed'; log('Firebase error: '+e.message); });
+
+  /* ===== Helpers ===== */
+  const byId = id => document.getElementById(id);
+  const log = (m)=>{ const el=byId('log'); el.textContent += (m+'\\n'); el.scrollTop = el.scrollHeight; };
+  const esc = s => String(s??'').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+  function show(el, yes){ el.classList[yes?'remove':'add']('hidden'); }
+
+  /* ===== DOM ===== */
+  const modeSel = byId('modeSel');
+  const camSel = byId('camSel');
+  const startBtn = byId('startBtn');
+  const stopBtn = byId('stopBtn');
+  const video = byId('video');
+  const manualCode = byId('manualCode');
+  const manualBtn = byId('manualBtn');
+  const scanOut = byId('scanOut');
+
+  const itemBox = byId('itemBox');
+  const linkBox = byId('linkBox');
+  const existingSel = byId('existingSel');
+  const linkBtn = byId('linkBtn');
+
+  const createChem = byId('createChem');
+  const chemName = byId('chemName');
+  const chemUnit = byId('chemUnit');
+  const chemUseOn = byId('chemUseOn');
+  const chemQty = byId('chemQty');
+  const chemProp = byId('chemProp');
+  const createChemBtn = byId('createChemBtn');
+
+  const createSeed = byId('createSeed');
+  const seedCrop = byId('seedCrop');
+  const seedVariety = byId('seedVariety');
+  const seedQty = byId('seedQty');
+  const seedProp = byId('seedProp');
+  const createSeedBtn = byId('createSeedBtn');
+
+  const adjBox = byId('adjBox');
+  const chemAdj = byId('chemAdj'); const chemDelta = byId('chemDelta'); const chemApply = byId('chemApply');
+  const seedAdj = byId('seedAdj'); const seedDelta = byId('seedDelta'); const seedApply = byId('seedApply');
+
+  /* ===== State ===== */
+  let props = []; let propNameById = new Map();
+  let currentBarcode = null;
+  let currentDoc = null; // {collection, id, data}
+  let stream = null;
+  let zxingReader = null;
+  let useBarcodeDetector = ('BarcodeDetector' in window);
+
+  async function init(){
+    await loadProperties();
+    await listCameras();
+    wire();
+  }
+
+  async function loadProperties(){
+    const snap = await db.collection('properties').get();
+    props = []; propNameById.clear();
+    snap.forEach(doc=>{
+      const d=doc.data()||{};
+      props.push({id:doc.id, name:d.name||'(unnamed)'});
+      propNameById.set(doc.id, d.name||'(unnamed)');
+    });
+    chemProp.innerHTML = props.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+    seedProp.innerHTML = chemProp.innerHTML;
+    log('Loaded properties.');
+  }
+
+  async function listCameras(){
+    try{
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const vids = devices.filter(d=> d.kind==='videoinput');
+      camSel.innerHTML = vids.map((d,i)=>`<option value="${d.deviceId}">${esc(d.label || ('Camera '+(i+1)))}</option>`).join('');
+    }catch(e){
+      camSel.innerHTML = '<option value="">Default camera</option>';
+    }
+  }
+
+  function wire(){
+    startBtn.addEventListener('click', startScan);
+    stopBtn.addEventListener('click', stopScan);
+    manualBtn.addEventListener('click', ()=> handleCode(manualCode.value.trim()));
+    linkBtn.addEventListener('click', linkExisting);
+    createChemBtn.addEventListener('click', createChemical);
+    createSeedBtn.addEventListener('click', createSeedRow);
+    chemApply.addEventListener('click', adjustChemical);
+    seedApply.addEventListener('click', adjustSeed);
+    modeSel.addEventListener('change', populateExistingDropdown);
+  }
+
+  async function startScan(){
+    try{
+      await stopScan();
+      const constraints = { video: { deviceId: camSel.value ? {exact: camSel.value} : undefined, facingMode: 'environment' }, audio:false };
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+      await video.play();
+      scanOut.textContent = 'Scanning…';
+      if (useBarcodeDetector){
+        loopScanNative();
+      } else {
+        zxingReader = new ZXing.BrowserMultiFormatReader();
+        loopScanZXing();
+      }
+    }catch(e){
+      alert('Camera error: '+e.message);
+      log('Camera error: '+e.message);
+    }
+  }
+  async function stopScan(){
+    if (stream){
+      stream.getTracks().forEach(t=>t.stop());
+      stream = null;
+    }
+    if (zxingReader){
+      try{ await zxingReader.reset(); }catch(_){}
+      zxingReader = null;
+    }
+    scanOut.textContent = 'Stopped.';
+  }
+
+  async function loopScanNative(){
+    if (!stream) return;
+    try{
+      const det = new BarcodeDetector({ formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code'] });
+      const frame = async ()=>{
+        if (!stream) return;
+        try{
+          const codes = await det.detect(video);
+          if (codes && codes.length){
+            const val = codes[0].rawValue || codes[0].rawValue;
+            if (val){ await handleCode(String(val)); }
+          }
+        }catch(_){}
+        requestAnimationFrame(frame);
+      };
+      frame();
+    }catch(e){
+      log('Native detector failed, falling back to ZXing. '+e.message);
+      useBarcodeDetector = false;
+      await loopScanZXing();
+    }
+  }
+
+  async function loopScanZXing(){
+    if (!stream) return;
+    // ZXing reader works better with capture still frames; we’ll poll every 600ms using decodeOnce.
+    const reader = zxingReader;
+    const tick = async ()=>{
+      if (!stream || !reader) return;
+      try{
+        const result = await reader.decodeFromVideoElement(video);
+        if (result && result.text){
+          await handleCode(String(result.text));
+        }
+      }catch(_){}
+      setTimeout(tick, 600);
+    };
+    tick();
+  }
+
+  async function handleCode(code){
+    if (!code) return;
+    currentBarcode = code;
+    scanOut.textContent = 'Scanned: ' + code;
+    await lookupBarcode();
+  }
+
+  async function lookupBarcode(){
+    currentDoc = null;
+    const mode = modeSel.value; // 'chemicals' or 'seeds'
+    const q = await db.collection(mode).where('barcode','==', currentBarcode).limit(1).get();
+    if (!q.empty){
+      const doc = q.docs[0];
+      currentDoc = { collection: mode, id: doc.id, data: doc.data()||{} };
+      renderFound();
+    } else {
+      renderNotFound();
+    }
+  }
+
+  function renderFound(){
+    const d = currentDoc.data;
+    const prop = d.propertyName || '';
+    if (currentDoc.collection==='chemicals'){
+      itemBox.innerHTML = `
+        <div><strong>Chemical:</strong> ${esc(d.name||'')}</div>
+        <div class="muted">Unit: ${esc(d.unit||'')} &nbsp; UseOn: ${esc(d.useOn||'')}</div>
+        <div>Quantity: <strong>${(parseFloat(d.quantity||0)).toLocaleString(undefined,{maximumFractionDigits:2})}</strong></div>
+        <div class="muted">Property: ${esc(prop)}</div>
+      `;
+      show(linkBox, false);
+      show(adjBox, true);
+      show(chemAdj, true);
+      show(seedAdj, false);
+    }else{
+      itemBox.innerHTML = `
+        <div><strong>Seed:</strong> ${esc(d.crop||'')} — ${esc(d.variety||'')}</div>
+        <div>Quantity: <strong>${(parseFloat(d.quantityKg||0)).toLocaleString(undefined,{maximumFractionDigits:2})} kg</strong></div>
+        <div class="muted">Property: ${esc(prop)}</div>
+      `;
+      show(linkBox, false);
+      show(adjBox, true);
+      show(chemAdj, false);
+      show(seedAdj, true);
+    }
+  }
+
+  async function populateExistingDropdown(){
+    existingSel.innerHTML = '<option value="">Loading…</option>';
+    const col = modeSel.value;
+    const snap = await db.collection(col).orderBy('updatedAt','desc').limit(400).get();
+    const opts = [];
+    snap.forEach(doc=>{
+      const d=doc.data()||{};
+      if (col==='chemicals'){
+        const label = `${d.name||'(unnamed)'} — ${d.unit||''} — ${d.propertyName||''}`;
+        opts.push(`<option value="${doc.id}">${esc(label)}</option>`);
+      }else{
+        const label = `${d.crop||''} — ${d.variety||''} — ${d.propertyName||''}`;
+        opts.push(`<option value="${doc.id}">${esc(label)}</option>`);
+      }
+    });
+    existingSel.innerHTML = '<option value="">(choose)</option>' + opts.join('');
+  }
+
+  function renderNotFound(){
+    itemBox.textContent = 'No item with this barcode.';
+    populateExistingDropdown();
+    show(linkBox, true);
+    const isChem = (modeSel.value==='chemicals');
+    show(createChem, isChem);
+    show(createSeed, !isChem);
+    show(adjBox, false);
+  }
+
+  async function linkExisting(){
+    const id = existingSel.value;
+    if (!id) return alert('Pick an item to link.');
+    const col = modeSel.value;
+    await db.collection(col).doc(id).update({
+      barcode: currentBarcode,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert('Linked.');
+    const doc = await db.collection(col).doc(id).get();
+    currentDoc = {collection: col, id: id, data: doc.data()||{}};
+    renderFound();
+  }
+
+  async function createChemical(){
+    try{
+      const payload = {
+        name: (chemName.value||'').trim() || 'Unnamed chemical',
+        unit: (chemUnit.value||'').trim() || 'KG',
+        useOn: (chemUseOn.value||'paddock').toLowerCase(),
+        quantity: parseFloat(chemQty.value||0) || 0,
+        propertyId: chemProp.value || null,
+        propertyName: propNameById.get(chemProp.value)||null,
+        barcode: currentBarcode,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      const ref = await db.collection('chemicals').add(payload);
+      const doc = await ref.get();
+      currentDoc = {collection:'chemicals', id: ref.id, data: doc.data()||{}};
+      alert('Chemical created & linked.');
+      renderFound();
+    }catch(e){ alert('Create chemical failed: '+e.message); }
+  }
+
+  async function createSeedRow(){
+    try{
+      const payload = {
+        crop: seedCrop.value,
+        variety: (seedVariety.value||'').trim() || 'Unknown',
+        quantityKg: parseFloat(seedQty.value||0) || 0,
+        propertyId: seedProp.value || null,
+        propertyName: propNameById.get(seedProp.value)||null,
+        unit: 'KG',
+        barcode: currentBarcode,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      const ref = await db.collection('seeds').add(payload);
+      const doc = await ref.get();
+      currentDoc = {collection:'seeds', id: ref.id, data: doc.data()||{}};
+      alert('Seed created & linked.');
+      renderFound();
+    }catch(e){ alert('Create seed failed: '+e.message); }
+  }
+
+  async function adjustChemical(){
+    if (!currentDoc || currentDoc.collection!=='chemicals') return;
+    const delta = parseFloat(chemDelta.value||0);
+    if (!delta) return alert('Enter a +/- amount.');
+    await db.runTransaction(async (tx)=>{
+      const ref = db.collection('chemicals').doc(currentDoc.id);
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new Error('Chemical gone.');
+      const d = snap.data()||{};
+      const cur = parseFloat(d.quantity||0);
+      const next = cur + delta;
+      if (next < -0.0001) throw new Error('Not enough stock.');
+      tx.update(ref,{quantity: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    });
+    const doc = await db.collection('chemicals').doc(currentDoc.id).get();
+    currentDoc = {collection:'chemicals', id: currentDoc.id, data: doc.data()||{}};
+    chemDelta.value='';
+    renderFound();
+  }
+
+  async function adjustSeed(){
+    if (!currentDoc || currentDoc.collection!=='seeds') return;
+    const delta = parseFloat(seedDelta.value||0);
+    if (!delta) return alert('Enter a +/- kg.');
+    await db.runTransaction(async (tx)=>{
+      const ref = db.collection('seeds').doc(currentDoc.id);
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new Error('Seed row gone.');
+      const d = snap.data()||{};
+      const cur = parseFloat(d.quantityKg||0);
+      const next = cur + delta;
+      if (next < -0.0001) throw new Error('Not enough stock.');
+      tx.update(ref,{quantityKg: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    });
+    const doc = await db.collection('seeds').doc(currentDoc.id).get();
+    currentDoc = {collection:'seeds', id: currentDoc.id, data: doc.data()||{}};
+    seedDelta.value='';
+    renderFound();
+  }
+
+})();
+</script>
+
+</body>
+</html>
