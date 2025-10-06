@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkyFarm — Chemical Inventory</title>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+
+  <style>
+    :root {
+      --brand:#0B7A6E;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:#f6fbf8; margin: 16px; color:#0f172a; }
+    h1 { margin: 0 0 12px; font-size: 1.6rem; }
+    .wrap { max-width: 1200px; margin: 0 auto; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+    input, select, button { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 10px; background:#fff; }
+    button { cursor: pointer; }
+    .primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: .95rem; }
+    th { background:#f1f5f9; }
+    .btn { border-radius: 8px; }
+    .danger { background:#ef4444; border-color:#ef4444; color:#fff; }
+    .disabled { opacity:.55; pointer-events:none; }
+    .toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .spacer { flex: 1; }
+    #status { color: var(--brand); }
+    #msg { color: #065f46; }
+    .muted { color:#64748b; font-size:.9rem; }
+    .linklike { color: var(--brand); text-decoration: underline; cursor: pointer; }
+    .nowrap { white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <!-- SkyFarm mini header/nav -->
+<header id="skyfarm-header" style="position:sticky;top:0;z-index:10">
+  <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border-bottom:1px solid #e5e7eb">
+    <div style="display:flex;align-items:center;gap:8px;color:#0B7A6E;font-weight:700">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M5 13c8-9 14-8 14-8s1 6-7 14c-4 4-9 3-9 3s-1-5 3-9Z" stroke="currentColor" stroke-width="1.8"/></svg>
+      SkyFarm
+    </div>
+    <nav style="display:flex;gap:10px;margin-left:10px">
+      <a href="#" data-nav="diary" style="color:#0B7A6E;text-decoration:none;font-weight:600">Diary</a>
+      <a href="#" data-nav="map"   style="color:#0B7A6E;text-decoration:none;font-weight:600">Map</a>
+      <a href="#" data-nav="chem"  style="color:#0B7A6E;text-decoration:none;font-weight:600">Chemicals</a>
+      <a href="#" data-nav="admin" style="color:#0B7A6E;text-decoration:none;font-weight:600">Users</a>
+    </nav>
+    <div style="flex:1"></div>
+    <span id="sf-auth" style="color:#64748b;font-size:.9rem">Connecting…</span>
+  </div>
+</header>
+<script>
+  (function(){
+    // Link handler
+    function pageUrl(slug){
+      const base = location.origin;
+      if (slug === 'diary') return `${base}/skyfarm-diary.html`;
+      if (slug === 'map')   return `${base}/skyfarm-map.html`;
+      if (slug === 'chem')  return `${base}/skyfarm-chemical-inventory.html`;
+      if (slug === 'admin') return `${base}/skyfarm-admin-users.html`;
+      return base + '/';
+    }
+    document.querySelectorAll('#skyfarm-header [data-nav]').forEach(a=>{
+      a.onclick = (e)=>{ e.preventDefault(); location.href = pageUrl(a.getAttribute('data-nav')); };
+    });
+
+    // Optional: show simple auth state if Firebase is present on the page
+    try {
+      if (window.firebase?.auth) {
+        const el = document.getElementById('sf-auth');
+        firebase.auth().onAuthStateChanged(u=>{
+          el.textContent = u ? (u.isAnonymous ? 'Connected (guest)' : `Signed in`) : 'Connecting…';
+        });
+      }
+    } catch(e){}
+  })();
+</script>
+<div class="wrap">
+  <h1>SkyFarm — Chemical Inventory</h1>
+
+  <div class="card">
+    <div class="toolbar">
+      <select id="property" title="Which property to view or save into"></select>
+      <select id="useFilter" title="Filter by use">
+        <option value="all">All uses</option>
+        <option value="Use on paddock">Use on paddock</option>
+        <option value="Use on stock">Use on stock</option>
+      </select>
+      <input id="search" placeholder="Search (name / use / location / unit / property)" style="min-width:280px" />
+      <span id="count" class="muted"></span>
+      <div class="spacer"></div>
+      <button id="exportCsv" class="btn" title="Download current view as CSV">Export CSV</button>
+      <span id="status" class="muted" aria-live="polite"></span>
+    </div>
+
+    <div class="row">
+      <select id="useOn" title="What is this chemical used on?">
+        <option>Use on paddock</option>
+        <option>Use on stock</option>
+      </select>
+      <input id="name" placeholder="Chemical name" style="min-width:260px" />
+      <input id="quantity" type="number" step="0.01" placeholder="Qty" style="width:120px" />
+      <select id="unit" style="width:90px">
+        <option value="L">L</option>
+        <option value="KG">KG</option>
+      </select>
+      <input id="location" placeholder="Location (e.g. Shed 1)" style="min-width:220px" />
+      <input id="expiry" type="date" style="width:170px" />
+    </div>
+
+    <div class="row">
+      <input id="sdsUrl" placeholder="SDS URL (optional)" style="min-width:320px" />
+      <input id="sdsFile" type="file" accept="application/pdf" />
+      <button id="saveBtn" class="primary btn">Save chemical</button>
+      <button id="resetBtn" class="btn" type="button">Reset</button>
+      <button class="btn" type="button" id="reloadBtn">Reload</button>
+      <span id="msg" class="muted" aria-live="polite"></span>
+    </div>
+    <div class="muted">When “All properties” is selected you can view/search/export/edit, but must choose a specific property to save new records.</div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Name</th>
+          <th class="nowrap">Qty&nbsp;&times;&nbsp;Unit</th>
+          <th>Use</th>
+          <th>Location</th>
+          <th>Expiry</th>
+          <th>SDS</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="chemList"><tr><td colspan="8">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+/***** Firebase *****/
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  storageBucket: "consentes-pastoral.appspot.com",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+const auth = firebase.auth();
+
+/***** UI helpers *****/
+const $ = (s) => document.querySelector(s);
+const setStatus = (t) => { $('#status').textContent = t || ''; };
+const setMsg = (t, timeoutMs = 3000) => { $('#msg').textContent = t || ''; if (t && timeoutMs) setTimeout(() => $('#msg').textContent = '', timeoutMs); };
+const saveBtn = $('#saveBtn');
+const loading = (on) => { saveBtn.classList.toggle('disabled', !!on); saveBtn.textContent = on ? 'Saving…' : (currentEdit ? 'Save changes' : 'Save chemical'); };
+
+/***** Property list *****/
+// If your project exposes a collection of properties in Firestore, you can
+// replace the hard-coded map by fetching it. We keep both paths: try fetch,
+// then fallback to the known IDs used in SkyFarm today.
+const fallbackPropertyIds = {
+  "Consentes": "s7PlDM9wrEpxuJ6DGIab",
+  "Gerawin": "P0dQ0H2FWHeqqxejflZs",
+  "Mt Myrtle": "TRuxtRBX2zJlwZnRGYKJ"
+};
+let propertyIds = { ...fallbackPropertyIds };
+
+/***** State *****/
+let chemicalsData = [];
+let currentEdit = null;      // { id, pid, __path }
+let currentSdsPath = null;   // string | null
+let filterText = '';
+let filterUse = 'all';
+let unsubscribeChem = null;
+const propertyNameById = Object.fromEntries(Object.entries(propertyIds).map(([name,id]) => [id,name]));
+// Cache the resolved collection path per propertyId
+let pathCache = {};
+
+/***** Bootstrap *****/
+(async function bootstrap(){
+  try {
+    // Enable offline cache (IndexedDB) and multi-tab support
+    try { await firebase.firestore().enablePersistence({ synchronizeTabs: true }); }
+    catch(e){ console.warn('Persistence not enabled', e && e.code); }
+
+    setStatus('Connecting…');
+    await auth.signInAnonymously();
+    setStatus('Connected');
+  } catch (e) {
+    console.error(e);
+    let hint=''; if(e&&e.code==='auth/operation-not-allowed'){hint=' (Enable Anonymous sign-in in Firebase Auth > Sign-in method)';} else if(e&&e.code==='auth/unauthorized-domain'){hint=' (Add this site’s domain to Auth > Settings > Authorized domains)';} setStatus('Auth failed'+hint);
+  }
+  await initProperties();
+  restorePropertySelection();
+  loadChemicals(); // snapshot-based, no await
+})();
+
+/***** Events *****/
+$('#search').oninput = (e) => { filterText = e.target.value; renderTable(); };
+$('#useFilter').onchange = (e) => { filterUse = e.target.value; renderTable(); };
+$('#property').onchange = () => { persistPropertySelection(); toggleSaveAvailability(); loadChemicals(); };
+$('#exportCsv').onclick = exportCsv;
+$('#reloadBtn').onclick = () => loadChemicals();
+$('#resetBtn').onclick = clearForm;
+$('#saveBtn').onclick = () => saveChemical().catch(err => { console.error(err); setMsg('Save failed. See console.'); loading(false); });
+
+/***** Property helpers *****/
+async function initProperties(){
+  const sel = $('#property');
+  sel.innerHTML = '';
+  // Always include the synthetic "All properties" option at the top
+  const optAll = document.createElement('option'); optAll.value = 'All properties'; optAll.textContent = 'All properties'; sel.appendChild(optAll);  // Using locked property IDs provided by Nyssa; skipping dynamic fetch of /properties to avoid mismatches.
+
+  Object.keys(propertyIds).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name; sel.appendChild(opt);
+  });
+
+  sel.value = 'All properties';
+  toggleSaveAvailability();
+}
+
+function toggleSaveAvailability(){
+  $('#saveBtn').classList.toggle('disabled', $('#property').value === 'All properties');
+}
+function persistPropertySelection(){
+  try { localStorage.setItem('chem.propSel', $('#property').value); } catch {}
+}
+function restorePropertySelection(){
+  try {
+    const v = localStorage.getItem('chem.propSel');
+    if (v && (v === 'All properties' || Object.prototype.hasOwnProperty.call(propertyIds, v))) {
+      $('#property').value = v;
+    }
+  } catch {}
+  toggleSaveAvailability();
+}
+
+/***** Data loading *****/
+async function loadChemicals(){
+  const tb = $('#chemList');
+  tb.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
+  chemicalsData = [];
+
+  // Tear down previous listener if any
+  if (typeof unsubscribeChem === 'function') { try { unsubscribeChem(); } catch(e){} unsubscribeChem = null; }
+
+  const selected = $('#property').value;
+  let q = db.collection('chemicals');
+  if (selected !== 'All properties') {
+    const pid = propertyIds[selected];
+    q = q.where('propertyId','==', pid);
+  }
+
+  unsubscribeChem = q.onSnapshot({ includeMetadataChanges: true }, (snap) => {
+    chemicalsData = [];
+    snap.forEach(doc => {
+      const d = doc.data() || {};
+      const pid = d.propertyId || null;
+      const propName = (Object.entries(propertyIds).find(([n,i])=>i===pid)||[])[0] || d.propertyName || pid || 'Unknown';
+      chemicalsData.push({ id: doc.id, propertyId: pid, propertyName: propName, ...d });
+    });
+    chemicalsData.sort((a,b) => String(a.name||'').localeCompare(String(b.name||'')));
+    renderTable();
+
+    const fromCache = snap.metadata.fromCache;
+    const pending = snap.metadata.hasPendingWrites;
+    setStatus(`Connected · ${chemicalsData.length} item(s)` + (fromCache ? ' · offline' : '') + (pending ? ' · syncing…' : ''));
+  }, (e) => {
+    console.error(e);
+    $('#chemList').innerHTML = '<tr><td colspan="8">Failed to load records.</td></tr>';
+    setStatus('Connected · load error (see console)');
+  });
+}
+
+function filtered(){
+  const q = filterText.trim().toLowerCase();
+  return chemicalsData.filter(r => {
+    if (filterUse !== 'all' && (r.useOn || '') !== filterUse) return false;
+    const hay = [r.name, r.useOn, r.location, r.unit, r.propertyName].filter(Boolean).join(' ').toLowerCase();
+    return !q || hay.includes(q);
+  });
+}
+
+function renderTable(){
+  const tb = $('#chemList');
+  tb.innerHTML = '';
+  const rows = filtered();
+  $('#count').textContent = `${rows.length} item(s)`;
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8">No records</td></tr>'; return; }
+
+  for (const r of rows){
+    const tr = document.createElement('tr');
+    const qty = (r.quantity ?? '') + (r.unit ? ` ${r.unit}` : '');
+    tr.innerHTML = `
+      <td>${escapeHtml(r.propertyName||'')}</td>
+      <td>${escapeHtml(r.name||'')}</td>
+      <td class="nowrap">${escapeHtml(qty)}</td>
+      <td>${escapeHtml(r.useOn||'')}</td>
+      <td>${escapeHtml(r.location||'')}</td>
+      <td>${escapeHtml(r.expiryDate||'')}</td>
+      <td>${r.sdsUrl ? `<a href="${encodeURI(r.sdsUrl)}" target="_blank" rel="noopener">SDS</a>` : ''}</td>
+      <td>
+        <button class="btn" data-e>Edit</button>
+        <button class="btn danger" data-d>Del</button>
+      </td>`;
+    tr.querySelector('[data-e]').onclick = () => editRow(r);
+    tr.querySelector('[data-d]').onclick = () => delRow(r);
+    tb.appendChild(tr);
+  }
+}
+
+function editRow(r){
+  $('#property').value = r.propertyName; toggleSaveAvailability();
+  $('#useOn').value = r.useOn || 'Use on paddock';
+  $('#name').value = r.name || '';
+  $('#quantity').value = typeof r.quantity === 'number' ? r.quantity : (r.quantity || '');
+  $('#unit').value = r.unit || 'L';
+  $('#location').value = r.location || '';
+  $('#expiry').value = r.expiryDate || '';
+  $('#sdsUrl').value = r.sdsUrl || '';
+  currentEdit = { id: r.id, pid: r.propertyId, __path: r.__path };
+  currentSdsPath = r.sdsPath || null;
+  saveBtn.textContent = 'Save changes';
+}
+
+async function delRow(r){
+  if (!confirm(`Delete "${r.name}" from ${r.propertyName}?`)) return;
+  try {
+    await db.doc(`${r.__path}/${r.id}`).delete();
+    if (r.sdsPath) {
+      try { await storage.ref(r.sdsPath).delete(); } catch {}
+    }
+    await loadChemicals();
+    setMsg('Deleted');
+  } catch (e) {
+    console.error(e);
+    setMsg('Delete failed');
+  }
+}
+
+async function saveChemical(){
+  if ($('#property').value === 'All properties') { alert('Select a property to save'); return; }
+  const pid = propertyIds[$('#property').value];
+
+  const qtyVal = $('#quantity').value;
+  const qtyNum = qtyVal === '' ? NaN : Number(qtyVal);
+
+  const data = {
+    name: ($('#name').value || '').trim(),
+    useOn: $('#useOn').value,
+    quantity: isNaN(qtyNum) ? null : qtyNum,
+    unit: $('#unit').value,
+    location: ($('#location').value || '').trim(),
+    expiryDate: $('#expiry').value || '',
+    propertyId: pid,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  if (!data.name) { alert('Chemical name is required'); return; }
+  if (data.quantity === null || data.quantity <= 0) { alert('Enter a valid quantity (> 0)'); return; }
+
+  const bestWritePath = async (pid) => {
+    if (pathCache[pid]) return pathCache[pid];
+    const candidates = [
+      `chemicals/${pid}/chemicals`,
+      `properties/${pid}/chemicals`,
+      `properties/${pid}/store`,
+      `properties/${pid}/inventory`
+    ];
+    for (const p of candidates){
+      try { const snap = await db.collection(p).limit(1).get(); if (!snap.empty) { pathCache[pid] = p; return p; } } catch(e){}
+    }
+    pathCache[pid] = candidates[0];
+    return pathCache[pid];
+  };
+
+  loading(true);
+  let sdsUrl = ($('#sdsUrl').value || '').trim();
+  let sdsPath = currentSdsPath || '';
+  const file = $('#sdsFile').files[0];
+  if (file){
+    sdsPath = `sds/${pid}/${Date.now()}_${file.name}`;
+    const ref = storage.ref(sdsPath);
+    await ref.put(file);
+    sdsUrl = await ref.getDownloadURL();
+  }
+
+  data.sdsUrl = sdsUrl || null;
+  data.sdsPath = sdsPath || null;
+
+  try {
+    const targetPath = await bestWritePath(pid);
+    if (currentEdit) {
+      const fromDifferentCollection = (currentEdit.pid !== pid) || (currentEdit.__path !== targetPath);
+      if (fromDifferentCollection){
+        const newDoc = await db.collection(targetPath).add({ ...data });
+        try { await db.doc(`${currentEdit.__path}/${currentEdit.id}`).delete(); } catch(e) { console.warn('Old doc delete failed', e); }
+      } else {
+        await db.doc(`${targetPath}/${currentEdit.id}`).update(data);
+      }
+    } else {
+      await db.collection(targetPath).add(data);
+    }
+    clearForm();
+    await loadChemicals();
+    setMsg('Saved');
+  } catch (e) {
+    console.error(e);
+    setMsg('Save failed');
+  } finally {
+    loading(false);
+  }
+}
+
+function clearForm(){
+  $('#useOn').value = 'Use on paddock';
+  $('#name').value = '';
+  $('#quantity').value = '';
+  $('#unit').value = 'L';
+  $('#location').value = '';
+  $('#expiry').value = '';
+  $('#sdsUrl').value = '';
+  $('#sdsFile').value = '';
+  currentEdit = null; currentSdsPath = null; saveBtn.textContent = 'Save chemical';
+}
+
+function exportCsv(){
+  const rows = filtered();
+  if (!rows.length) { alert('Nothing to export'); return; }
+  const head = 'Property,Name,Quantity,Unit,Use,Location,Expiry,SDS URL';
+  const lines = rows.map(r => [
+    r.propertyName, r.name, r.quantity, r.unit, r.useOn, r.location, r.expiryDate, r.sdsUrl || ''
+  ].map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(','));
+  const blob = new Blob([head + '\n' + lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'chemicals.csv'; a.click();
+}
+
+/***** Utils *****/
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"] /g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',' ':'&nbsp;'}[m]));
+}
+</script>
+</body>
+</html>

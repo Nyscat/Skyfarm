@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>SkyFarm — Property Map</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+
+<style>
+  :root{--bg:#f6faf8;--card:#fff;--muted:#6b7280;--text:#111827;--brand:#0B7A6E;}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 12px;border-bottom:1px solid #e5e7eb;background:#fff;position:sticky;top:0;z-index:500}
+  .topbar h1{font-size:1.05rem;margin:0 6px 0 0}
+  .topbar input,.topbar select,.topbar button{border:1px solid #d1d5db;border-radius:10px;background:#fff;padding:6px 10px}
+  .btn{cursor:pointer}
+  .primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .muted{color:var(--muted);font-size:.9rem}
+  #layout{display:grid;grid-template-columns: 1fr 400px; grid-template-rows: calc(100vh - 64px); }
+  #map{width:100%;height:100%}
+  #panel{background:#fff;border-left:1px solid #e5e7eb;overflow:auto}
+  .panel-inner{padding:12px}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin:10px 0;padding:12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .stack{display:flex;gap:8px;align-items:center}
+  .btn-sm{padding:4px 8px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer}
+  .btn-sm.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .legend{position:absolute;bottom:16px;left:16px;z-index:400;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,.06);font-size:.9rem}
+  .legend .row{display:flex;gap:8px;align-items:center;margin:4px 0}
+  .swatch{width:14px;height:14px;border-radius:3px;border:1px solid #cbd5e1}
+  input[type="text"], input[type="number"], select { width: 100%; }
+  .field{margin:6px 0}
+  .field label{display:block;font-size:.85rem;color:#475569;margin-bottom:3px}
+  .row-split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+</style>
+</head>
+<body>
+<!-- SkyFarm mini header/nav -->
+<header id="skyfarm-header" style="position:sticky;top:0;z-index:10">
+  <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border-bottom:1px solid #e5e7eb">
+    <div style="display:flex;align-items:center;gap:8px;color:#0B7A6E;font-weight:700">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M5 13c8-9 14-8 14-8s1 6-7 14c-4 4-9 3-9 3s-1-5 3-9Z" stroke="currentColor" stroke-width="1.8"/></svg>
+      SkyFarm
+    </div>
+    <nav style="display:flex;gap:10px;margin-left:10px">
+      <a href="#" data-nav="diary" style="color:#0B7A6E;text-decoration:none;font-weight:600">Diary</a>
+      <a href="#" data-nav="map"   style="color:#0B7A6E;text-decoration:none;font-weight:600">Map</a>
+      <a href="#" data-nav="chem"  style="color:#0B7A6E;text-decoration:none;font-weight:600">Chemicals</a>
+      <a href="#" data-nav="admin" style="color:#0B7A6E;text-decoration:none;font-weight:600">Users</a>
+    </nav>
+    <div style="flex:1"></div>
+    <span id="sf-auth" style="color:#64748b;font-size:.9rem">Connecting…</span>
+  </div>
+</header>
+<script>
+  (function(){
+    // Link handler
+    function pageUrl(slug){
+      const base = location.origin;
+      if (slug === 'diary') return `${base}/skyfarm-diary.html`;
+      if (slug === 'map')   return `${base}/skyfarm-map.html`;
+      if (slug === 'chem')  return `${base}/skyfarm-chemical-inventory.html`;
+      if (slug === 'admin') return `${base}/skyfarm-admin-users.html`;
+      return base + '/';
+    }
+    document.querySelectorAll('#skyfarm-header [data-nav]').forEach(a=>{
+      a.onclick = (e)=>{ e.preventDefault(); location.href = pageUrl(a.getAttribute('data-nav')); };
+    });
+
+    // Optional: show simple auth state if Firebase is present on the page
+    try {
+      if (window.firebase?.auth) {
+        const el = document.getElementById('sf-auth');
+        firebase.auth().onAuthStateChanged(u=>{
+          el.textContent = u ? (u.isAnonymous ? 'Connected (guest)' : `Signed in`) : 'Connecting…';
+        });
+      }
+    } catch(e){}
+  })();
+</script>
+<div class="topbar">
+  <h1>SkyFarm — Property Map</h1>
+
+  <button id="btnLoadCG" class="btn primary" title="Load Consentes + Gerawin">Load Consentes + Gerawin</button>
+  <button id="btnLoadMM" class="btn" title="Load Mt Myrtle">Load Mt Myrtle</button>
+  <input id="filePicker" type="file" accept=".json,.geojson" title="Load a local GeoJSON/JSON" />
+
+  <select id="layerToggle">
+    <option value="all">Show all layers</option>
+  </select>
+
+  <button id="btnToggleGauges" class="btn">Rain Gauges: Off</button>
+  <button id="btnClear" class="btn">Clear</button>
+
+  <span class="muted" style="margin-left:auto">Status: <span id="status" style="color:#0B7A6E">Connecting…</span></span>
+</div>
+
+<div id="layout">
+  <div id="map"></div>
+  <aside id="panel">
+    <div class="panel-inner">
+      <div class="card">
+        <strong>Selection</strong>
+        <div id="selTitle" style="margin-top:6px">Click a paddock/shape…</div>
+        <div id="selMeta" class="muted" style="margin-top:6px"></div>
+      </div>
+
+      <div class="card">
+        <div class="stack">
+          <strong>Paddock Metrics</strong>
+          <button id="btnOpenDiary" class="btn-sm">Open Diary</button>
+          <button id="btnOpenDiaryChem" class="btn-sm primary" title="Open diary filtered to chemical use">Chemical diary</button>
+        </div>
+        <div id="paddockMetrics" class="muted">—</div>
+      </div>
+
+      <div class="card">
+        <div class="stack">
+          <strong>Livestock in paddock</strong>
+          <button id="btnRefreshLivestock" class="btn-sm" style="margin-left:auto">Refresh</button>
+        </div>
+        <div id="liveBody" class="muted">—</div>
+      </div>
+
+      <div class="card">
+        <div class="stack">
+          <strong>Recent diary entries</strong>
+          <select id="diaryDays">
+            <option value="7">7d</option>
+            <option value="14">14d</option>
+            <option value="30" selected>30d</option>
+            <option value="90">90d</option>
+          </select>
+          <button id="btnRefreshDiary" class="btn-sm" style="margin-left:auto">Refresh</button>
+        </div>
+        <div id="diaryBody" class="muted">—</div>
+      </div>
+
+      <!-- Paddock editor -->
+      <div class="card" id="paddockEditor" style="display:none">
+        <div class="stack">
+          <strong>Edit paddock (Firestore)</strong>
+          <span class="muted" id="pedStatus" style="margin-left:auto"></span>
+        </div>
+        <div class="muted" id="pedMapName" style="margin:6px 0"></div>
+        <div class="field">
+          <label for="pedName">Name (in Firestore)</label>
+          <input id="pedName" type="text" placeholder="e.g. Middle Paddock" />
+        </div>
+        <div class="row-split">
+          <div class="field">
+            <label for="pedGrazHa">Grazable hectares</label>
+            <input id="pedGrazHa" type="number" min="0" step="0.001" />
+          </div>
+          <div class="field">
+            <label for="pedLandUse">Land use</label>
+            <input id="pedLandUse" type="text" placeholder="Grazing / Cropping / Mixed…" />
+          </div>
+        </div>
+        <div class="row-split">
+          <div class="field">
+            <label for="pedCrop">Crop type</label>
+            <input id="pedCrop" type="text" placeholder="e.g. Sorghum" />
+          </div>
+          <div class="field">
+            <label for="pedState">Pasture state</label>
+            <input id="pedState" type="text" placeholder="e.g. Good feed" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="btnPedSave" class="btn-sm primary">Save paddock</button>
+          <button id="btnPedRevert" class="btn-sm">Revert</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="legend">
+  <div class="row"><strong>Legend</strong></div>
+  <div class="row"><span class="swatch" style="background:#61aad9"></span> Water / dams</div>
+  <div class="row"><span class="swatch" style="background:#65bb38"></span> Cropping / crop</div>
+  <div class="row"><span class="swatch" style="background:#31a6c5"></span> Grazing paddock</div>
+  <div class="row"><span class="swatch" style="background:#efcb19"></span> Horse / special use</div>
+  <div class="row"><span class="swatch" style="background:#d8dee2"></span> Other paddock</div>
+  <div class="row"><span class="swatch" style="background:#f5a01b"></span> Non-ag / compound</div>
+  <div class="row"><span class="swatch" style="background:#000"></span> Rain gauge / landmark</div>
+</div>
+
+<script>
+/* ========== Map base ========== */
+const map = L.map('map',{preferCanvas:true}).setView([-20.27,141.60],10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+
+const groupAll = L.featureGroup().addTo(map);
+const registry = new Map(); // name -> {layerGroup, count}
+const layerToggle = document.getElementById('layerToggle');
+
+function ensureLayer(name){
+  if(registry.has(name)) return registry.get(name).layerGroup;
+  const lg = L.featureGroup(); groupAll.addLayer(lg);
+  registry.set(name,{layerGroup:lg,count:0});
+  const opt=document.createElement('option'); opt.value=name; opt.textContent=`Only: ${name}`; layerToggle.appendChild(opt);
+  return lg;
+}
+function fitToAll(){ if(groupAll.getLayers().length){ map.fitBounds(groupAll.getBounds().pad(0.1)); } }
+function fillFor(feature){
+  const c = feature?.properties?.fillColour; if(c) return c;
+  const s=(feature?.properties?.pastureState||'').toLowerCase();
+  if(s.includes('graz'))return'#31a6c5'; if(s.includes('crop'))return'#65bb38';
+  if(s.includes('yard')||s.includes('compound'))return'#f5a01b'; return'#d8dee2';
+}
+function iconForGauge(color='#111'){
+  const html=`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)"></div>`;
+  return L.divIcon({className:'',html,iconSize:[16,16],iconAnchor:[8,8]});
+}
+
+/* ========== Firebase: auto-connect ========== */
+let db;
+const cfg = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+(async ()=>{
+  try{
+    firebase.initializeApp(cfg);
+    db = firebase.firestore();
+    try{ await firebase.firestore().enablePersistence({synchronizeTabs:true}); }catch(_){}
+    await firebase.auth().signInAnonymously();
+    document.getElementById('status').textContent = 'Connected';
+  }catch(e){
+    document.getElementById('status').textContent = 'Auth failed';
+    console.error(e);
+  }
+})();
+
+/* ========== Selection + Queries ========== */
+let currentSelection = null; // { propertyName, propertyId, paddockName, dbPaddockName, ... }
+const $ = id=>document.getElementById(id);
+
+function setSelection(title, metaObj){
+  currentSelection = metaObj;
+  $('selTitle').textContent = title || '(paddock)';
+  const meta = [];
+  if (metaObj.propertyName) meta.push(`<div><strong>Property:</strong> ${metaObj.propertyName}</div>`);
+  const dbLine = metaObj.dbPaddockName && metaObj.dbPaddockName!==metaObj.paddockName
+    ? `<div><strong>Paddock (DB):</strong> ${metaObj.dbPaddockName} <span class="muted">(mapped from map name)</span></div>`
+    : `<div><strong>Paddock:</strong> ${metaObj.paddockName||''}</div>`;
+  meta.push(dbLine);
+  if (metaObj.areaHa!=null)     meta.push(`<div><strong>Area:</strong> ${Number(metaObj.areaHa).toLocaleString(undefined,{maximumFractionDigits:2})} ha</div>`);
+  if (metaObj.grazableHa!=null) meta.push(`<div><strong>Grazable:</strong> ${Number(metaObj.grazableHa).toLocaleString(undefined,{maximumFractionDigits:2})} ha</div>`);
+  $('selMeta').innerHTML = meta.join('');
+  renderPaddockMetrics(null, null); // clear while loading
+  loadPaddockEditor();              // load editor with this selection
+}
+
+/* Buttons */
+$('btnRefreshLivestock').addEventListener('click', ()=>{ if(currentSelection) loadLivestockForSelection(); });
+$('btnRefreshDiary').addEventListener('click', ()=>{ if(currentSelection) loadDiaryForSelection(); });
+
+$('btnOpenDiary').addEventListener('click', ()=>{
+  if(!currentSelection) return alert('Click a paddock first');
+  const q = new URLSearchParams({
+    propertyId: currentSelection.propertyId||'',
+    propertyName: currentSelection.propertyName||'',
+    paddock: currentSelection.dbPaddockName || currentSelection.paddockName || ''
+  }).toString();
+  window.open(`./skyfarm-diary.html?${q}`,'_blank');
+});
+$('btnOpenDiaryChem').addEventListener('click', ()=>{
+  if(!currentSelection) return alert('Click a paddock first');
+  const q = new URLSearchParams({
+    propertyId: currentSelection.propertyId||'',
+    propertyName: currentSelection.propertyName||'',
+    paddock: currentSelection.dbPaddockName || currentSelection.paddockName || '',
+    chemOnly:'true'
+  }).toString();
+  window.open(`./skyfarm-diary.html?${q}`,'_blank');
+});
+
+function classPriority(cls){ const c=(cls||'').toLowerCase();
+  if(c.includes('cow'))return 1;if(c.includes('heifer'))return 2;if(c.includes('weaner'))return 3;
+  if(c.includes('calf'))return 4;if(c.includes('steer'))return 5;if(c.includes('bull'))return 6;return 99;
+}
+function calcAEDays(m,ae,c){ if(!m||!ae||!c)return 0; const s=new Date(m); return ae*c*((Date.now()-s.getTime())/86400000); }
+
+function renderPaddockMetrics(liveAgg, aeDaysSum){
+  const box = $('paddockMetrics');
+  if(!currentSelection){ box.textContent='—'; return; }
+  const area = (currentSelection.grazableHa ?? currentSelection.areaHa ?? 0);
+  let html = '';
+  if(liveAgg){ html += `<div><strong>Head:</strong> ${liveAgg.totalHead.toLocaleString()} &nbsp; <strong>AE:</strong> ${liveAgg.totalAE.toFixed(1)}</div>`; }
+  if(aeDaysSum!=null){
+    const aeHaYr = area ? (aeDaysSum/(365*area)) : null;
+    html += `<div class="muted" style="margin-top:6px">AE-days: ${aeDaysSum.toFixed(1)} ${area?`| Area: ${area.toLocaleString(undefined,{maximumFractionDigits:2})} ha | <strong>AE/ha/yr:</strong> ${aeHaYr.toFixed(2)}`:''}</div>`;
+  }
+  if(!html) html = '—';
+  box.innerHTML = html;
+}
+
+/* ---------- Fuzzy name matching helpers ---------- */
+const norm = s => String(s||'').toLowerCase().trim();
+const stripNonLetters = s => norm(s).replace(/[^a-z]+/g,' ');
+const tokens = s => stripNonLetters(s).split(/\s+/).filter(t=>t.length>=3);
+function paddockNamesMatch(a,b){
+  const A = tokens(a), B = tokens(b);
+  if(!A.length || !B.length) return norm(a)===norm(b);
+  const setB = new Set(B);
+  let hits = 0; for(const t of A){ if(setB.has(t)) hits++; }
+  if (hits >= Math.min(2, Math.min(A.length, B.length))) return true;
+  // fallback: collapsed substring check
+  const ca = stripNonLetters(a).replace(/\s+/g,'');
+  const cb = stripNonLetters(b).replace(/\s+/g,'');
+  return ca.includes(cb) || cb.includes(ca);
+}
+
+/* ---------- Livestock loader (fuzzy paddock + tolerant species) ---------- */
+async function loadLivestockForSelection(){
+  const body = $('liveBody');
+  body.textContent = 'Loading…';
+  if(!db) { body.textContent='(No Firebase)'; return; }
+  const { propertyId, dbPaddockName, paddockName } = currentSelection || {};
+  if(!propertyId){ body.textContent='(No property)'; return; }
+  const targetName = dbPaddockName || paddockName;
+
+  try{
+    // Pull all livestock for the property; filter in JS for fuzzy paddock match
+    const snap = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .get();
+
+    const rows = [];
+    snap.forEach(doc=>{
+      const d = doc.data()||{};
+      if (!paddockNamesMatch(d.location||'', targetName)) return;
+      rows.push({id:doc.id, ...d});
+    });
+
+    if(!rows.length){ body.textContent='No livestock recorded here.'; renderPaddockMetrics({totalHead:0,totalAE:0}, 0); return; }
+
+    let totalHead = 0, totalAE = 0, aeDaysSum = 0;
+    const groups = rows.map(d=>{
+      const head=+d.count||0;
+      const ae=(+d.aePerHead||0)*head;
+      const aeDays=calcAEDays(d.movedIn,d.aePerHead,head);
+      totalHead+=head; totalAE+=ae; aeDaysSum+=aeDays;
+      return {species:d.species, cls:d.class, head, ae, aeDays};
+    });
+
+    groups.sort((a,b)=> a.species.localeCompare(b.species) || classPriority(a.cls)-classPriority(b.cls) || (a.cls||'').localeCompare(b.cls||''));
+    body.innerHTML = groups.map(g=>`<div><span class="pill">${g.species}</span> ${g.cls||''} — Head: ${g.head}, AE: ${g.ae.toFixed(1)}</div>`)
+      .concat([`<div style="margin-top:6px"><strong>Totals</strong> — Head: ${totalHead}, AE: ${totalAE.toFixed(1)}</div>`]).join('');
+    renderPaddockMetrics({totalHead,totalAE}, aeDaysSum);
+  }catch(e){ body.textContent = 'Error: ' + e.message; }
+}
+
+/* ---------- Diary loader ---------- */
+async function loadDiaryForSelection(){
+  const body = $('diaryBody');
+  body.textContent = 'Loading…';
+  if(!db) { body.textContent='(No Firebase)'; return; }
+  const { propertyId, dbPaddockName, paddockName } = currentSelection || {};
+  if(!propertyId){ body.textContent='(No property)'; return; }
+  const targetName = dbPaddockName || paddockName;
+  try{
+    const days = parseInt($('diaryDays').value||'30',10);
+    const from = new Date(Date.now()-days*86400000).toISOString().slice(0,10);
+    const snap = await db.collection('diaryEntries')
+      .where('propertyId','==',propertyId)
+      .orderBy('createdAt','desc').limit(300).get();
+
+    const items = [];
+    snap.forEach(doc=>{
+      const d=doc.data();
+      // accept direct paddock match OR a fuzzy match in notes
+      if (d.paddock && !paddockNamesMatch(d.paddock, targetName)) return;
+      if (d.date && d.date < from) return;
+      items.push(`<div style="margin:6px 0;border-bottom:1px solid #eee;padding-bottom:6px">
+        <div><strong>${d.date||''} ${d.time||''}</strong> — <span class="pill">${d.activity||''}</span></div>
+        <div class="muted">${[d.species,d.livestockClass].filter(Boolean).join(' · ')}</div>
+        ${d.headCount? `<div class="muted">Head: ${d.headCount}</div>`:''}
+        ${d.notes? `<div class="muted">${d.notes}</div>`:''}
+      </div>`);
+    });
+    body.innerHTML = items.length? items.join('') : 'No diary entries in window.';
+  }catch(e){ body.textContent = 'Error: ' + e.message; }
+}
+
+/* ========== GeoJSON handling ========== */
+function popupHTML(f){
+  const p=f.properties||{}; const title=p.title||p.name||'(untitled)';
+  const area=(p.area_hectares!=null)? `${(+p.area_hectares).toLocaleString(undefined,{maximumFractionDigits:2})} ha` : '';
+  const graz=(p.grazableArea_hectares!=null)? `${(+p.grazableArea_hectares).toLocaleString(undefined,{maximumFractionDigits:2})} ha` : '';
+  const chips=[]; if(p.cropType)chips.push(`<span class="pill">${p.cropType}</span>`); if(p.pastureState)chips.push(`<span class="pill">${p.pastureState}</span>`);
+  return `<div style="min-width:220px"><div style="font-weight:700;margin-bottom:4px">${title}</div>
+    ${area?`<div class="muted"><strong>Area:</strong> ${area}</div>`:''}
+    ${graz?`<div class="muted"><strong>Grazable:</strong> ${graz}</div>`:''}
+    ${chips.length?`<div style="margin-top:6px">${chips.join(' ')}</div>`:''}
+    <div class="muted" style="margin-top:6px">Click to see livestock & diary in the side panel</div></div>`;
+}
+const normalizePaddockName = n => String(n||'').trim();
+
+async function identifyPropertyIdByName(nameGuess){
+  if(!db) return null;
+  const snap = await db.collection('properties').get();
+  let best=null;
+  snap.forEach(doc=>{
+    const nm=(doc.data().name||'').trim().toLowerCase();
+    if(nm && nm === String(nameGuess||'').trim().toLowerCase()) best = doc.id;
+  });
+  return best;
+}
+function guessPropertyName(feature, layerName){
+  const p=feature.properties||{};
+  return (p.property || p.farm || layerName || '').toString();
+}
+
+function addGeoJSON(geojson, layerName){
+  const layerGroup = ensureLayer(layerName);
+  const gj = L.geoJSON(geojson, {
+    style: f=>({color:'#1f2937',weight:1,fillColor:fillFor(f),fillOpacity:0.25}),
+    pointToLayer: (feature, latlng) => {
+      const lt=(feature?.properties?.landmarkType||'').toLowerCase();
+      if (feature.geometry?.type==='Point' && lt.includes('gauge')) {
+        return L.marker(latlng, { icon: iconForGauge('#000') });
+      }
+      if (feature.geometry?.type==='Point') {
+        return L.circleMarker(latlng,{radius:5,color:'#1f2937',fillColor:'#555',fillOpacity:.7});
+      }
+      return null;
+    },
+    onEachFeature: (feature, layer) => {
+      layer.bindPopup(popupHTML(feature));
+      if (feature.geometry && (feature.geometry.type==='Polygon' || feature.geometry.type==='MultiPolygon')) {
+        layer.on('click', async ()=>{
+          const fp=feature.properties||{};
+          const paddockName=normalizePaddockName(fp.title||fp.name||fp.paddock||'');
+          const propertyName=guessPropertyName(feature, layerName);
+          let propertyId=null;
+          if(db){
+            propertyId = await identifyPropertyIdByName(propertyName);
+            if(!propertyId && layerName.includes('Consentes')){
+              propertyId = await identifyPropertyIdByName('Consentes') || await identifyPropertyIdByName('Gerawin');
+            }
+            if(!propertyId && layerName.includes('Mt Myrtle')){
+              propertyId = await identifyPropertyIdByName('Mt Myrtle');
+            }
+          }
+          const areaHa=(fp.area_hectares!=null)? +fp.area_hectares : null;
+          const grazableHa=(fp.grazableArea_hectares!=null)? +fp.grazableArea_hectares : null;
+
+          setSelection(
+            paddockName||'(paddock)',
+            { paddockName, dbPaddockName: paddockName, propertyName, propertyId, areaHa, grazableHa }
+          );
+          await loadLivestockForSelection();
+          await loadDiaryForSelection();
+        });
+      }
+      const lt=(feature?.properties?.landmarkType||'').toLowerCase();
+      if (feature.geometry?.type==='Point' && lt.includes('gauge')) {
+        layer.on('click', ()=> handleGaugeClick({
+          id: feature.properties?.id || null,
+          name: feature.properties?.name || feature.properties?.title || 'Gauge',
+          latlng: layer.getLatLng(),
+          propertyName: feature.properties?.property || layerName
+        }));
+      }
+    }
+  });
+  layerGroup.addLayer(gj);
+  registry.get(layerName).count += gj.getLayers().length;
+  fitToAll();
+}
+
+/* ========== Rain gauges overlay (Firestore) ========== */
+let gaugesLayer = L.featureGroup();
+let gaugesOn = false;
+$('btnToggleGauges').addEventListener('click', async ()=>{
+  gaugesOn = !gaugesOn;
+  $('btnToggleGauges').textContent = `Rain Gauges: ${gaugesOn? 'On':'Off'}`;
+  if (gaugesOn) { await loadGaugesFromFirestore(); map.addLayer(gaugesLayer); }
+  else { map.removeLayer(gaugesLayer); }
+});
+async function loadGaugesFromFirestore(){
+  try{
+    gaugesLayer.clearLayers();
+    if(!db) return;
+    // Using your collection name "gauges"
+    const snap = await db.collection('gauges').get();
+    snap.forEach(doc=>{
+      const g=doc.data()||{};
+      if(!isFinite(parseFloat(g.lat))||!isFinite(parseFloat(g.lon))) return;
+      const mk=L.marker([+g.lat,+g.lon],{icon:iconForGauge('#000')});
+      mk.bindPopup(`<strong>${g.name||'Gauge'}</strong><div class="muted">${g.propertyName||''}</div>`);
+      mk.on('click', ()=> handleGaugeClick({ id:doc.id, name:g.name||'Gauge', latlng:mk.getLatLng(), propertyId:g.propertyId||null }));
+      mk.addTo(gaugesLayer);
+    });
+  }catch(e){ console.warn('Gauges load error', e); }
+}
+async function handleGaugeClick(g){
+  if(!db){ alert('Connect failed'); return; }
+  const mm = prompt(`Enter rainfall (mm) for ${g.name}:`, '');
+  if(mm===null) return;
+  const val = parseFloat(mm); if(!isFinite(val)){ alert('Not a number'); return; }
+  const dateISO = new Date().toISOString().slice(0,10);
+  try{
+    // Minimal demo: store as a reading record
+    await db.collection('rainReadings').add({
+      gaugeId:g.id||null, gaugeName:g.name||null,
+      propertyId:g.propertyId || currentSelection?.propertyId || null,
+      date:dateISO, mm:val,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert('Rainfall saved.');
+  }catch(e){ alert('Save failed: ' + e.message); }
+}
+
+/* ========== Paddock editor (Firestore: collection "paddocks") ========== */
+let currentPaddockDocId = null;
+function showPed(on){ document.getElementById('paddockEditor').style.display = on? 'block':'none'; }
+function fillPedFields(data){
+  $('pedName').value = data?.name || (currentSelection?.dbPaddockName || '');
+  $('pedGrazHa').value = data?.hectares ?? (currentSelection?.grazableHa ?? '');
+  $('pedLandUse').value = data?.landUse || '';
+  $('pedCrop').value = data?.cropType || '';
+  $('pedState').value = data?.pastureState || '';
+}
+async function loadPaddockEditor(){
+  if(!db || !currentSelection || !currentSelection.propertyId){ showPed(false); return; }
+  $('pedStatus').textContent='Loading…';
+  showPed(true);
+  $('pedMapName').innerHTML = `<em>Using map name:</em> <strong>${currentSelection.paddockName}</strong> (Firestore match by property + name)`;
+  currentPaddockDocId = null;
+
+  try{
+    const q = await db.collection('paddocks')
+      .where('propertyId','==', currentSelection.propertyId)
+      .where('name','==', currentSelection.dbPaddockName || currentSelection.paddockName)
+      .limit(1).get();
+
+    if (!q.empty){
+      const doc = q.docs[0];
+      currentPaddockDocId = doc.id;
+      fillPedFields(doc.data());
+      $('pedStatus').textContent='Loaded';
+    } else {
+      fillPedFields(null);
+      $('pedStatus').textContent='New (not in Firestore yet)';
+    }
+  }catch(e){
+    $('pedStatus').textContent='Load error';
+    console.error(e);
+  }
+}
+$('btnPedRevert').addEventListener('click', ()=> loadPaddockEditor());
+$('btnPedSave').addEventListener('click', async ()=>{
+  if(!db || !currentSelection?.propertyId) return;
+  const payload = {
+    propertyId: currentSelection.propertyId,
+    name: ($('pedName').value||'').trim() || (currentSelection.dbPaddockName||currentSelection.paddockName),
+    hectares: $('pedGrazHa').value==='' ? null : Number($('pedGrazHa').value),
+    landUse: ($('pedLandUse').value||'').trim() || null,
+    cropType: ($('pedCrop').value||'').trim() || null,
+    pastureState: ($('pedState').value||'').trim() || null,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  try{
+    $('pedStatus').textContent='Saving…';
+    if (currentPaddockDocId){
+      await db.collection('paddocks').doc(currentPaddockDocId).set(payload, {merge:true});
+    } else {
+      const docRef = await db.collection('paddocks').add({ createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...payload });
+      currentPaddockDocId = docRef.id;
+    }
+    $('pedStatus').textContent='Saved';
+  }catch(e){
+    $('pedStatus').textContent='Save error';
+    alert('Save failed: ' + e.message);
+  }
+});
+
+/* ========== Loaders & UI ========== */
+async function loadLocalJSON(path,label){
+  const res=await fetch(path); if(!res.ok) throw new Error(`Failed to load ${label}: HTTP ${res.status}`);
+  const data=await res.json(); addGeoJSON(data,label);
+}
+$('filePicker').addEventListener('change', async (ev)=>{
+  const file=ev.target.files?.[0]; if(!file) return;
+  try{ const json=JSON.parse(await file.text()); addGeoJSON(json,file.name); }
+  catch(e){ alert('Invalid JSON/GeoJSON: '+e.message); }
+});
+$('btnLoadCG').addEventListener('click', async ()=>{ try{ await loadLocalJSON('./consentes_station-2025-10-04_13-07-19.json','Consentes + Gerawin'); }catch(e){ alert(e.message); } });
+$('btnLoadMM').addEventListener('click', async ()=>{ try{ await loadLocalJSON('./mt_myrtle-2025-10-04_13-07-08.json','Mt Myrtle'); }catch(e){ alert(e.message); } });
+$('btnClear').addEventListener('click', ()=>{
+  groupAll.clearLayers(); registry.clear(); currentSelection=null;
+  layerToggle.innerHTML=''; const optAll=document.createElement('option'); optAll.value='all'; optAll.textContent='Show all layers'; layerToggle.appendChild(optAll);
+  $('selTitle').textContent='Click a paddock/shape…'; $('selMeta').textContent='';
+  $('liveBody').textContent='—'; $('diaryBody').textContent='—'; $('paddockMetrics').textContent='—';
+  showPed(false);
+});
+layerToggle.addEventListener('change', ()=>{
+  const val=layerToggle.value;
+  groupAll.eachLayer(lg=>{
+    const name=[...registry.entries()].find(([,v])=>v.layerGroup===lg)?.[0];
+    if(!name) return;
+    if(val==='all'||val===name) map.addLayer(lg); else map.removeLayer(lg);
+  });
+  fitToAll();
+});
+
+// Auto-load available local files on start
+(async ()=>{
+  try{ await loadLocalJSON('./consentes_station-2025-10-04_13-07-19.json','Consentes + Gerawin'); }catch(_){}
+  try{ await loadLocalJSON('./mt_myrtle-2025-10-04_13-07-08.json','Mt Myrtle'); }catch(_){}
+})();
+</script>
+
+</body>
+</html>
