@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SkyFarm — Sign in</title>
+
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+
+<style>
+  :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#f6fbf8; color:var(--ink); }
+  .wrap { max-width:1000px; margin:0 auto; padding:16px; }
+  h1 { margin:0 0 8px; font-size:1.8rem; }
+  p { margin:0; color:#475569; }
+
+  /* Header */
+  #skyfarm-header { position:sticky; top:0; z-index:10; }
+  #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
+  #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
+  #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+  #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
+  .spacer { flex:1; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  .hidden { display:none; }
+
+  /* Cards / Forms */
+  .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin:16px 0; }
+  input, button, label { font-size:16px; }
+  input, button { padding:10px 12px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+  button { cursor:pointer; }
+  .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+  .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:12px; }
+  .hint { color:#64748b; font-size:.9rem; }
+  .success { color:#065f46; }
+  .error { color:#991b1b; }
+  .right { text-align:right; }
+  .w100 { width:100%; }
+  .pw-wrap { position:relative; }
+  .pw-toggle { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#64748b; cursor:pointer; }
+  label.checkbox { display:flex; align-items:center; gap:8px; user-select:none; }
+
+  footer { text-align:center; color:#94a3b8; padding:24px 0; font-size:.9rem; }
+</style>
+</head>
+<body>
+
+<!-- Header with logo + nav -->
+<header id="skyfarm-header">
+  <div class="bar">
+    <a class="brand" href="index.html" title="Home">
+      <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
+           alt="SkyFarm logo" style="height:40px;width:auto;border-radius:6px;">
+      <span>SkyFarm</span>
+    </a>
+    <nav>
+      <a href="index.html" aria-current="page">Home</a>
+      <a href="skyfarm-diary.html">Diary</a>
+      <a href="skyfarm-map.html">Map</a>
+      <a href="skyfarm-livestock.html">Livestock</a>
+      <a href="skyfarm-chemical.html">Chemicals</a>
+      <a href="skyfarm-admin-users.html">Users</a>
+    </nav>
+    <div class="spacer"></div>
+    <span id="authState" class="muted">Not signed in</span>
+    <a id="signOutBtn" class="btn hidden" href="#">Sign out</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h1>Sign in to SkyFarm</h1>
+    <p>Use your <strong>email</strong> (as username) and <strong>password</strong>. Tick “Remember me” to stay signed in.</p>
+
+    <!-- Sign in -->
+    <div id="panel-signin">
+      <div class="grid" style="margin-top:8px">
+        <div>
+          <label class="hint">Username (Email)</label>
+          <input id="siEmail" type="email" class="w100" placeholder="you@example.com" autocomplete="username" />
+        </div>
+        <div>
+          <label class="hint">Password</label>
+          <div class="pw-wrap">
+            <input id="siPw" type="password" class="w100" placeholder="••••••••" autocomplete="current-password" />
+            <button class="pw-toggle" data-toggle="#siPw" type="button">Show</button>
+          </div>
+          <label class="checkbox" style="margin-top:8px;">
+            <input id="rememberMe" type="checkbox" />
+            <span>Remember me on this device</span>
+          </label>
+        </div>
+      </div>
+      <div class="row right" style="margin-top:10px">
+        <button id="signInBtn" class="primary">Sign in</button>
+      </div>
+      <div id="siMsg" class="hint" style="margin-top:6px"></div>
+    </div>
+
+    <!-- Reset password -->
+    <div class="card" style="margin-top:12px">
+      <div class="row">
+        <div style="flex:1; min-width:260px">
+          <label class="hint">Forgot your password?</label>
+          <input id="rpEmail" type="email" class="w100" placeholder="you@example.com" />
+        </div>
+        <button id="resetBtn" class="btn">Send reset email</button>
+      </div>
+      <div id="rpMsg" class="hint" style="margin-top:6px"></div>
+    </div>
+
+    <!-- If already signed in AND remembered -->
+    <div id="already" class="card hidden">
+      <div class="row">
+        <span class="success" id="signedInAs">Signed in.</span>
+        <span class="spacer"></span>
+        <a id="goNextBtn" class="btn primary" href="skyfarm-diary.html">Go</a>
+        <a id="hdrSignOut" class="btn" href="#">Sign out</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>© <span id="yr"></span> Consentes Pastoral · SkyFarm</footer>
+</div>
+
+<script>
+/*** Firebase ***/
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+/*** Elements ***/
+const $ = s => document.querySelector(s);
+const authState = $('#authState'); const signOutBtn = $('#signOutBtn'); const hdrSignOut = $('#hdrSignOut');
+const siEmail = $('#siEmail'), siPw = $('#siPw'), signInBtn = $('#signInBtn'), siMsg = $('#siMsg'), rememberMe = $('#rememberMe');
+const rpEmail = $('#rpEmail'), resetBtn = $('#resetBtn'), rpMsg = $('#rpMsg');
+const already = $('#already'), signedInAs = $('#signedInAs'), goNextBtn = $('#goNextBtn');
+
+/*** Helpers ***/
+function setMsg(el, text, kind=''){ el.textContent = text || ''; el.className = 'hint ' + (kind || ''); }
+function nextUrl(){
+  const params = new URLSearchParams(location.search);
+  return params.get('next') || 'skyfarm-diary.html';
+}
+function afterLoginRedirect(){ location.href = nextUrl(); }
+document.querySelectorAll('.pw-toggle').forEach(btn=>{
+  btn.onclick = ()=>{
+    const sel = btn.getAttribute('data-toggle');
+    const inp = document.querySelector(sel);
+    if (!inp) return;
+    inp.type = (inp.type === 'password') ? 'text' : 'password';
+    btn.textContent = inp.type === 'password' ? 'Show' : 'Hide';
+  };
+});
+
+/*** Remember-me policy ***/
+const REMEMBER_KEY = 'sf.rememberMe';   // '1' or '0'
+function remembered(){ try { return localStorage.getItem(REMEMBER_KEY) === '1'; } catch { return false; } }
+function setRemembered(on){ try { localStorage.setItem(REMEMBER_KEY, on ? '1' : '0'); } catch {} }
+
+/*** Auth state ***/
+auth.onAuthStateChanged(async user => {
+  const isRemembered = remembered();
+
+  // If user persisted but did NOT ask to be remembered, sign them out so login is required.
+  if (!isRemembered && user) {
+    try { await auth.signOut(); } catch {}
+    authState.textContent = 'Not signed in';
+    signOutBtn.classList.add('hidden');
+    already.classList.add('hidden');
+    return;
+  }
+
+  if (user) {
+    authState.textContent = user.email ? `Signed in: ${user.email}` : 'Signed in';
+    signOutBtn.classList.remove('hidden');
+    signedInAs.textContent = `Signed in as ${user.email || 'user'}.`;
+    // Show "Go" button pointing to ?next= if present
+    goNextBtn.href = nextUrl();
+    if (isRemembered) {
+      already.classList.remove('hidden');
+    } else {
+      already.classList.add('hidden');
+    }
+  } else {
+    authState.textContent = 'Not signed in';
+    signOutBtn.classList.add('hidden');
+    already.classList.add('hidden');
+  }
+});
+
+/*** Explicit sign-in ***/
+signInBtn.onclick = async ()=>{
+  const email = (siEmail.value||'').trim(), pw = siPw.value||'';
+  if (!email || !pw) return setMsg(siMsg,'Enter email and password','error');
+
+  // Set persistence based on Remember me
+  const wantRemember = !!rememberMe.checked;
+  setRemembered(wantRemember);
+  try{
+    await auth.setPersistence(wantRemember ? firebase.auth.Auth.Persistence.LOCAL
+                                           : firebase.auth.Auth.Persistence.SESSION);
+  }catch(e){ console.warn('Persistence set failed', e?.code); }
+
+  signInBtn.disabled = true; setMsg(siMsg,'Signing in…');
+  try {
+    await auth.signInWithEmailAndPassword(email, pw);
+    setMsg(siMsg,'Signed in','success');
+    afterLoginRedirect();
+  } catch (e) {
+    console.error(e);
+    setMsg(siMsg, e.message || 'Sign in failed', 'error');
+  } finally { signInBtn.disabled = false; }
+};
+
+/*** Sign out (header & card) ***/
+function doSignOut(e){ if(e) e.preventDefault(); auth.signOut(); }
+signOutBtn.onclick = doSignOut;
+if (hdrSignOut) hdrSignOut.onclick = doSignOut;
+
+/*** Reset password ***/
+resetBtn.onclick = async ()=>{
+  const email = (rpEmail.value||'').trim();
+  if (!email) return setMsg(rpMsg,'Enter your email','error');
+  resetBtn.disabled = true; setMsg(rpMsg,'Sending reset email…');
+  try {
+    await auth.sendPasswordResetEmail(email);
+    setMsg(rpMsg,'Reset email sent — check your inbox','success');
+  } catch (e) {
+    console.error(e);
+    setMsg(rpMsg, e.message || 'Could not send reset email','error');
+  } finally { resetBtn.disabled = false; }
+};
+
+/*** Footer year ***/
+document.getElementById('yr').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
