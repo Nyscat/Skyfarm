@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SkyFarm — Users & Roles (Admin)</title>
+
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+
+<style>
+  :root { --brand:#0B7A6E; }
+  * { box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#f6fbf8; margin:16px; color:#0f172a; }
+  h1 { margin:0 0 12px; font-size:1.6rem; }
+  .wrap { max-width:1100px; margin:0 auto; }
+  .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:flex-end; }
+  label { display:block; font-size:.9rem; color:#475569; margin-bottom:4px; }
+  input, select, button, textarea { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+  button { cursor:pointer; }
+  .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
+  .muted { color:#64748b; font-size:.9rem; }
+  .spacer { flex:1; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; }
+  th { background:#f1f5f9; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; }
+  .pill { padding:2px 8px; border-radius:999px; background:#dcfce7; color:#065f46; font-size:.8rem; }
+  .warn { color:#9a3412; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SkyFarm — Users & Roles</h1>
+
+  <!-- Invite block -->
+  <div class="card">
+    <div class="row">
+      <strong>Invite a user (email link)</strong>
+      <span class="spacer"></span>
+      <span id="status" class="muted">Connecting…</span>
+    </div>
+    <div class="grid">
+      <div>
+        <label>Email</label>
+        <input id="invEmail" type="email" placeholder="user@example.com" style="width:100%" />
+      </div>
+      <div>
+        <label>Name (optional)</label>
+        <input id="invName" placeholder="e.g. Jane Brown" style="width:100%" />
+      </div>
+      <div>
+        <label>Role</label>
+        <select id="invRole" style="width:100%">
+          <option value="worker">Worker</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div>
+        <label>Allowed properties</label>
+        <div id="invProps" class="grid" style="grid-template-columns: repeat(1, minmax(200px,1fr));">
+          <!-- checkboxes inserted here -->
+        </div>
+      </div>
+      <div>
+        <label>Redirect after sign-in (must be an authorized domain)</label>
+        <input id="redirectUrl" style="width:100%" />
+        <div class="muted">Default: your live domain. New users will land on the Diary page after confirming the email link.</div>
+      </div>
+    </div>
+    <div class="row">
+      <button id="inviteBtn" class="primary">Send invite link</button>
+      <span id="inviteMsg" class="muted" aria-live="polite"></span>
+    </div>
+    <div class="muted">
+      Make sure Firebase → <strong>Authentication → Sign-in method → Email/Password → Email link (passwordless)</strong> is enabled, and
+      your domain is in <strong>Authorized domains</strong>.
+    </div>
+  </div>
+
+  <!-- Manage users -->
+  <div class="card">
+    <div class="row">
+      <strong>Manage users</strong>
+      <span class="spacer"></span>
+      <input id="search" placeholder="Search email / name" />
+      <button id="refreshBtn">Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th><th>Name</th><th>Role</th><th>Properties</th><th>Last updated</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="usersTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- How it works -->
+  <div class="card">
+    <div class="row"><strong>How it works</strong></div>
+    <ul>
+      <li>Sending an invite uses <span class="badge">sendSignInLinkToEmail</span>. When the user clicks the link and signs in, Firebase creates their Auth account.</li>
+      <li>We also store a record in <span class="badge">Firestore → users/{email}</span> with <em>role</em> and <em>allowedProperties</em>. Your app pages can read this for authorization.</li>
+      <li>Listing/Deleting here affects the Firestore user record only. Listing Auth users or creating passwords requires the Admin SDK (server).</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+/*** Firebase ***/
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+/*** App constants ***/
+// Use the *lowercase x* ID for Mt Myrtle (your data is normalized this way)
+const PROPERTY_IDS = {
+  "Consentes":"s7PlDM9wrEpxuJ6DGIab",
+  "Mt Myrtle":"TRuxtRBx2zJlwZnRGYKJ",
+  "Gerawin":"P0dQ0H2FWHeqqxejflZs"
+};
+const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
+
+/*** DOM ***/
+const statusEl = document.getElementById('status');
+const invEmail = document.getElementById('invEmail');
+const invName  = document.getElementById('invName');
+const invRole  = document.getElementById('invRole');
+const invPropsBox = document.getElementById('invProps');
+const inviteBtn = document.getElementById('inviteBtn');
+const inviteMsg = document.getElementById('inviteMsg');
+const redirectUrl = document.getElementById('redirectUrl');
+const usersTbody = document.getElementById('usersTbody');
+const searchInp = document.getElementById('search');
+const refreshBtn = document.getElementById('refreshBtn');
+
+const $ = (s)=>document.querySelector(s);
+const setStatus = (t)=>{ statusEl.textContent = t||''; statusEl.className = t?.toLowerCase().includes('connected') ? 'pill' : 'warn'; };
+const setMsg = (el, t, ms=5000)=>{ el.textContent=t||''; if(t&&ms) setTimeout(()=>{el.textContent='';}, ms); };
+
+/*** State ***/
+let users = []; // [{id,email,name,role,allowedProperties,updatedAt}]
+
+/*** Bootstrap ***/
+(async function init(){
+  // Property checkboxes
+  invPropsBox.innerHTML = Object.entries(PROPERTY_IDS).map(([name,id])=>`
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <input type="checkbox" value="${id}" />
+      <span>${name}</span>
+    </label>`).join('');
+
+  // Default redirect: prefer live domain; fall back to consentes live if testing elsewhere
+  const defaultRedirect = location.hostname.endsWith('consentes.com.au')
+    ? `${location.origin}/skyfarm-diary.html`
+    : 'https://www.consentes.com.au/skyfarm-diary.html';
+  redirectUrl.value = defaultRedirect;
+
+  try{
+    try { await firebase.firestore().enablePersistence({synchronizeTabs:true}); } catch(e){ /* ok */ }
+    await auth.signInAnonymously();
+    setStatus('Connected');
+  }catch(e){
+    console.warn('Anonymous auth failed:', e?.code, e?.message);
+    setStatus('Auth issue — check Anonymous sign-in & authorized domains');
+    // Note: sending invite doesn't require auth, but saving Firestore user docs will.
+  }
+
+  inviteBtn.onclick = sendInvite;
+  refreshBtn.onclick = loadUsers;
+  searchInp.oninput = renderUsers;
+
+  await loadUsers();
+})();
+
+/*** Invite via email link + save Firestore user record ***/
+async function sendInvite(){
+  const email = (invEmail.value||'').trim().toLowerCase();
+  if (!email || !email.includes('@')) { setMsg(inviteMsg, 'Enter a valid email'); return; }
+  const name  = (invName.value||'').trim();
+  const role  = invRole.value || 'worker';
+  const allowedProperties = Array.from(invPropsBox.querySelectorAll('input[type="checkbox"]:checked')).map(c=>c.value);
+
+  // Save/merge user record in Firestore (for roles/permissions)
+  try {
+    const docId = email.replace(/[^\w.-]/g,'_');
+    await db.collection('users').doc(docId).set({
+      email, name, role, allowedProperties,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+  } catch(e){
+    console.error('Saving Firestore user record failed', e);
+    setMsg(inviteMsg, `Saved user record failed: ${e.code||''} ${e.message||''}`.trim());
+  }
+
+  // Send passwordless email link
+  const actionCodeSettings = {
+    url: (redirectUrl.value || '').trim() || (location.origin + '/skyfarm-diary.html'),
+    handleCodeInApp: true,
+  };
+
+  try {
+    await firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings);
+    try { window.localStorage.setItem('emailForSignIn', email); } catch {}
+    setMsg(inviteMsg, `Invite sent to ${email}. Check inbox/spam.`);
+    invEmail.value=''; invName.value='';
+  } catch (e){
+    console.error('sendSignInLinkToEmail failed', e);
+    const msg = `Failed to send invite: ${e.code || ''} ${e.message || ''}`.trim();
+    setMsg(inviteMsg, msg);
+  }
+}
+
+/*** Load & render Firestore users ***/
+async function loadUsers(){
+  usersTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
+  users = [];
+  try{
+    const snap = await db.collection('users').orderBy('updatedAt','desc').get();
+    snap.forEach(d=>{
+      const r = d.data()||{};
+      users.push({
+        id: d.id,
+        email: r.email || '',
+        name: r.name || '',
+        role: r.role || 'worker',
+        allowedProperties: Array.isArray(r.allowedProperties) ? r.allowedProperties : [],
+        updatedAt: r.updatedAt?.toDate?.()?.toLocaleString?.() || ''
+      });
+    });
+  }catch(e){
+    console.error('Load users failed', e);
+  }
+  renderUsers();
+}
+
+function renderUsers(){
+  const q = (searchInp.value||'').toLowerCase();
+  const list = users.filter(u => !q || u.email.toLowerCase().includes(q) || u.name.toLowerCase().includes(q));
+  usersTbody.innerHTML = '';
+  if (!list.length){ usersTbody.innerHTML = '<tr><td colspan="6">No users</td></tr>'; return; }
+
+  for (const u of list){
+    const tr = document.createElement('tr');
+    const propNames = (u.allowedProperties||[]).map(id=>PROPERTY_NAME_BY_ID[id]||id).join(', ');
+    tr.innerHTML = `
+      <td>${escapeHtml(u.email)}</td>
+      <td><input data-name value="${escapeHtml(u.name)}" style="min-width:160px" /></td>
+      <td>
+        <select data-role style="min-width:120px">
+          <option value="worker" ${u.role==='worker'?'selected':''}>Worker</option>
+          <option value="manager" ${u.role==='manager'?'selected':''}>Manager</option>
+          <option value="admin"   ${u.role==='admin'  ?'selected':''}>Admin</option>
+        </select>
+      </td>
+      <td>
+        <div data-props class="grid" style="grid-template-columns: repeat(1, minmax(160px,1fr));">
+          ${Object.entries(PROPERTY_IDS).map(([name,id])=>`
+            <label style="display:flex;align-items:center;gap:6px">
+              <input type="checkbox" value="${id}" ${u.allowedProperties.includes(id)?'checked':''} />
+              <span>${name}</span>
+            </label>`).join('')}
+        </div>
+      </td>
+      <td>${escapeHtml(u.updatedAt)}</td>
+      <td>
+        <button data-save class="primary">Save</button>
+        <button data-del  class="danger">Delete</button>
+      </td>
+    `;
+    tr.querySelector('[data-save]').onclick = () => saveRow(u.id, tr, u.email);
+    tr.querySelector('[data-del]').onclick  = () => delRow(u.id, u.email);
+    usersTbody.appendChild(tr);
+  }
+}
+
+async function saveRow(docId, tr, emailForId){
+  const name = tr.querySelector('[data-name]').value || '';
+  const role = tr.querySelector('[data-role]').value;
+  const allowedProperties = Array.from(tr.querySelectorAll('[data-props] input[type="checkbox"]:checked')).map(c=>c.value);
+  try {
+    await db.collection('users').doc(docId).set({
+      name, role, allowedProperties,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+    await loadUsers();
+  } catch(e){
+    console.error('Save row failed', e);
+    alert(`Save failed: ${e.code||''} ${e.message||''}`);
+  }
+}
+
+async function delRow(docId, email){
+  if (!confirm(`Remove user record for ${email}? This does not delete their Auth account.`)) return;
+  try {
+    await db.collection('users').doc(docId).delete();
+    await loadUsers();
+  } catch(e){
+    console.error('Delete failed', e);
+    alert(`Delete failed: ${e.code||''} ${e.message||''}`);
+  }
+}
+
+/*** Utils ***/
+function escapeHtml(s){ return String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+/*** Optional: complete sign-in if user opens this page from the magic link ***/
+window.addEventListener('load', async () => {
+  if (auth.isSignInWithEmailLink(window.location.href)) {
+    let email = window.localStorage.getItem('emailForSignIn');
+    if (!email) email = window.prompt('Please confirm your email for sign-in');
+    try {
+      const res = await auth.signInWithEmailLink(email, window.location.href);
+      window.localStorage.removeItem('emailForSignIn');
+      setMsg(inviteMsg, `Signed in as ${res.user.email}`);
+    } catch (e) {
+      console.error('signInWithEmailLink failed', e);
+      setMsg(inviteMsg, `Sign-in failed: ${e.code || ''} ${e.message || ''}`);
+    }
+  }
+});
+</script>
+</body>
+</html>
