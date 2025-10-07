@@ -1,0 +1,2131 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "0475b630-0ef3-4512-9e70-36aa4c2f49ae",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.751844,
+              -20.114863
+            ],
+            [
+              141.748969,
+              -20.115659
+            ],
+            [
+              141.751567,
+              -20.119501
+            ],
+            [
+              141.762481,
+              -20.11229
+            ],
+            [
+              141.753222,
+              -20.091809
+            ],
+            [
+              141.752579,
+              -20.091814
+            ],
+            [
+              141.761995,
+              -20.112178
+            ],
+            [
+              141.754226,
+              -20.117258
+            ],
+            [
+              141.751844,
+              -20.114863
+            ]
+          ]
+        ],
+        "bbox": [
+          141.748969,
+          -20.119501,
+          141.762481,
+          -20.091809
+        ]
+      },
+      "properties": {
+        "area_hectares": 32.313586064302214,
+        "cropType": "Natural grasses",
+        "fillColour": "#966fe1",
+        "grazableArea_hectares": 32.313586064302214,
+        "pastureState": "Grazing",
+        "title": "Lane way and cooler",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "444d574e-3175-4fd0-b600-bf583b3403ad",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.753258,
+              -20.091803
+            ],
+            [
+              141.730653,
+              -20.091643
+            ],
+            [
+              141.722555,
+              -20.089249
+            ],
+            [
+              141.716517,
+              -20.082771
+            ],
+            [
+              141.716067,
+              -20.080715
+            ],
+            [
+              141.715236,
+              -20.075917
+            ],
+            [
+              141.708084,
+              -20.06707
+            ],
+            [
+              141.721435,
+              -20.045367
+            ],
+            [
+              141.722084,
+              -20.045316
+            ],
+            [
+              141.739041,
+              -20.043984
+            ],
+            [
+              141.751722,
+              -20.042874
+            ],
+            [
+              141.753544,
+              -20.045218
+            ],
+            [
+              141.759494,
+              -20.053538
+            ],
+            [
+              141.786125,
+              -20.06791
+            ],
+            [
+              141.772998,
+              -20.094085
+            ],
+            [
+              141.76912,
+              -20.091929
+            ],
+            [
+              141.753258,
+              -20.091803
+            ]
+          ]
+        ],
+        "bbox": [
+          141.708084,
+          -20.094085,
+          141.786125,
+          -20.042874
+        ]
+      },
+      "properties": {
+        "area_hectares": 3189.7104854583376,
+        "cropType": "Natural grasses",
+        "fillColour": "#0d67ad",
+        "grazableArea_hectares": 3189.7104854583376,
+        "pastureState": "Grazing",
+        "title": "Open Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "71439524-8869-47d8-a699-bffc1117feef",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.581866,
+              -20.269375
+            ],
+            [
+              141.583596,
+              -20.272227
+            ],
+            [
+              141.583013,
+              -20.27996
+            ],
+            [
+              141.573474,
+              -20.287086
+            ],
+            [
+              141.568817,
+              -20.286952
+            ],
+            [
+              141.561149,
+              -20.27671
+            ],
+            [
+              141.575601,
+              -20.271517
+            ],
+            [
+              141.581866,
+              -20.269375
+            ]
+          ]
+        ],
+        "bbox": [
+          141.561149,
+          -20.287086,
+          141.583596,
+          -20.269375
+        ]
+      },
+      "properties": {
+        "area_hectares": 277.6928280160677,
+        "cropType": "Natural grasses",
+        "fillColour": "#f5a01b",
+        "grazableArea_hectares": 277.6928280160677,
+        "pastureState": "Grazing",
+        "title": "Sheep Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "8882c90e-49ea-46ac-ad8c-4cf0488a2417",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.584737,
+              -20.234686
+            ],
+            [
+              141.560794,
+              -20.238969
+            ],
+            [
+              141.560682,
+              -20.242738
+            ],
+            [
+              141.537779,
+              -20.246823
+            ],
+            [
+              141.537951,
+              -20.247809
+            ],
+            [
+              141.54896,
+              -20.258503
+            ],
+            [
+              141.565849,
+              -20.275021
+            ],
+            [
+              141.594616,
+              -20.264873
+            ],
+            [
+              141.587543,
+              -20.249098
+            ],
+            [
+              141.584737,
+              -20.234686
+            ]
+          ]
+        ],
+        "bbox": [
+          141.537779,
+          -20.275021,
+          141.594616,
+          -20.234686
+        ]
+      },
+      "properties": {
+        "area_hectares": 1511.93927088,
+        "cropType": "Natural grasses",
+        "fillColour": "#966fe1",
+        "grazableArea_hectares": 1511.93927088,
+        "pastureState": "Grazing",
+        "title": "Boggolywallah",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "9aa9baf9-39cc-40d8-b1fc-a047df14df55",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.686632,
+              -20.080634
+            ],
+            [
+              141.685252,
+              -20.082009
+            ],
+            [
+              141.6814,
+              -20.080447
+            ],
+            [
+              141.680585,
+              -20.081757
+            ],
+            [
+              141.679544,
+              -20.08218
+            ],
+            [
+              141.679179,
+              -20.083309
+            ],
+            [
+              141.677505,
+              -20.083833
+            ],
+            [
+              141.677001,
+              -20.084397
+            ],
+            [
+              141.674351,
+              -20.083329
+            ],
+            [
+              141.67316,
+              -20.08483
+            ],
+            [
+              141.673096,
+              -20.085596
+            ],
+            [
+              141.672613,
+              -20.086261
+            ],
+            [
+              141.672216,
+              -20.09006
+            ],
+            [
+              141.669437,
+              -20.091561
+            ],
+            [
+              141.670906,
+              -20.093909
+            ],
+            [
+              141.67347,
+              -20.095994
+            ],
+            [
+              141.673642,
+              -20.097556
+            ],
+            [
+              141.675558,
+              -20.100285
+            ],
+            [
+              141.675912,
+              -20.101474
+            ],
+            [
+              141.676965,
+              -20.102574
+            ],
+            [
+              141.678306,
+              -20.104609
+            ],
+            [
+              141.679057,
+              -20.10479
+            ],
+            [
+              141.682275,
+              -20.107359
+            ],
+            [
+              141.684453,
+              -20.109596
+            ],
+            [
+              141.686996,
+              -20.111671
+            ],
+            [
+              141.688198,
+              -20.113938
+            ],
+            [
+              141.690461,
+              -20.115278
+            ],
+            [
+              141.691588,
+              -20.113787
+            ],
+            [
+              141.695535,
+              -20.114218
+            ],
+            [
+              141.696535,
+              -20.11561
+            ],
+            [
+              141.698332,
+              -20.11699
+            ],
+            [
+              141.701469,
+              -20.117649
+            ],
+            [
+              141.702499,
+              -20.118037
+            ],
+            [
+              141.705793,
+              -20.120953
+            ],
+            [
+              141.709086,
+              -20.122504
+            ],
+            [
+              141.709827,
+              -20.12327
+            ],
+            [
+              141.71414,
+              -20.126091
+            ],
+            [
+              141.722246,
+              -20.130571
+            ],
+            [
+              141.724027,
+              -20.132908
+            ],
+            [
+              141.726323,
+              -20.133996
+            ],
+            [
+              141.729306,
+              -20.132666
+            ],
+            [
+              141.742545,
+              -20.124937
+            ],
+            [
+              141.74764,
+              -20.121919
+            ],
+            [
+              141.751567,
+              -20.119501
+            ],
+            [
+              141.748905,
+              -20.115677
+            ],
+            [
+              141.734659,
+              -20.109385
+            ],
+            [
+              141.721754,
+              -20.098185
+            ],
+            [
+              141.70228,
+              -20.086341
+            ],
+            [
+              141.686632,
+              -20.080634
+            ]
+          ]
+        ],
+        "bbox": [
+          141.669437,
+          -20.133996,
+          141.751567,
+          -20.080447
+        ]
+      },
+      "properties": {
+        "area_hectares": 2325.98944104,
+        "cropType": "Natural grasses",
+        "fillColour": "#65bb38",
+        "grazableArea_hectares": 2325.98944104,
+        "pastureState": "Grazing",
+        "title": "River Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "9e62e652-20a7-4cd4-ab2e-ec769af3a297",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.594755,
+              -20.264823
+            ],
+            [
+              141.606152,
+              -20.260649
+            ],
+            [
+              141.607759,
+              -20.261147
+            ],
+            [
+              141.609422,
+              -20.260795
+            ],
+            [
+              141.627809,
+              -20.256835
+            ],
+            [
+              141.642379,
+              -20.273542
+            ],
+            [
+              141.615106,
+              -20.295078
+            ],
+            [
+              141.594755,
+              -20.264823
+            ]
+          ]
+        ],
+        "bbox": [
+          141.594755,
+          -20.295078,
+          141.642379,
+          -20.256835
+        ]
+      },
+      "properties": {
+        "area_hectares": 1140.36872626,
+        "cropType": "Natural grasses",
+        "fillColour": "#31a6c5",
+        "grazableArea_hectares": 1140.36872626,
+        "pastureState": "Grazing",
+        "title": "Bore Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "a4219ad2-5b33-45e8-979b-295b4dbd1c53",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.720519,
+              -20.043748
+            ],
+            [
+              141.720291,
+              -20.043931
+            ],
+            [
+              141.720629,
+              -20.044634
+            ],
+            [
+              141.720256,
+              -20.045241
+            ],
+            [
+              141.686616,
+              -20.080651
+            ],
+            [
+              141.702291,
+              -20.086345
+            ],
+            [
+              141.721847,
+              -20.098242
+            ],
+            [
+              141.7347,
+              -20.109421
+            ],
+            [
+              141.748905,
+              -20.115677
+            ],
+            [
+              141.751845,
+              -20.114861
+            ],
+            [
+              141.754228,
+              -20.11726
+            ],
+            [
+              141.762007,
+              -20.112203
+            ],
+            [
+              141.752579,
+              -20.091819
+            ],
+            [
+              141.730664,
+              -20.091643
+            ],
+            [
+              141.722555,
+              -20.089249
+            ],
+            [
+              141.716531,
+              -20.082786
+            ],
+            [
+              141.715248,
+              -20.075989
+            ],
+            [
+              141.708084,
+              -20.06707
+            ],
+            [
+              141.721451,
+              -20.045254
+            ],
+            [
+              141.720519,
+              -20.043748
+            ]
+          ]
+        ],
+        "bbox": [
+          141.686616,
+          -20.11726,
+          141.762007,
+          -20.043748
+        ]
+      },
+      "properties": {
+        "area_hectares": 1509.3905912372825,
+        "cropType": "Natural grasses",
+        "fillColour": "#efcb19",
+        "grazableArea_hectares": 1509.3905912372825,
+        "pastureState": "Grazing",
+        "title": "Sand Ridge Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "a7ff988d-35b4-4bc9-8cf8-ba6da7ee70e5",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.537782,
+              -20.246841
+            ],
+            [
+              141.515322,
+              -20.250837
+            ],
+            [
+              141.516656,
+              -20.265336
+            ],
+            [
+              141.544464,
+              -20.281637
+            ],
+            [
+              141.550233,
+              -20.280617
+            ],
+            [
+              141.565796,
+              -20.27504
+            ],
+            [
+              141.537965,
+              -20.247823
+            ],
+            [
+              141.537782,
+              -20.246841
+            ]
+          ]
+        ],
+        "bbox": [
+          141.515322,
+          -20.281637,
+          141.565796,
+          -20.246841
+        ]
+      },
+      "properties": {
+        "area_hectares": 1145.0104746800002,
+        "cropType": "Natural grasses",
+        "fillColour": "#a16b4c",
+        "grazableArea_hectares": 1145.0104746800002,
+        "pastureState": "Grazing",
+        "title": "Swamp & Dry",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "b39d942f-69eb-4a04-88f7-352fa9b959c8",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.561143,
+              -20.27671
+            ],
+            [
+              141.55007,
+              -20.280646
+            ],
+            [
+              141.544543,
+              -20.281623
+            ],
+            [
+              141.54856,
+              -20.309433
+            ],
+            [
+              141.571419,
+              -20.329605
+            ],
+            [
+              141.603889,
+              -20.304016
+            ],
+            [
+              141.603222,
+              -20.303237
+            ],
+            [
+              141.580815,
+              -20.297071
+            ],
+            [
+              141.573428,
+              -20.287085
+            ],
+            [
+              141.56883,
+              -20.286947
+            ],
+            [
+              141.561143,
+              -20.27671
+            ]
+          ]
+        ],
+        "bbox": [
+          141.544543,
+          -20.329605,
+          141.603889,
+          -20.27671
+        ]
+      },
+      "properties": {
+        "area_hectares": 1820.6183678804662,
+        "cropType": "Natural grasses",
+        "fillColour": "#31a6c5",
+        "grazableArea_hectares": 1820.6183678804662,
+        "pastureState": "Grazing",
+        "title": "Letterbox Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "b730c520-268a-4993-b9a8-e80126102f75",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.721517,
+              -20.045361
+            ],
+            [
+              141.720519,
+              -20.043748
+            ],
+            [
+              141.735411,
+              -20.029838
+            ],
+            [
+              141.743264,
+              -20.035886
+            ],
+            [
+              141.744723,
+              -20.036249
+            ],
+            [
+              141.744723,
+              -20.037055
+            ],
+            [
+              141.751722,
+              -20.042874
+            ],
+            [
+              141.721517,
+              -20.045361
+            ]
+          ]
+        ],
+        "bbox": [
+          141.720519,
+          -20.045361,
+          141.751722,
+          -20.029838
+        ]
+      },
+      "properties": {
+        "area_hectares": 277.90596992,
+        "cropType": "Natural grasses",
+        "fillColour": "#d8dee2",
+        "grazableArea_hectares": 277.90596992,
+        "pastureState": "Grazing",
+        "title": "Bore Drain Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "c4cf868e-17a2-4c7c-ab5b-5b2950306c81",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.513303,
+              -20.229258
+            ],
+            [
+              141.502038,
+              -20.237979
+            ],
+            [
+              141.508089,
+              -20.251568
+            ],
+            [
+              141.511007,
+              -20.251946
+            ],
+            [
+              141.511243,
+              -20.267787
+            ],
+            [
+              141.521457,
+              -20.275859
+            ],
+            [
+              141.520191,
+              -20.281273
+            ],
+            [
+              141.533687,
+              -20.289726
+            ],
+            [
+              141.536524,
+              -20.299396
+            ],
+            [
+              141.535944,
+              -20.300925
+            ],
+            [
+              141.536095,
+              -20.303924
+            ],
+            [
+              141.5384,
+              -20.308452
+            ],
+            [
+              141.548162,
+              -20.30668
+            ],
+            [
+              141.544551,
+              -20.281676
+            ],
+            [
+              141.516656,
+              -20.265336
+            ],
+            [
+              141.515326,
+              -20.250878
+            ],
+            [
+              141.513303,
+              -20.229258
+            ]
+          ]
+        ],
+        "bbox": [
+          141.502038,
+          -20.308452,
+          141.548162,
+          -20.229258
+        ]
+      },
+      "properties": {
+        "area_hectares": 949.68472992,
+        "cropType": "Natural grasses",
+        "fillColour": "#addbe8",
+        "grazableArea_hectares": 949.68472992,
+        "pastureState": "Grazing",
+        "title": "Lane Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "e829b29c-0895-47ff-ae17-c31e3ffd1cb3",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.627702,
+              -20.256858
+            ],
+            [
+              141.607685,
+              -20.261124
+            ],
+            [
+              141.605953,
+              -20.260722
+            ],
+            [
+              141.59465,
+              -20.264861
+            ],
+            [
+              141.592534,
+              -20.260694
+            ],
+            [
+              141.58755,
+              -20.249134
+            ],
+            [
+              141.584725,
+              -20.234622
+            ],
+            [
+              141.603994,
+              -20.231166
+            ],
+            [
+              141.605368,
+              -20.230783
+            ],
+            [
+              141.627702,
+              -20.256858
+            ]
+          ]
+        ],
+        "bbox": [
+          141.584725,
+          -20.264861,
+          141.627702,
+          -20.230783
+        ]
+      },
+      "properties": {
+        "area_hectares": 1006.60786268,
+        "cropType": "Natural grasses",
+        "fillColour": "#d8dee2",
+        "grazableArea_hectares": 1006.60786268,
+        "pastureState": "Grazing",
+        "title": "Prickly Bush",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f152eb5d-92d0-4980-b61d-35ae040fa0d7",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.75322,
+              -20.091804
+            ],
+            [
+              141.762481,
+              -20.11229
+            ],
+            [
+              141.764359,
+              -20.111051
+            ],
+            [
+              141.77297,
+              -20.09407
+            ],
+            [
+              141.769142,
+              -20.091941
+            ],
+            [
+              141.75322,
+              -20.091804
+            ]
+          ]
+        ],
+        "bbox": [
+          141.75322,
+          -20.11229,
+          141.77297,
+          -20.091804
+        ]
+      },
+      "properties": {
+        "area_hectares": 254.98457957911006,
+        "cropType": "Natural grasses",
+        "fillColour": "#f8f9fa",
+        "grazableArea_hectares": 254.98457957911006,
+        "pastureState": "Grazing",
+        "title": "Heifer Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f6c34aee-7fb8-4544-9990-f234113448f4",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.594755,
+              -20.264823
+            ],
+            [
+              141.615106,
+              -20.295078
+            ],
+            [
+              141.603889,
+              -20.304016
+            ],
+            [
+              141.603215,
+              -20.303229
+            ],
+            [
+              141.580815,
+              -20.297071
+            ],
+            [
+              141.573474,
+              -20.287086
+            ],
+            [
+              141.583019,
+              -20.279956
+            ],
+            [
+              141.583598,
+              -20.272196
+            ],
+            [
+              141.581871,
+              -20.269375
+            ],
+            [
+              141.594755,
+              -20.264823
+            ]
+          ]
+        ],
+        "bbox": [
+          141.573474,
+          -20.304016,
+          141.615106,
+          -20.264823
+        ]
+      },
+      "properties": {
+        "area_hectares": 1040.4870611883541,
+        "cropType": "Natural grasses",
+        "fillColour": "#efcb19",
+        "grazableArea_hectares": 1040.4870611883541,
+        "pastureState": "Grazing",
+        "title": "Middle Paddock",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "0f14265c-ca42-4f0b-a680-3fd01f186b08",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.751879,
+              -20.114898
+            ],
+            [
+              141.75149,
+              -20.114341
+            ],
+            [
+              141.751567,
+              -20.114253
+            ],
+            [
+              141.751881,
+              -20.114036
+            ],
+            [
+              141.752286,
+              -20.114585
+            ],
+            [
+              141.752265,
+              -20.114661
+            ],
+            [
+              141.751879,
+              -20.114898
+            ]
+          ]
+        ],
+        "bbox": [
+          141.75149,
+          -20.114898,
+          141.752286,
+          -20.114036
+        ]
+      },
+      "properties": {
+        "area_hectares": 0.42087344000000004,
+        "cropType": "Natural grasses",
+        "fillColour": "#e24e4c",
+        "grazableArea_hectares": 0.42087344000000004,
+        "pastureState": "Yard",
+        "title": "Cattle Yards",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "2fdfbc5e-155f-4076-865f-2c765282381c",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.577971,
+              -20.274843
+            ],
+            [
+              141.578375,
+              -20.274539
+            ],
+            [
+              141.578139,
+              -20.273578
+            ],
+            [
+              141.577741,
+              -20.273926
+            ],
+            [
+              141.578021,
+              -20.274216
+            ],
+            [
+              141.577765,
+              -20.274444
+            ],
+            [
+              141.577825,
+              -20.274507
+            ],
+            [
+              141.577703,
+              -20.274619
+            ],
+            [
+              141.577814,
+              -20.27475
+            ],
+            [
+              141.577851,
+              -20.274742
+            ],
+            [
+              141.577971,
+              -20.274843
+            ]
+          ]
+        ],
+        "bbox": [
+          141.577703,
+          -20.274843,
+          141.578375,
+          -20.273578
+        ]
+      },
+      "properties": {
+        "area_hectares": 0.53,
+        "cropType": null,
+        "fillColour": "#966fe1",
+        "grazableArea_hectares": 0.53,
+        "pastureState": "Yard",
+        "title": "Cattle yards",
+        "type": "paddock",
+        "vegetation": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "027208a6-2499-454e-98de-019a6be7f52c",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.60948162377227,
+          -20.263300774820518
+        ]
+      },
+      "properties": {
+        "fillColour": "#2c303e",
+        "landmarkType": "Building",
+        "title": "Homestead",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "0df0a972-cc88-44da-b6dc-69b903d44e69",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.5918254235998,
+          -20.291786692363523
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Middle Paddock - Trough 2",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "1ce0571f-b3dc-4731-a153-da86527e3bdc",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.56699762713893,
+          -20.30831346560512
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Letterbox - Trough 2",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "1d53f342-6823-476a-942e-658c6a9a5009",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.60432059093853,
+          -20.271758615821533
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Bore Paddock - Trough 1",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "22e64905-e359-4aab-af34-2d528fe88bb1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.75791898282202,
+          -20.075350608007817
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "New Tank Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "2b49bf25-6dd9-4a69-9791-cd707b7dfe3b",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.59103801498853,
+          -20.291016925824895
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "Middle Paddock Water Tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "36cade23-359c-49f0-8e6a-6e3a2b53257b",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.62217889893248,
+          -20.275046051299956
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Bore Paddock - Trough 3",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "3c26df21-3323-4154-92de-4d1a807424d0",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.55462097045057,
+          -20.258184445518328
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Boggollywallah - Trough 2",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "3f67cf78-731a-4445-818a-163dd26d0fd3",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.5835644665233,
+          -20.30131929148029
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Letterbox Paddock - Trough 1",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "4087a60d-3723-4b2f-ad1f-23489ddf9d87",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.60962109864104,
+          -20.263157350802487
+        ]
+      },
+      "properties": {
+        "fillColour": "#2c303e",
+        "landmarkType": "Rain Gauge",
+        "title": "House Raingauge",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "417c26cc-8903-421d-87d1-c67d65285df6",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.57747726146155,
+          -20.27483386875663
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "Cattle yards water tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "44384c1f-d6e0-4fe7-b8b9-38a521de6a51",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.61060687154531,
+          -20.26334420525238
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Bore",
+        "title": "Consentes Bore",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "46825f06-3b87-44d9-9465-d827a7201e8c",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.57675767580352,
+          -20.27044385123735
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "Boggolywallah Water Tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "498c13bc-892b-401b-ab8f-d15c25695731",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.7527434905847,
+          -20.092179554409498
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Lane Sandridge Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "57a7aa83-53cd-41fd-96f5-785bf995a696",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.57645995060287,
+          -20.269870180779147
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Boggolywallah - Round trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "5c3eee25-d219-4826-bc7d-3426d7addbad",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.70550342860324,
+          -20.088690710536408
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "River Paddock Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "6d8e41b5-658e-425b-a3d2-72f7a5e67591",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.75730701991526,
+          -20.07557708375439
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "New Tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "79beac75-68bb-4145-9489-83629272986a",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.56164372097,
+          -20.2749062900939
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Swamp & Dry - Trough 1",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "7cdcd06f-053e-48ca-a233-ee3ec31fea14",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.71643,
+          -20.08058
+        ]
+      },
+      "properties": {
+        "fillColour": "#000000",
+        "landmarkType": "Rain Gauge",
+        "title": "Division Fence Rain Gauge",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "7daa95b9-8614-4692-8589-bf52ddcf0d75",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.737055731885,
+          -20.066350565641848
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "High Tank Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "87f1850b-d7c0-4a9f-9674-f5dab3377ef7",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.74453897422023,
+          -20.079413864407368
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Trough 3",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "8a3cfbf3-ebd0-4071-a514-788edb412ea0",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.56785967275056,
+          -20.30792813193387
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "Letterbox Water Tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "a37cbed9-438c-41ed-b69e-0f1fa58ab1bb",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.72163557273205,
+          -20.04481824278893
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "Damn Water Tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "a426e688-d8b7-4d45-8668-7b6e13551df3",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.72216128569897,
+          -20.045730383723832
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Open Paddock - First Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "a531e3b3-5313-4547-9f81-6f2857876420",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.7522899,
+          -20.09116
+        ]
+      },
+      "properties": {
+        "fillColour": "#000000",
+        "landmarkType": "Rain Gauge",
+        "title": "Crowfels Tank Rain Gauge",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "a8f1c21b-c672-40c5-8533-b4543f820b9b",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.721636,
+              -20.044546
+            ],
+            [
+              141.721536,
+              -20.044634
+            ],
+            [
+              141.721397,
+              -20.04446
+            ],
+            [
+              141.721512,
+              -20.044433
+            ],
+            [
+              141.721636,
+              -20.044546
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "area_hectares": 0.028328020000000002,
+        "fillColour": "#61aad9",
+        "landmarkType": "Dam",
+        "title": "Block Dam",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "b792b685-93ce-471a-b12c-c8a39c21c85d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.7522899,
+          -20.09116
+        ]
+      },
+      "properties": {
+        "fillColour": "#000000",
+        "landmarkType": "Water Tank",
+        "title": "Crowfels Tank Water Monitor",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "bad75603-b897-4848-a6ce-5ac033098922",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.75335996844524,
+          -20.09212288935855
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Lane Heifer Paddock Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "bb53e517-c99b-4043-bd04-014f84481144",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.5865321341467,
+          -20.2694865309145
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Middle Paddock - Claypan Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "be91ee7f-7728-4e40-8dee-c6738a7d0804",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.73620386159354,
+          -20.066859490223138
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "High Tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "c2c83d7f-5230-4574-b9d4-d1885fd025c8",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.53790699498293,
+          -20.259218933343377
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Swamp & Dry - Trough 2",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "c3825312-1bf3-43e3-bf3d-a12646793955",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.56271352114646,
+          -20.275419284185016
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "Swamp & Dry Water Tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "c5d12b86-ad70-414f-98ef-bde1c3278060",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.59102090721038,
+          -20.251482943853247
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Prickly Bush - Trough 2",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "c73fd7d6-578d-45ec-af9c-cc8776956394",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.56077545837536,
+          -20.278146275107723
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Letterbox - Trough 3",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "c9624cae-a30b-47f5-9351-a066c0a2e6ad",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.75232412469106,
+          -20.111229046492618
+        ]
+      },
+      "properties": {
+        "fillColour": "#0d67ad",
+        "landmarkType": "Water Tank",
+        "title": "Yards Tank",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "c9f7180c-9397-4dcb-9b36-ffaf640254f7",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.58189354362125,
+          -20.269449362725464
+        ]
+      },
+      "properties": {
+        "fillColour": "#addbe8",
+        "landmarkType": "Rain Gauge",
+        "title": "Yards Rain gauge",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ccf478a9-4561-4f15-823d-b17870a2b46d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.57065308343948,
+          -20.328923624277515
+        ]
+      },
+      "properties": {
+        "fillColour": "#addbe8",
+        "landmarkType": "Rain Gauge",
+        "title": "Letterbox Raingauge",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "cfa3ee98-05fe-43d5-86b1-d7d94f50d380",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              141.737496,
+              -20.11126
+            ],
+            [
+              141.740757,
+              -20.113295
+            ],
+            [
+              141.740081,
+              -20.112549
+            ],
+            [
+              141.738494,
+              -20.111632
+            ],
+            [
+              141.737496,
+              -20.11126
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "area_hectares": 0.80127828,
+        "fillColour": "#61aad9",
+        "landmarkType": "Body of water",
+        "title": "Snows Waterhole",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "d2d52f94-f59f-45b0-9221-8fcc171e180d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.59525657384813,
+          -20.262544521398745
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Prickly Bush - Trough 1",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "d38e44f3-fade-4fbb-ba3b-bfa7f95d0e63",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.58329350035766,
+          -20.24683325311136
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Boggollywallah - Trough 1",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "d8431560-d5d1-441e-95e8-9e442f4b9d82",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.7215551064616,
+          -20.044662019224468
+        ]
+      },
+      "properties": {
+        "fillColour": "#efcb19",
+        "landmarkType": "Solar Pump",
+        "title": "Solar Pump",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "dcf72e19-3da0-4a37-904a-f735688ea67c",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.5981855758506,
+          -20.280870615188388
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Middle Paddock - Trough 1",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "dd9f5a6a-4818-4972-8715-e56d04633bca",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.75391202768697,
+          -20.108932488559443
+        ]
+      },
+      "properties": {
+        "fillColour": "#61aad9",
+        "landmarkType": "Building",
+        "title": "Phone",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "dffcc82e-8921-4aff-a3fd-7c1eca4d956c",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.70771164786348,
+          -20.087157782550864
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Sandridge Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "e5ee2f4e-9a1d-492e-aef9-5bbca1f9206f",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.71643,
+          -20.08058
+        ]
+      },
+      "properties": {
+        "fillColour": "#000000",
+        "landmarkType": "Water Tank",
+        "title": "Divison fence tank monitor",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "e6d0332e-6b00-455a-9ccb-5492364b4ba6",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.57795727842944,
+          -20.276526503354333
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Sheep Paddock Water Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ec2bdd85-e9a0-4cb2-a1a2-b9590bb46d64",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.75213594805027,
+          -20.114718399153492
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Yards Trough",
+        "type": "landmark"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "f4a7596d-ecff-47c6-aa0e-e59f40ab0c17",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          141.59834089482018,
+          -20.264466114363508
+        ]
+      },
+      "properties": {
+        "fillColour": "#747784",
+        "landmarkType": "Trough",
+        "title": "Bore Paddock - Trough 2",
+        "type": "landmark"
+      }
+    }
+  ]
+}
