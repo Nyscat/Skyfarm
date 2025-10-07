@@ -1,0 +1,31 @@
+:root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --bg:#f6fbf8; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+a{color:var(--brand);text-decoration:none}
+a:hover{text-decoration:underline}
+.hidden{display:none}
+
+/* Header */
+.sf-header{position:sticky;top:0;z-index:1000;background:#fff;border-bottom:1px solid #e5e7eb}
+.sf-header .bar{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 14px}
+.sf-brand{display:flex;align-items:center;gap:10px;color:var(--brand);font-weight:700}
+.sf-brand img{height:40px;width:auto;border-radius:6px}
+.sf-nav{display:flex;align-items:center;gap:8px;margin-left:8px}
+.sf-nav > a,
+.sf-nav > button{font-weight:600;border:0;background:none;padding:6px 8px;border-radius:8px;color:var(--brand);cursor:pointer}
+.sf-nav > a[aria-current="page"],
+.sf-nav > button[aria-expanded="true"]{text-decoration:underline}
+.sf-spacer{flex:1}
+.sf-auth{color:var(--muted);font-size:.9rem}
+
+/* Database dropdown */
+.sf-menu{position:relative}
+.sf-menu .sf-menu-btn{display:flex;align-items:center;gap:6px}
+.sf-menu .sf-menu-list{position:absolute;top:100%;left:0;background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);padding:6px;margin-top:6px;min-width:220px;display:none}
+.sf-menu .sf-menu-list a{display:block;padding:8px 10px;border-radius:8px;color:var(--ink)}
+.sf-menu .sf-menu-list a:hover{background:#f1f5f9}
+.sf-menu.open .sf-menu-list{display:block}
+
+/* Page wrapper helper (optional) */
+.sf-wrap{max-width:1200px;margin:0 auto;padding:16px}

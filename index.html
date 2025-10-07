@@ -47,30 +47,17 @@
 
   footer { text-align:center; color:#94a3b8; padding:24px 0; font-size:.9rem; }
 </style>
+
+<link rel="stylesheet" href="skyfarm-shared.css">
 </head>
 <body>
+<div id="sf-header-root"></div>
+<script src="skyfarm-header.js"></script>
+<script>SkyFarmHeader.mount();</script>
+
 
 <!-- Header with logo + nav -->
-<header id="skyfarm-header">
-  <div class="bar">
-    <a class="brand" href="index.html" title="Home">
-      <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-           alt="SkyFarm logo" style="height:40px;width:auto;border-radius:6px;">
-      <span>SkyFarm</span>
-    </a>
-    <nav>
-      <a href="index.html" aria-current="page">Home</a>
-      <a href="skyfarm-diary.html">Diary</a>
-      <a href="skyfarm-map.html">Map</a>
-      <a href="skyfarm-livestock.html">Livestock</a>
-      <a href="skyfarm-chemical.html">Chemicals</a>
-      <a href="skyfarm-admin-users.html">Users</a>
-    </nav>
-    <div class="spacer"></div>
-    <span id="authState" class="muted">Not signed in</span>
-    <a id="signOutBtn" class="btn hidden" href="#">Sign out</a>
-  </div>
-</header>
+
 
 <div class="wrap">
   <div class="card">

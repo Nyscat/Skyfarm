@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SkyFarm — Livestock</title>
+
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+
+<style>
+  :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; }
+  * { box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#f6fbf8; margin:0; color:var(--ink); }
+  .wrap { max-width:1200px; margin:0 auto; padding:16px; }
+  h1 { margin:12px 0; font-size:1.6rem; }
+
+  /* Header */
+  #skyfarm-header { position:sticky; top:0; z-index:10; }
+  #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
+  #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
+  #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+  #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
+  .spacer { flex:1; }
+  .muted { color:var(--muted); font-size:.9rem; }
+
+  /* Cards / Controls */
+  .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  label { font-size:.9rem; color:#475569; }
+  input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+  button { cursor:pointer; }
+  .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+  .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; }
+
+  /* Table */
+  table { width:100%; border-collapse:collapse; }
+  th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; }
+  th { background:#f1f5f9; }
+  .nowrap { white-space:nowrap; }
+  .right { text-align:right; }
+  .w110 { width:110px; } .w140 { width:140px; } .w180 { width:180px; } .w220 { width:220px; }
+  .small { font-size:.9rem; color:#475569; }
+</style>
+
+<link rel="stylesheet" href="skyfarm-shared.css">
+</head>
+<body>
+<div id="sf-header-root"></div>
+<script src="skyfarm-header.js"></script>
+<script>SkyFarmHeader.mount();</script>
+
+
+<!-- Header with logo + nav -->
+
+
+<div class="wrap">
+  <h1>Livestock Management</h1>
+
+  <!-- NEW LIVESTOCK ENTRY FORM -->
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Property</label><br/>
+        <select id="newPropSel" class="w180">
+          <option value="s7PlDM9wrEpxuJ6DGIab">Consentes</option>
+          <option value="TRuxtRBx2zJlwZnRGYKJ">Mt Myrtle</option>
+          <option value="P0dQ0H2FWHeqqxejflZs">Gerawin</option>
+        </select>
+      </div>
+      <div>
+        <label>Paddock</label><br/>
+        <input id="newLocation" class="w180" placeholder="e.g. Gravel Paddock" />
+      </div>
+      <div>
+        <label>Species</label><br/>
+        <select id="newSpecies" class="w140">
+          <option>Cattle</option>
+          <option>Sheep</option>
+          <option>Goats</option>
+        </select>
+      </div>
+      <div>
+        <label>Class</label><br/>
+        <input id="newClass" class="w140" placeholder="e.g. Heifers" />
+      </div>
+      <div>
+        <label>Count</label><br/>
+        <input id="newCount" class="w110" type="number" min="0" />
+      </div>
+      <div style="align-self:flex-end;">
+        <button id="addRowBtn" class="btn primary">Add Livestock</button>
+      </div>
+      <span id="addMsg" class="muted"></span>
+    </div>
+  </div>
+
+  <!-- FILTER & TABLE -->
+  <div class="card">
+    <div class="row" style="gap:12px">
+      <div>
+        <label class="small">Property view</label><br/>
+        <select id="propSel" class="w220">
+          <option value="s7PlDM9wrEpxuJ6DGIab">Consentes</option>
+          <option value="TRuxtRBx2zJlwZnRGYKJ">Mt Myrtle</option>
+          <option value="P0dQ0H2FWHeqqxejflZs">Gerawin</option>
+        </select>
+      </div>
+      <div>
+        <label class="small">Search</label><br/>
+        <input id="search" class="w220" placeholder="paddock / species / class" />
+      </div>
+      <button id="refreshBtn" class="btn">Refresh</button>
+      <button id="exportBtn" class="btn">Export CSV</button>
+      <span class="spacer"></span>
+      <span id="status" class="muted">Loading…</span>
+    </div>
+    <div class="row small">
+      <span class="pill" id="countPill">0 rows</span>
+      <span class="pill" id="totalPill">Total: 0</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Paddock</th>
+          <th>Species</th>
+          <th>Class</th>
+          <th class="right">Count</th>
+          <th>Updated</th>
+          <th class="nowrap">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rowsTbody"><tr><td colspan="7">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <strong>Totals by Paddock</strong>
+    <div id="totalsByPaddock" class="small" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+/*** Firebase setup ***/
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+/*** DOM refs ***/
+const $ = s => document.querySelector(s);
+const authState=$('#authState'), statusEl=$('#status');
+const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'), newClass=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg');
+const propSel=$('#propSel'), searchInp=$('#search'), refreshBtn=$('#refreshBtn'), exportBtn=$('#exportBtn');
+const rowsTbody=$('#rowsTbody'), countPill=$('#countPill'), totalPill=$('#totalPill'), totalsByPaddock=$('#totalsByPaddock');
+
+let allRows=[];
+
+/*** Helpers ***/
+const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+/*** Init ***/
+(async()=>{
+  try{await firebase.firestore().enablePersistence({synchronizeTabs:true});}catch{}
+  await auth.signInAnonymously();
+  auth.onAuthStateChanged(u=>authState.textContent=u?'Connected':'Connecting…');
+  propSel.onchange=loadRows;
+  searchInp.oninput=render;
+  refreshBtn.onclick=loadRows;
+  exportBtn.onclick=exportCsv;
+  addRowBtn.onclick=addLivestock;
+  await loadRows();
+})();
+
+/*** Add livestock row ***/
+async function addLivestock(){
+  const pid=newPropSel.value, location=newLocation.value.trim(), species=newSpecies.value.trim(), klass=newClass.value.trim(), count=Number(newCount.value||0);
+  if(!location||!klass) return alert('Please enter paddock and class.');
+  if(count<0||!Number.isFinite(count)) return alert('Enter a valid count.');
+  addRowBtn.disabled=true; addMsg.textContent='Saving…';
+  try{
+    await db.collection('livestock').add({
+      propertyId:pid, location,species,class:klass,count,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    addMsg.textContent='Added!';
+    newLocation.value=''; newClass.value=''; newCount.value='';
+    await loadRows();
+  }catch(e){
+    console.error(e);
+    addMsg.textContent='Failed to add';
+  }finally{
+    addRowBtn.disabled=false;
+    setTimeout(()=>addMsg.textContent='',3000);
+  }
+}
+
+/*** Load rows ***/
+async function loadRows(){
+  rowsTbody.innerHTML='<tr><td colspan="7">Loading…</td></tr>'; statusEl.textContent='Loading…';
+  allRows=[];
+  try{
+    const pid=propSel.value;
+    const snap=await db.collection('livestock').where('propertyId','==',pid).get();
+    snap.forEach(d=>{const r=d.data();allRows.push({id:d.id,...r,updatedAt:r.updatedAt?.toDate?.()});});
+    render(); statusEl.textContent='Loaded';
+  }catch(e){console.error(e);statusEl.textContent='Error loading';}
+}
+
+/*** Render table ***/
+function filtered(){
+  const q=(searchInp.value||'').toLowerCase();
+  if(!q) return allRows;
+  return allRows.filter(r=>`${r.location} ${r.species} ${r.class}`.toLowerCase().includes(q));
+}
+function render(){
+  const rows=filtered();
+  countPill.textContent=`${rows.length} rows`;
+  const total=rows.reduce((a,b)=>a+Number(b.count||0),0);
+  totalPill.textContent=`Total: ${total}`;
+  if(!rows.length){rowsTbody.innerHTML='<tr><td colspan="7">No rows</td></tr>';totalsByPaddock.textContent='';return;}
+  rowsTbody.innerHTML='';
+  for(const r of rows){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="small">${escapeHtml(r.id.slice(0,6))}…</td>
+      <td><input class="loc" value="${escapeHtml(r.location)}" /></td>
+      <td><input class="spec w140" value="${escapeHtml(r.species)}" /></td>
+      <td><input class="cls w140" value="${escapeHtml(r.class)}" /></td>
+      <td class="right"><input type="number" class="cnt w110" value="${r.count}" /></td>
+      <td class="small">${r.updatedAt?r.updatedAt.toLocaleString():""}</td>
+      <td><button class="btn primary" data-s>Save</button> <button class="btn danger" data-d>Delete</button></td>`;
+    tr.querySelector('[data-s]').onclick=()=>saveRow(r.id,tr);
+    tr.querySelector('[data-d]').onclick=()=>deleteRow(r.id);
+    rowsTbody.appendChild(tr);
+  }
+  const totals={};
+  for(const r of rows){totals[r.location]=(totals[r.location]||0)+Number(r.count||0);}
+  totalsByPaddock.innerHTML=Object.entries(totals).map(([loc,sum])=>`<span class="pill">${escapeHtml(loc)}: ${sum}</span>`).join(' ');
+}
+
+/*** Save / Delete / Export ***/
+async function saveRow(id,tr){
+  const loc=tr.querySelector('.loc').value.trim(),spec=tr.querySelector('.spec').value.trim(),cls=tr.querySelector('.cls').value.trim(),cnt=Number(tr.querySelector('.cnt').value||0);
+  if(cnt<0) return alert('Invalid count');
+  await db.collection('livestock').doc(id).set({location:loc,species:spec,class:cls,count:cnt,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await loadRows();
+}
+async function deleteRow(id){
+  if(!confirm('Delete this row?'))return;
+  await db.collection('livestock').doc(id).delete();
+  await loadRows();
+}
+function exportCsv(){
+  const rows=filtered();
+  const propName=propSel.selectedOptions[0]?.textContent||'';
+  const head='Property,Paddock,Species,Class,Count,DocID';
+  const lines=rows.map(r=>[propName,r.location,r.species,r.class,r.count,r.id].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
+  const blob=new Blob([head+'\n'+lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`livestock_${propName}.csv`;a.click();
+}
+</script>
+</body>
+</html>

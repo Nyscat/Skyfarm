@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkyFarm — Chemical Inventory</title>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+
+  <style>
+    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:#f6fbf8; margin:0; color:var(--ink); }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    h1 { margin: 12px 0; font-size: 1.6rem; }
+
+    /* Header */
+    #skyfarm-header { position:sticky; top:0; z-index:10; }
+    #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
+    #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
+    #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+    #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
+    .spacer { flex:1; }
+    .muted { color:var(--muted); font-size:.9rem; }
+
+    /* Cards / Controls */
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
+    label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
+    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    button { cursor:pointer; }
+    .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+    .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
+    .disabled { opacity:.55; pointer-events:none; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: .95rem; }
+    th { background:#f1f5f9; }
+    .nowrap { white-space: nowrap; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; }
+  </style>
+
+<link rel="stylesheet" href="skyfarm-shared.css">
+</head>
+<body>
+<div id="sf-header-root"></div>
+<script src="skyfarm-header.js"></script>
+<script>SkyFarmHeader.mount();</script>
+
+
+<!-- Header with logo + nav -->
+
+
+<div class="wrap">
+  <h1>Chemical Inventory</h1>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Property</label>
+        <select id="property" style="min-width:240px"></select>
+      </div>
+      <div>
+        <label>Filter use</label>
+        <select id="useFilter">
+          <option value="all">All uses</option>
+          <option value="Use on paddock">Use on paddock</option>
+          <option value="Use on stock">Use on stock</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:260px">
+        <label>Search</label>
+        <input id="search" placeholder="Name / use / location / unit / property" />
+      </div>
+      <button id="exportCsv" class="btn">Export CSV</button>
+      <button id="reloadBtn" class="btn">Reload</button>
+      <span id="status" class="muted">Connecting…</span>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Use</label>
+        <select id="useOn">
+          <option>Use on paddock</option>
+          <option>Use on stock</option>
+        </select>
+      </div>
+      <div>
+        <label>Name</label>
+        <input id="name" style="min-width:240px" />
+      </div>
+      <div>
+        <label>Qty</label>
+        <input id="quantity" type="number" step="0.01" class="w110" />
+      </div>
+      <div>
+        <label>Unit</label>
+        <select id="unit">
+          <option value="L">L</option>
+          <option value="KG">KG</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:220px">
+        <label>Location</label>
+        <input id="location" placeholder="e.g. Shed 1" />
+      </div>
+      <div>
+        <label>Expiry</label>
+        <input id="expiry" type="date" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div style="flex:1; min-width:320px">
+        <label>SDS URL (optional)</label>
+        <input id="sdsUrl" placeholder="https://…" />
+      </div>
+      <div>
+        <label>SDS file</label>
+        <input id="sdsFile" type="file" accept="application/pdf" />
+      </div>
+      <button id="saveBtn" class="primary btn">Save chemical</button>
+      <button id="resetBtn" class="btn" type="button">Reset</button>
+      <span id="msg" class="muted" aria-live="polite"></span>
+    </div>
+    <div class="muted small">When “All properties” is selected you can view/search/export/edit, but must choose a specific property to save new records.</div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Name</th>
+          <th class="nowrap">Qty × Unit</th>
+          <th>Use</th>
+          <th>Location</th>
+          <th>Expiry</th>
+          <th>SDS</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="chemList"><tr><td colspan="8">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <strong>Info</strong>
+    <div class="small" style="margin-top:6px">
+      <span class="pill">Edit</span> updates the existing row.  
+      <span class="pill" style="background:#fee2e2;color:#7f1d1d">Del</span> deletes the row (and SDS file if stored).
+    </div>
+  </div>
+</div>
+
+<script>
+/*** Firebase ***/
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  storageBucket: "consentes-pastoral.appspot.com",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+const auth = firebase.auth();
+
+/*** UI helpers ***/
+const $ = (s) => document.querySelector(s);
+const setStatus = (t) => { $('#authState').textContent = t || ''; };
+const setMsg = (t, timeoutMs = 3000) => { $('#msg').textContent = t || ''; if (t && timeoutMs) setTimeout(() => $('#msg').textContent = '', timeoutMs); };
+const saveBtn = $('#saveBtn');
+const loading = (on) => { saveBtn.classList.toggle('disabled', !!on); saveBtn.textContent = on ? (currentEdit ? 'Saving changes…' : 'Saving…') : (currentEdit ? 'Save changes' : 'Save chemical'); };
+
+/*** Property IDs (shared across pages) ***/
+const PROPERTY_IDS = {
+  "Consentes":"s7PlDM9wrEpxuJ6DGIab",
+  "Mt Myrtle":"TRuxtRBx2zJlwZnRGYKJ",
+  "Gerawin":"P0dQ0H2FWHeqqxejflZs"
+};
+const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
+
+/*** Cross-page active property sync ***/
+const ACTIVE_KEY = 'sf.activePropertyId';
+
+/*** State ***/
+let chemicalsData = [];
+let currentEdit = null;      // { id, pid, __path }
+let currentSdsPath = null;   // string | null
+let filterText = '';
+let filterUse = 'all';
+let pathCache = {};          // pid -> collection path
+
+/*** Elements ***/
+const propSel = $('#property');
+
+/*** Bootstrap ***/
+(async function bootstrap(){
+  try {
+    try { await firebase.firestore().enablePersistence({synchronizeTabs:true}); } catch(e) { /* ok if not available */ }
+    await auth.signInAnonymously();
+    setStatus('Connected (guest)');
+  } catch (e) {
+    console.warn('Auth failed:', e?.code, e?.message);
+    setStatus('Auth issue');
+  }
+  initProperties();
+  restoreActiveProperty();
+  bindEvents();
+  await loadChemicals();
+})();
+
+/*** Events ***/
+function bindEvents(){
+  $('#search').oninput = (e) => { filterText = e.target.value; renderTable(); };
+  $('#useFilter').onchange = (e) => { filterUse = e.target.value; renderTable(); };
+  propSel.onchange = () => { persistActiveProperty(); toggleSaveAvailability(); loadChemicals(); };
+  $('#exportCsv').onclick = exportCsv;
+  $('#reloadBtn').onclick = () => loadChemicals();
+  $('#resetBtn').onclick = clearForm;
+  $('#saveBtn').onclick = () => saveChemical().catch(err => { console.error(err); setMsg('Save failed. See console.'); loading(false); });
+}
+
+/*** Property helpers ***/
+function initProperties(){
+  propSel.innerHTML = '';
+  const optAll = document.createElement('option'); optAll.value = 'ALL'; optAll.textContent = '(All properties)'; propSel.appendChild(optAll);
+  Object.keys(PROPERTY_IDS).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = PROPERTY_IDS[name]; opt.textContent = name; propSel.appendChild(opt);
+  });
+  propSel.value = 'ALL';
+  toggleSaveAvailability();
+}
+function toggleSaveAvailability(){
+  $('#saveBtn').classList.toggle('disabled', propSel.value === 'ALL');
+}
+function restoreActiveProperty(){
+  // prefer shared key; fall back to previous local key
+  let v = null;
+  try { v = localStorage.getItem(ACTIVE_KEY); } catch {}
+  if (v && (v === 'ALL' || PROPERTY_NAME_BY_ID[v])) propSel.value = v;
+  // also accept any previous saved label values like 'All properties' → map to ALL
+  if (!PROPERTY_NAME_BY_ID[propSel.value] && propSel.value !== 'ALL') propSel.value = 'ALL';
+  toggleSaveAvailability();
+}
+function persistActiveProperty(){
+  try { localStorage.setItem(ACTIVE_KEY, propSel.value); } catch {}
+}
+
+/*** Data loading ***/
+async function loadChemicals(){
+  const tb = $('#chemList');
+  tb.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
+  chemicalsData = [];
+  const selectedPid = propSel.value;
+
+  const findExistingPath = async (pid) => {
+    if (pathCache[pid]) return pathCache[pid];
+    const candidates = [
+      `chemicals/${pid}/chemicals`,
+      `properties/${pid}/chemicals`,
+      `properties/${pid}/store`,
+      `properties/${pid}/inventory`,
+      `chemicals` // fallback (flat)
+    ];
+    for (const path of candidates){
+      try {
+        const q = path === 'chemicals'
+          ? db.collection(path).where('propertyId','==',pid).limit(1)
+          : db.collection(path).limit(1);
+        const snap = await q.get();
+        if (!snap.empty){ pathCache[pid] = path; return path; }
+      } catch(e){}
+    }
+    pathCache[pid] = `chemicals/${pid}/chemicals`;
+    return pathCache[pid];
+  };
+
+  const loadForPid = async (pid, propName) => {
+    const path = await findExistingPath(pid);
+    let snap;
+    if (path === 'chemicals') {
+      snap = await db.collection('chemicals').where('propertyId','==',pid).get();
+    } else {
+      snap = await db.collection(path).get();
+    }
+    snap.forEach(d => chemicalsData.push({ id: d.id, propertyId: pid, propertyName: propName, __path: (path==='chemicals'? 'chemicals' : path), ...d.data() }));
+  };
+
+  try {
+    if (selectedPid === 'ALL') {
+      for (const [name, pid] of Object.entries(PROPERTY_IDS)) {
+        await loadForPid(pid, name);
+      }
+    } else {
+      const name = Object.entries(PROPERTY_IDS).find(([n,i])=>i===selectedPid)?.[0] || '(Unknown)';
+      await loadForPid(selectedPid, name);
+    }
+    chemicalsData.sort((a,b) => String(a.name||'').localeCompare(String(b.name||'')));
+    renderTable();
+    setMsg('Loaded');
+  } catch (e) {
+    console.error(e);
+    $('#chemList').innerHTML = '<tr><td colspan="8">Failed to load records.</td></tr>';
+  }
+}
+
+function filtered(){
+  const q = filterText.trim().toLowerCase();
+  return chemicalsData.filter(r => {
+    if (filterUse !== 'all' && (r.useOn || '') !== filterUse) return false;
+    const hay = [r.name, r.useOn, r.location, r.unit, r.propertyName].filter(Boolean).join(' ').toLowerCase();
+    return !q || hay.includes(q);
+  });
+}
+
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+}
+
+function renderTable(){
+  const tb = $('#chemList');
+  tb.innerHTML = '';
+  const rows = filtered();
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8">No records</td></tr>'; return; }
+
+  for (const r of rows){
+    const tr = document.createElement('tr');
+    const qty = (r.quantity ?? '') + (r.unit ? ` ${r.unit}` : '');
+    tr.innerHTML = `
+      <td>${escapeHtml(r.propertyName||'')}</td>
+      <td>${escapeHtml(r.name||'')}</td>
+      <td class="nowrap">${escapeHtml(qty)}</td>
+      <td>${escapeHtml(r.useOn||'')}</td>
+      <td>${escapeHtml(r.location||'')}</td>
+      <td>${escapeHtml(r.expiryDate||'')}</td>
+      <td>${r.sdsUrl ? `<a href="${encodeURI(r.sdsUrl)}" target="_blank" rel="noopener">SDS</a>` : ''}</td>
+      <td class="nowrap">
+        <button class="btn" data-e>Edit</button>
+        <button class="btn danger" data-d>Del</button>
+      </td>`;
+    tr.querySelector('[data-e]').onclick = () => editRow(r);
+    tr.querySelector('[data-d]').onclick = () => delRow(r);
+    tb.appendChild(tr);
+  }
+}
+
+/*** Edit / Delete ***/
+function editRow(r){
+  const pid = r.propertyId;
+  propSel.value = pid; persistActiveProperty(); toggleSaveAvailability();
+  $('#useOn').value = r.useOn || 'Use on paddock';
+  $('#name').value = r.name || '';
+  $('#quantity').value = typeof r.quantity === 'number' ? r.quantity : (r.quantity || '');
+  $('#unit').value = r.unit || 'L';
+  $('#location').value = r.location || '';
+  $('#expiry').value = r.expiryDate || '';
+  $('#sdsUrl').value = r.sdsUrl || '';
+  currentEdit = { id: r.id, pid, __path: r.__path };
+  currentSdsPath = r.sdsPath || null;
+  saveBtn.textContent = 'Save changes';
+}
+
+async function delRow(r){
+  if (!confirm(`Delete "${r.name}" from ${r.propertyName}?`)) return;
+  try {
+    // delete from correct collection
+    const docPath = (r.__path === 'chemicals') ? `chemicals/${r.id}` : `${r.__path}/${r.id}`;
+    await db.doc(docPath).delete();
+    if (r.sdsPath) {
+      try { await storage.ref(r.sdsPath).delete(); } catch {}
+    }
+    await loadChemicals();
+    setMsg('Deleted');
+  } catch (e) {
+    console.error(e);
+    setMsg('Delete failed');
+  }
+}
+
+/*** Save / Update ***/
+async function saveChemical(){
+  if (propSel.value === 'ALL') { alert('Select a property to save'); return; }
+  const pid = propSel.value;
+
+  const qtyVal = $('#quantity').value;
+  const qtyNum = qtyVal === '' ? NaN : Number(qtyVal);
+
+  const data = {
+    name: ($('#name').value || '').trim(),
+    useOn: $('#useOn').value,
+    quantity: isNaN(qtyNum) ? null : qtyNum,
+    unit: $('#unit').value,
+    location: ($('#location').value || '').trim(),
+    expiryDate: $('#expiry').value || '',
+    propertyId: pid,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  if (!data.name) { alert('Chemical name is required'); return; }
+  if (data.quantity === null || data.quantity <= 0) { alert('Enter a valid quantity (> 0)'); return; }
+
+  const bestWritePath = async (pid) => {
+    if (pathCache[pid]) return pathCache[pid];
+    const candidates = [
+      `chemicals/${pid}/chemicals`,
+      `properties/${pid}/chemicals`,
+      `properties/${pid}/store`,
+      `properties/${pid}/inventory`,
+      `chemicals` // supports flat structure (with propertyId field)
+    ];
+    for (const p of candidates){
+      try {
+        // if flat 'chemicals' exists with rows for this pid, we prefer writing there too
+        if (p === 'chemicals') {
+          const s = await db.collection('chemicals').where('propertyId','==',pid).limit(1).get();
+          if (!s.empty){ pathCache[pid] = p; return p; }
+        } else {
+          const s = await db.collection(p).limit(1).get();
+          if (!s.empty){ pathCache[pid] = p; return p; }
+        }
+      } catch(e){}
+    }
+    pathCache[pid] = 'chemicals'; // default to flat collection if nothing found
+    return pathCache[pid];
+  };
+
+  loading(true);
+  let sdsUrl = ($('#sdsUrl').value || '').trim();
+  let sdsPath = currentSdsPath || '';
+  const file = $('#sdsFile').files[0];
+  if (file){
+    sdsPath = `sds/${pid}/${Date.now()}_${file.name}`;
+    const ref = storage.ref(sdsPath);
+    await ref.put(file);
+    sdsUrl = await ref.getDownloadURL();
+  }
+
+  data.sdsUrl = sdsUrl || null;
+  data.sdsPath = sdsPath || null;
+
+  try {
+    const targetPath = await bestWritePath(pid);
+
+    if (currentEdit) {
+      // if path changed, copy to new path and delete old
+      const fromDifferentCollection = (currentEdit.pid !== pid) || (currentEdit.__path !== targetPath);
+      if (fromDifferentCollection){
+        if (targetPath === 'chemicals') {
+          const newDoc = await db.collection('chemicals').add({ ...data });
+          // delete from old
+          const oldPath = (currentEdit.__path === 'chemicals') ? `chemicals/${currentEdit.id}` : `${currentEdit.__path}/${currentEdit.id}`;
+          try { await db.doc(oldPath).delete(); } catch(e) { console.warn('Old doc delete failed', e); }
+        } else {
+          const newDoc = await db.collection(targetPath).add({ ...data });
+          const oldPath = (currentEdit.__path === 'chemicals') ? `chemicals/${currentEdit.id}` : `${currentEdit.__path}/${currentEdit.id}`;
+          try { await db.doc(oldPath).delete(); } catch(e) { console.warn('Old doc delete failed', e); }
+        }
+      } else {
+        const docPath = (targetPath === 'chemicals') ? `chemicals/${currentEdit.id}` : `${targetPath}/${currentEdit.id}`;
+        await db.doc(docPath).set(data, { merge:true });
+      }
+    } else {
+      if (targetPath === 'chemicals') {
+        await db.collection('chemicals').add(data);
+      } else {
+        await db.collection(targetPath).add(data);
+      }
+    }
+    clearForm();
+    await loadChemicals();
+    setMsg('Saved');
+  } catch (e) {
+    console.error(e);
+    setMsg('Save failed');
+  } finally {
+    loading(false);
+  }
+}
+
+function clearForm(){
+  $('#useOn').value = 'Use on paddock';
+  $('#name').value = '';
+  $('#quantity').value = '';
+  $('#unit').value = 'L';
+  $('#location').value = '';
+  $('#expiry').value = '';
+  $('#sdsUrl').value = '';
+  $('#sdsFile').value = '';
+  currentEdit = null; currentSdsPath = null; saveBtn.textContent = 'Save chemical';
+}
+
+/*** Export ***/
+function exportCsv(){
+  const rows = filtered();
+  if (!rows.length) { alert('Nothing to export'); return; }
+  const head = 'Property,Name,Quantity,Unit,Use,Location,Expiry,SDS URL';
+  const lines = rows.map(r => [
+    r.propertyName, r.name, r.quantity, r.unit, r.useOn, r.location, r.expiryDate, r.sdsUrl || ''
+  ].map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(','));
+  const blob = new Blob([head + '\n' + lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'chemicals.csv'; a.click();
+}
+</script>
+</body>
+</html>
