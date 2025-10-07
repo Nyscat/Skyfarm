@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SkyFarm — Map</title>
+  <title>SkyFarm — Map (Direct Storage)</title>
   <link rel="stylesheet" href="skyfarm-shared.css">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-  <!-- Config + Firebase (Compat SDKs for simplicity) -->
+  <!-- Config + Firebase (Compat) -->
   <script src="skyfarm-config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -75,9 +75,9 @@ firebase.auth().onAuthStateChanged(async (u)=>{
   }
   setStatus("Signed in");
 
-  // Load JSON files from Storage: gs://consentes-pastoral.firebasestorage.app/maps
   try {
     const storage = firebase.storage();
+    // Use gs:// bucket reference explicitly
     const folder = storage.refFromURL('gs://consentes-pastoral.firebasestorage.app/maps');
     const { items } = await folder.listAll();
     const list = document.getElementById('filelist');
@@ -86,6 +86,7 @@ firebase.auth().onAuthStateChanged(async (u)=>{
 
     const m = ensureMap();
     const addedBounds = [];
+    const decoder = new TextDecoder();
 
     for (const itemRef of items){
       const li = document.createElement('li');
@@ -93,10 +94,11 @@ firebase.auth().onAuthStateChanged(async (u)=>{
       list.appendChild(li);
 
       try {
-        const url = await itemRef.getDownloadURL();
-        const resp = await fetch(url, { cache: 'no-store' });
-        const data = await resp.json();
-        log(`Loaded ${itemRef.name}`);
+        // Download bytes directly from Storage (avoids CORS/URL fetch)
+        const bytes = await itemRef.getBytes(); // full file
+        const text = decoder.decode(bytes);
+        const data = JSON.parse(text);
+        log(`Loaded ${itemRef.name} (${bytes.byteLength} bytes)`);
 
         if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')){
           const gj = L.geoJSON(data);
@@ -106,11 +108,10 @@ firebase.auth().onAuthStateChanged(async (u)=>{
           log({ preview: typeof data === 'string' ? data.slice(0,200) : data });
         }
       } catch (e) {
-        log(`Failed to load ${itemRef.name}: ${e.message}`);
+        log(`Failed to load ${itemRef.name}: ${e.code || e.message}`);
       }
     }
 
-    // Fit to combined bounds
     if (addedBounds.length){
       let b = addedBounds[0];
       for (let i=1;i<addedBounds.length;i++){ b = b.extend(addedBounds[i]); }
