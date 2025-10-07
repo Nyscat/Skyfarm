@@ -41,18 +41,25 @@
   .field label{display:block;font-size:.85rem;color:#475569;margin-bottom:3px}
   .row-split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 </style>
-
-<link rel="stylesheet" href="skyfarm-shared.css">
 </head>
 <body>
-<div id="sf-header-root"></div>
-<script src="skyfarm-header.js"></script>
-<script>SkyFarmHeader.mount();</script>
-
-
-<script>SkyFarmAuth.requireAuth();</script>
 <!-- SkyFarm mini header/nav -->
-
+<header id="skyfarm-header" style="position:sticky;top:0;z-index:10">
+  <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border-bottom:1px solid #e5e7eb">
+    <div style="display:flex;align-items:center;gap:8px;color:#0B7A6E;font-weight:700">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M5 13c8-9 14-8 14-8s1 6-7 14c-4 4-9 3-9 3s-1-5 3-9Z" stroke="currentColor" stroke-width="1.8"/></svg>
+      SkyFarm
+    </div>
+    <nav style="display:flex;gap:10px;margin-left:10px">
+      <a href="#" data-nav="diary" style="color:#0B7A6E;text-decoration:none;font-weight:600">Diary</a>
+      <a href="#" data-nav="map"   style="color:#0B7A6E;text-decoration:none;font-weight:600">Map</a>
+      <a href="#" data-nav="chem"  style="color:#0B7A6E;text-decoration:none;font-weight:600">Chemicals</a>
+      <a href="#" data-nav="admin" style="color:#0B7A6E;text-decoration:none;font-weight:600">Users</a>
+    </nav>
+    <div style="flex:1"></div>
+    <span id="sf-auth" style="color:#64748b;font-size:.9rem">Connecting…</span>
+  </div>
+</header>
 <script>
   (function(){
     // Link handler
@@ -60,7 +67,7 @@
       const base = location.origin;
       if (slug === 'diary') return `${base}/skyfarm-diary.html`;
       if (slug === 'map')   return `${base}/skyfarm-map.html`;
-      if (slug === 'chem')  return `${base}/skyfarm-chemical.html`;
+      if (slug === 'chem')  return `${base}/skyfarm-chemical-inventory.html`;
       if (slug === 'admin') return `${base}/skyfarm-admin-users.html`;
       return base + '/';
     }
@@ -219,24 +226,50 @@ function iconForGauge(color='#111'){
 
 /* ========== Firebase: auto-connect ========== */
 let db;
+
 const cfg = {
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-  authDomain: "consentes-pastoral.firebaseapp.com",
-  projectId: "consentes-pastoral",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+  apiKey: cfg.apiKey,
+  authDomain: cfg.authDomain,
+  projectId: cfg.projectId,
+  storageBucket: cfg.storageBucket,
+  appId: cfg.appId
 };
 (async ()=>{
   try{
-    firebase.initializeApp(cfg);
+    // Initialize (reuse if already created)
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
     db = firebase.firestore();
     try{ await firebase.firestore().enablePersistence({synchronizeTabs:true}); }catch(_){}
-    await // anonymous sign-in removed
-    document.getElementById('status').textContent = 'Connected';
+
+    const statusEl = document.getElementById('status');
+    if (statusEl) statusEl.textContent = 'Connecting…';
+
+    firebase.auth().onAuthStateChanged(async (u)=>{
+      if (u) {
+        if (statusEl) statusEl.textContent = 'Signed in';
+        try {
+          if (typeof initMapAndData === 'function') {
+            await initMapAndData();
+          }
+        } catch (e) {
+          if (statusEl) statusEl.textContent = 'Data error';
+          console.error('Data load error:', e);
+          if (typeof showError === 'function') showError(e);
+        }
+      } else {
+        // Strict: no anonymous. Redirect to index for login.
+        const here = encodeURIComponent(location.pathname + location.search);
+        location.href = `index.html?next=${here}`;
+      }
+    });
   }catch(e){
-    document.getElementById('status').textContent = 'Auth failed';
-    console.error(e);
+    const statusEl = document.getElementById('status');
+    if (statusEl) statusEl.textContent = 'Auth init failed';
+    console.error('Auth init failed:', e);
+    if (typeof showError === 'function') showError(e);
   }
 })();
+
 
 /* ========== Selection + Queries ========== */
 let currentSelection = null; // { propertyName, propertyId, paddockName, dbPaddockName, ... }
@@ -622,18 +655,28 @@ layerToggle.addEventListener('change', ()=>{
 
 
 <script>
-window.addEventListener('skyfarm:authorized', async (ev)=>{
-  try {
-    if (typeof initMapAndData === 'function') {
-      await initMapAndData();
-    }
-  } catch (e) {
-    console.error('Map init error:', e);
-    const statusEl = document.getElementById('status');
-    if (statusEl) statusEl.textContent = 'Map init error';
-  }
-});
+function showError(err){
+  try{
+    const panel = document.querySelector('#panel .panel-inner') || document.body;
+    const pre = document.createElement('pre');
+    pre.textContent = (err && err.message) ? err.message : String(err);
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.style.background = '#fff7ed';
+    pre.style.border = '1px solid #fdba74';
+    pre.style.borderRadius = '8px';
+    pre.style.padding = '8px';
+    pre.style.marginTop = '8px';
+    panel.prepend(pre);
+  }catch(_){}
+}
 </script>
 
+<script>
+window.addEventListener('skyfarm:authorized', async ()=>{
+  try {
+    if (typeof initMapAndData === 'function') await initMapAndData();
+  } catch(e){ console.error(e); }
+});
+</script>
 </body>
 </html>
