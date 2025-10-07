@@ -3,19 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SkyFarm — Map (Direct Storage)</title>
+  <title>SkyFarm — Map</title>
   <link rel="stylesheet" href="skyfarm-shared.css">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-  <!-- Config + Firebase (Compat) -->
-  <script src="skyfarm-config.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 </head>
 <body>
   <div id="sf-header-root"></div>
@@ -24,15 +17,18 @@
 
   <div class="sf-wrap">
     <h1>Map</h1>
-    <p id="status">Connecting…</p>
+    <p id="status">Loading paddocks…</p>
 
     <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
       <div>
         <div id="map" style="height:560px;border:1px solid #e5e7eb;border-radius:12px;"></div>
       </div>
       <aside style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
-        <h3>Files in <code>maps/</code></h3>
-        <ul id="filelist" style="padding-left:18px;margin-top:8px;"></ul>
+        <h3>Data sources</h3>
+        <ul style="padding-left:18px;margin-top:8px;">
+          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank" rel="noopener">consentes_station.json</a></li>
+          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank" rel="noopener">mt_myrtle.json</a></li>
+        </ul>
         <details style="margin-top:10px;">
           <summary>Log</summary>
           <pre id="log" style="white-space:pre-wrap;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px;max-height:220px;overflow:auto;"></pre>
@@ -42,86 +38,57 @@
   </div>
 
 <script>
+const SOURCES = ['https://storage.googleapis.com/consentes-maps/consentes_station.json', 'https://storage.googleapis.com/consentes-maps/mt_myrtle.json'];
+
 function log(msg){
   const el = document.getElementById('log');
-  if (!el) return;
-  el.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\\n";
+  el.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
 }
-
-// Initialize Firebase from central config
-const CFG = window.SKYFARM_CONFIG;
-if (!firebase.apps.length) firebase.initializeApp(CFG);
 
 const statusEl = document.getElementById('status');
 function setStatus(s){ statusEl.textContent = s; }
 
-let map;
-function ensureMap(){
-  if (map) return map;
-  map = L.map('map').setView([-20.0, 142.5], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
-  return map;
-}
+let map = L.map('map').setView([-20.0, 142.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap'
+}).addTo(map);
 
-// Require sign-in (no anonymous)
-firebase.auth().onAuthStateChanged(async (u)=>{
-  if (!u) {
-    setStatus("Not signed in → redirecting to login…");
-    const here = encodeURIComponent(location.pathname + location.search);
-    location.href = `index.html?next=${here}`;
-    return;
-  }
-  setStatus("Signed in");
-
+(async ()=>{
   try {
-    const storage = firebase.storage();
-    // Use gs:// bucket reference explicitly
-    const folder = storage.refFromURL('gs://consentes-pastoral.firebasestorage.app/maps');
-    const { items } = await folder.listAll();
-    const list = document.getElementById('filelist');
-    list.innerHTML = '';
-    setStatus(`Found ${items.length} file(s)`);
-
-    const m = ensureMap();
-    const addedBounds = [];
-    const decoder = new TextDecoder();
-
-    for (const itemRef of items){
-      const li = document.createElement('li');
-      li.textContent = itemRef.name;
-      list.appendChild(li);
-
+    const bounds = [];
+    let loaded = 0;
+    for (const url of SOURCES) {
       try {
-        // Download bytes directly from Storage (avoids CORS/URL fetch)
-        const bytes = await itemRef.getBytes(); // full file
-        const text = decoder.decode(bytes);
-        const data = JSON.parse(text);
-        log(`Loaded ${itemRef.name} (${bytes.byteLength} bytes)`);
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(resp.status + ' ' + resp.statusText);
+        const data = await resp.json();
+        log('Loaded ' + url);
 
-        if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')){
+        if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')) {
           const gj = L.geoJSON(data);
-          gj.addTo(m);
-          try { addedBounds.push(gj.getBounds()); } catch(_){}
+          gj.addTo(map);
+          try { bounds.push(gj.getBounds()); } catch(_){}
         } else {
-          log({ preview: typeof data === 'string' ? data.slice(0,200) : data });
+          log({warning: 'Not GeoJSON', url});
         }
+        loaded++;
+        setStatus('Loaded ' + loaded + ' of ' + SOURCES.length + ' file(s)');
       } catch (e) {
-        log(`Failed to load ${itemRef.name}: ${e.code || e.message}`);
+        log('Failed to load ' + url + ': ' + (e.message || e));
       }
     }
 
-    if (addedBounds.length){
-      let b = addedBounds[0];
-      for (let i=1;i<addedBounds.length;i++){ b = b.extend(addedBounds[i]); }
-      try { m.fitBounds(b, { padding: [12,12] }); } catch(_){}
+    if (bounds.length) {
+      let b = bounds[0];
+      for (let i=1;i<bounds.length;i++) b = b.extend(bounds[i]);
+      map.fitBounds(b, { padding: [12,12] });
     }
-  } catch (e){
-    setStatus('Storage list failed');
+    if (!bounds.length) setStatus('No GeoJSON features drawn');
+  } catch (e) {
+    setStatus('Error initialising map');
     log(e);
   }
-});
+})();
 </script>
 </body>
 </html>
