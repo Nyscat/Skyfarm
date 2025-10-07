@@ -17,12 +17,8 @@
   .wrap { max-width:1200px; margin:0 auto; padding:16px; }
   h1 { margin:12px 0; font-size:1.6rem; }
 
-  /* Header */
+  /* Header shell (your shared header mounts into #sf-header-root) */
   #skyfarm-header { position:sticky; top:0; z-index:10; }
-  #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
-  #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
-  #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
-  #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
   .spacer { flex:1; }
   .muted { color:var(--muted); font-size:.9rem; }
 
@@ -35,7 +31,8 @@
   .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
   .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
   .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
-  .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:999px; background:#eef2f7; font-size:.85rem; margin:4px 6px 0 0; border:1px solid #e5e7eb; cursor:pointer; }
+  .pill.selected { background:#0B7A6E; color:#fff; border-color:#0B7A6E; }
 
   /* Table */
   table { width:100%; border-collapse:collapse; }
@@ -43,7 +40,7 @@
   th { background:#f1f5f9; }
   .nowrap { white-space:nowrap; }
   .right { text-align:right; }
-  .w110 { width:110px; } .w140 { width:140px; } .w180 { width:180px; } .w220 { width:220px; }
+  .w110 { width:110px; } .w140 { width:160px; } .w180 { width:180px; } .w220 { width:220px; }
   .small { font-size:.9rem; color:#475569; }
 </style>
 
@@ -53,12 +50,6 @@
 <div id="sf-header-root"></div>
 <script src="skyfarm-header.js"></script>
 <script>SkyFarmHeader.mount();</script>
-
-
-
-<script>SkyFarmAuth.requireAuth();</script>
-<!-- Header with logo + nav -->
-
 
 <div class="wrap">
   <h1>Livestock Management</h1>
@@ -74,26 +65,32 @@
           <option value="P0dQ0H2FWHeqqxejflZs">Gerawin</option>
         </select>
       </div>
+
       <div>
         <label>Paddock</label><br/>
         <input id="newLocation" class="w180" placeholder="e.g. Gravel Paddock" />
       </div>
+
       <div>
         <label>Species</label><br/>
         <select id="newSpecies" class="w140">
-          <option>Cattle</option>
-          <option>Sheep</option>
-          <option>Goats</option>
+          <option value="Cattle">Cattle</option>
+          <option value="Sheep">Sheep</option>
+          <option value="Goats">Goats</option>
         </select>
       </div>
-      <div>
-        <label>Class</label><br/>
-        <input id="newClass" class="w140" placeholder="e.g. Heifers" />
+
+      <div style="min-width:320px;flex:1;">
+        <label>Class of stock</label>
+        <div id="classPills" style="display:flex;flex-wrap:wrap;margin-top:4px;"></div>
+        <input type="hidden" id="newClass" />
       </div>
+
       <div>
         <label>Count</label><br/>
         <input id="newCount" class="w110" type="number" min="0" />
       </div>
+
       <div style="align-self:flex-end;">
         <button id="addRowBtn" class="btn primary">Add Livestock</button>
       </div>
@@ -151,7 +148,36 @@
 </div>
 
 <script>
-/*** Firebase setup ***/
+/*** 1) CLASSES & ORDER (single source of truth) ***/
+const CLASSES_BY_SPECIES = {
+  "Cattle": [
+    "PTE Cow","PTIC Cow","Joined Cow",
+    "PTE Heifer","PTIC Heifer","Joined Heifer",
+    "Weaner Heifer","Female Calf","Male Calf",
+    "Weaner Steer","Store Steer","Bullock","Bull",
+    "Missing"
+  ],
+  "Sheep": [
+    "Cull Ewes","Ewes","Weaner Ewes","Weaner Weathers","Mixed Sex Lambs","Rams","Missing"
+  ],
+  // Goats: keep free-text (no fixed order yet)
+};
+
+// Build ordering index per species
+function classIndex(species){
+  const arr = CLASSES_BY_SPECIES[species] || [];
+  return Object.fromEntries(arr.map((c,i)=>[c,i]));
+}
+function compareByClass(a,b){
+  // Sorts by species -> class order -> location
+  const ia = classIndex(a.species)[a.class] ?? 9999;
+  const ib = classIndex(b.species)[b.class] ?? 9999;
+  if (a.species !== b.species) return a.species.localeCompare(b.species);
+  if (ia !== ib) return ia - ib;
+  return String(a.location || '').localeCompare(String(b.location || ''));
+}
+
+/*** 2) Firebase setup ***/
 const firebaseConfig = {
   apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
   authDomain: "consentes-pastoral.firebaseapp.com",
@@ -162,23 +188,52 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-/*** DOM refs ***/
+/*** 3) DOM refs ***/
 const $ = s => document.querySelector(s);
-const authState=$('#authState'), statusEl=$('#status');
-const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'), newClass=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg');
+const statusEl=$('#status');
+const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'), newClassHidden=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg');
+const classPillsWrap = $('#classPills');
+
 const propSel=$('#propSel'), searchInp=$('#search'), refreshBtn=$('#refreshBtn'), exportBtn=$('#exportBtn');
 const rowsTbody=$('#rowsTbody'), countPill=$('#countPill'), totalPill=$('#totalPill'), totalsByPaddock=$('#totalsByPaddock');
 
 let allRows=[];
 
-/*** Helpers ***/
-const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+/*** 4) Class pill renderer for the Add form ***/
+function renderClassPills(species){
+  classPillsWrap.innerHTML = '';
+  const set = CLASSES_BY_SPECIES[species];
+  if (!set){ // Goats or other → free-text
+    const b = document.createElement('span');
+    b.className = 'muted';
+    b.textContent = 'Enter a custom class in the table after adding (no fixed set for this species).';
+    classPillsWrap.appendChild(b);
+    newClassHidden.value = '';
+    return;
+  }
+  set.forEach(cls=>{
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'pill';
+    pill.textContent = cls;
+    pill.onclick = ()=>{
+      newClassHidden.value = cls;
+      classPillsWrap.querySelectorAll('.pill').forEach(x=>x.classList.remove('selected'));
+      pill.classList.add('selected');
+    };
+    classPillsWrap.appendChild(pill);
+  });
+  // default to first item
+  classPillsWrap.querySelector('.pill')?.click();
+}
+newSpecies.addEventListener('change', ()=> renderClassPills(newSpecies.value));
+renderClassPills(newSpecies.value);
 
-/*** Init ***/
+/*** 5) Init & events ***/
 (async()=>{
   try{await firebase.firestore().enablePersistence({synchronizeTabs:true});}catch{}
+  // NOTE: if you don’t want anonymous access, swap this for your email/password sign-in.
   await auth.signInAnonymously();
-  auth.onAuthStateChanged(u=>authState.textContent=u?'Connected':'Connecting…');
   propSel.onchange=loadRows;
   searchInp.oninput=render;
   refreshBtn.onclick=loadRows;
@@ -187,19 +242,21 @@ const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;
   await loadRows();
 })();
 
-/*** Add livestock row ***/
+/*** 6) Add livestock row ***/
 async function addLivestock(){
-  const pid=newPropSel.value, location=newLocation.value.trim(), species=newSpecies.value.trim(), klass=newClass.value.trim(), count=Number(newCount.value||0);
-  if(!location||!klass) return alert('Please enter paddock and class.');
+  const pid=newPropSel.value, location=newLocation.value.trim(), species=newSpecies.value, klass=newClassHidden.value.trim(), count=Number(newCount.value||0);
+  if(!location) return alert('Please enter paddock.');
+  if(CLASSES_BY_SPECIES[species] && !klass) return alert('Please choose a class.');
   if(count<0||!Number.isFinite(count)) return alert('Enter a valid count.');
   addRowBtn.disabled=true; addMsg.textContent='Saving…';
   try{
     await db.collection('livestock').add({
-      propertyId:pid, location,species,class:klass,count,
+      propertyId:pid, location, species, class:klass || '(Unspecified)', count,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     addMsg.textContent='Added!';
-    newLocation.value=''; newClass.value=''; newCount.value='';
+    newLocation.value=''; newCount.value='';
+    // keep species and class selection as-is for the next add
     await loadRows();
   }catch(e){
     console.error(e);
@@ -210,19 +267,23 @@ async function addLivestock(){
   }
 }
 
-/*** Load rows ***/
+/*** 7) Load rows ***/
 async function loadRows(){
   rowsTbody.innerHTML='<tr><td colspan="7">Loading…</td></tr>'; statusEl.textContent='Loading…';
   allRows=[];
   try{
     const pid=propSel.value;
     const snap=await db.collection('livestock').where('propertyId','==',pid).get();
-    snap.forEach(d=>{const r=d.data();allRows.push({id:d.id,...r,updatedAt:r.updatedAt?.toDate?.()});});
+    snap.forEach(d=>{
+      const r=d.data();
+      allRows.push({id:d.id,...r,updatedAt:r.updatedAt?.toDate?.()});
+    });
+    allRows.sort(compareByClass);
     render(); statusEl.textContent='Loaded';
   }catch(e){console.error(e);statusEl.textContent='Error loading';}
 }
 
-/*** Render table ***/
+/*** 8) Render table (uses class order; per-row class editor switches by species) ***/
 function filtered(){
   const q=(searchInp.value||'').toLowerCase();
   if(!q) return allRows;
@@ -237,28 +298,80 @@ function render(){
   rowsTbody.innerHTML='';
   for(const r of rows){
     const tr=document.createElement('tr');
+    const updatedStr = r.updatedAt ? r.updatedAt.toLocaleString() : '';
     tr.innerHTML=`
-      <td class="small">${escapeHtml(r.id.slice(0,6))}…</td>
-      <td><input class="loc" value="${escapeHtml(r.location)}" /></td>
-      <td><input class="spec w140" value="${escapeHtml(r.species)}" /></td>
-      <td><input class="cls w140" value="${escapeHtml(r.class)}" /></td>
-      <td class="right"><input type="number" class="cnt w110" value="${r.count}" /></td>
-      <td class="small">${r.updatedAt?r.updatedAt.toLocaleString():""}</td>
+      <td class="small">${String(r.id).slice(0,6)}…</td>
+      <td><input class="loc" value="${escapeHtml(r.location||'')}" /></td>
+      <td>
+        <select class="spec w140">
+          <option ${r.species==='Cattle'?'selected':''}>Cattle</option>
+          <option ${r.species==='Sheep'?'selected':''}>Sheep</option>
+          <option ${r.species==='Goats'?'selected':''}>Goats</option>
+        </select>
+      </td>
+      <td class="clsCell"></td>
+      <td class="right"><input type="number" class="cnt w110" value="${Number(r.count||0)}" /></td>
+      <td class="small">${updatedStr}</td>
       <td><button class="btn primary" data-s>Save</button> <button class="btn danger" data-d>Delete</button></td>`;
+
+    // Build class editor suited to species
+    const clsCell = tr.querySelector('.clsCell');
+    const buildClassEditor = (species, val) => {
+      clsCell.innerHTML='';
+      const set = CLASSES_BY_SPECIES[species];
+      if (set) {
+        const sel = document.createElement('select');
+        sel.className = 'w180 cls';
+        set.forEach(c=>{
+          const opt=document.createElement('option');
+          opt.textContent=c; opt.value=c;
+          if (c===val) opt.selected=true;
+          sel.appendChild(opt);
+        });
+        // If existing value isn’t in the fixed set, append it at end
+        if (val && !set.includes(val)) {
+          const opt=document.createElement('option');
+          opt.textContent=val + ' (custom)'; opt.value=val; opt.selected=true;
+          sel.appendChild(opt);
+        }
+        clsCell.appendChild(sel);
+      } else {
+        const inp = document.createElement('input');
+        inp.className='w180 cls';
+        inp.value = val || '';
+        clsCell.appendChild(inp);
+      }
+    };
+    buildClassEditor(r.species, r.class);
+
+    // react to species change (swap class options)
+    tr.querySelector('.spec').addEventListener('change', (ev)=>{
+      buildClassEditor(ev.target.value, '');
+    });
+
     tr.querySelector('[data-s]').onclick=()=>saveRow(r.id,tr);
     tr.querySelector('[data-d]').onclick=()=>deleteRow(r.id);
     rowsTbody.appendChild(tr);
   }
+
+  // Totals by paddock
   const totals={};
   for(const r of rows){totals[r.location]=(totals[r.location]||0)+Number(r.count||0);}
   totalsByPaddock.innerHTML=Object.entries(totals).map(([loc,sum])=>`<span class="pill">${escapeHtml(loc)}: ${sum}</span>`).join(' ');
 }
 
-/*** Save / Delete / Export ***/
+/*** 9) Save / Delete / Export ***/
 async function saveRow(id,tr){
-  const loc=tr.querySelector('.loc').value.trim(),spec=tr.querySelector('.spec').value.trim(),cls=tr.querySelector('.cls').value.trim(),cnt=Number(tr.querySelector('.cnt').value||0);
+  const loc=tr.querySelector('.loc').value.trim();
+  const spec=tr.querySelector('.spec').value;
+  const clsEl=tr.querySelector('.cls');
+  const cls = (clsEl.tagName==='SELECT') ? clsEl.value : clsEl.value.trim();
+  const cnt=Number(tr.querySelector('.cnt').value||0);
   if(cnt<0) return alert('Invalid count');
-  await db.collection('livestock').doc(id).set({location:loc,species:spec,class:cls,count:cnt,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await db.collection('livestock').doc(id).set({
+    location:loc,species:spec,class:cls,count:cnt,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
   await loadRows();
 }
 async function deleteRow(id){
@@ -274,6 +387,9 @@ function exportCsv(){
   const blob=new Blob([head+'\n'+lines.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`livestock_${propName}.csv`;a.click();
 }
+
+/*** 10) Utils ***/
+const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 </script>
 </body>
 </html>
