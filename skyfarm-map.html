@@ -3,12 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SkyFarm — Property Map</title>
+  <title>SkyFarm — Map</title>
   <link rel="stylesheet" href="skyfarm-shared.css">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Firebase (Compat SDKs for simplicity) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 </head>
 <body>
   <div id="sf-header-root"></div>
@@ -16,19 +22,16 @@
   <script>SkyFarmHeader.mount();</script>
 
   <div class="sf-wrap">
-    <h1>SkyFarm — Property Map</h1>
-    <p id="status">Loading paddock data…</p>
+    <h1>Map</h1>
+    <p id="status">Connecting…</p>
 
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
       <div>
         <div id="map" style="height:560px;border:1px solid #e5e7eb;border-radius:12px;"></div>
       </div>
       <aside style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
-        <h3>Data Sources</h3>
-        <ul style="padding-left:18px;margin-top:8px;">
-          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank">consentes_station.json</a></li>
-          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank">mt_myrtle.json</a></li>
-        </ul>
+        <h3>Files in <code>maps/</code></h3>
+        <ul id="filelist" style="padding-left:18px;margin-top:8px;"></ul>
         <details style="margin-top:10px;">
           <summary>Log</summary>
           <pre id="log" style="white-space:pre-wrap;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px;max-height:220px;overflow:auto;"></pre>
@@ -38,66 +41,84 @@
   </div>
 
 <script>
-const SOURCES = [
-  "https://storage.googleapis.com/consentes-maps/consentes_station.json",
-  "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
-];
-
-function log(msg) {
+function log(msg){
   const el = document.getElementById('log');
+  if (!el) return;
   el.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
 }
 
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  storageBucket: "consentes-pastoral.appspot.com",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+
+// Initialize Firebase
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const statusEl = document.getElementById('status');
-function setStatus(s) { statusEl.textContent = s; }
+function setStatus(s){ statusEl.textContent = s; }
 
-// Initialize Leaflet
-const map = L.map('map').setView([-20.0, 142.5], 7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+let map;
+function ensureMap(){
+  if (map) return map;
+  map = L.map('map').setView([-20.0, 142.5], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  return map;
+}
 
-(async () => {
-  try {
-    const bounds = [];
-    let loaded = 0;
-
-    for (const url of SOURCES) {
-      try {
-        const response = await fetch(url, {cache: 'no-store'});
-        if (!response.ok) throw new Error(response.statusText);
-
-        const data = await response.json();
-        if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')) {
-          const gj = L.geoJSON(data, {
-            style: {color: '#00897B', weight: 2, fillOpacity: 0.3}
-          }).addTo(map);
-          bounds.push(gj.getBounds());
-          log(`Loaded ${url}`);
-        } else {
-          log(`Invalid GeoJSON at ${url}`);
-        }
-
-        loaded++;
-        setStatus(`Loaded ${loaded} of ${SOURCES.length} files`);
-      } catch (err) {
-        log(`Failed to load ${url}: ${err.message}`);
-      }
-    }
-
-    if (bounds.length) {
-      let combined = bounds[0];
-      for (let i = 1; i < bounds.length; i++) combined = combined.extend(bounds[i]);
-      map.fitBounds(combined, {padding: [20, 20]});
-    } else {
-      setStatus("No features drawn");
-    }
-  } catch (err) {
-    setStatus("Error loading map");
-    log(err);
+// Auth and load maps
+firebase.auth().onAuthStateChanged(async (user)=>{
+  if (!user){
+    setStatus("Not signed in → redirecting…");
+    const here = encodeURIComponent(location.pathname + location.search);
+    location.href = `index.html?next=${here}`;
+    return;
   }
-})();
+
+  setStatus("Signed in");
+
+  const urls = [
+    "https://storage.googleapis.com/consentes-maps/consentes_station.json",
+    "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
+  ];
+
+  const list = document.getElementById('filelist');
+  list.innerHTML = '';
+  const m = ensureMap();
+  const boundsList = [];
+
+  for (const url of urls){
+    const li = document.createElement('li');
+    li.textContent = url.split('/').pop();
+    list.appendChild(li);
+
+    try {
+      const resp = await fetch(url, { cache: 'no-store' });
+      const data = await resp.json();
+      log(`Loaded ${url}`);
+      if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')){
+        const gj = L.geoJSON(data);
+        gj.addTo(m);
+        try { boundsList.push(gj.getBounds()); } catch(_){}
+      }
+    } catch (err) {
+      log(`Failed to load ${url}: ${err.message}`);
+    }
+  }
+
+  if (boundsList.length){
+    let b = boundsList[0];
+    for (let i=1;i<boundsList.length;i++){ b = b.extend(boundsList[i]); }
+    m.fitBounds(b.pad(0.1));
+  }
+
+  setStatus("Maps loaded");
+});
 </script>
 </body>
 </html>
