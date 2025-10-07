@@ -1,14 +1,20 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SkyFarm — Property Map</title>
-  <link rel="stylesheet" href="skyfarm-shared.css">
+  <link rel="stylesheet" href="skyfarm-shared.css" />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Firebase (for diary/livestock lookups) -->
+  <script src="skyfarm-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div id="sf-header-root"></div>
@@ -19,16 +25,44 @@
     <h1>SkyFarm — Property Map</h1>
     <p id="status">Loading paddock data…</p>
 
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
       <div>
         <div id="map" style="height:560px;border:1px solid #e5e7eb;border-radius:12px;"></div>
       </div>
+
       <aside style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
-        <h3>Data Sources</h3>
+        <h3>Selection</h3>
+        <div id="sel-none" style="color:#64748b;">Click a paddock…</div>
+        <div id="sel" style="display:none">
+          <div style="font-weight:600;font-size:18px;" id="sel-name">—</div>
+          <div style="margin-top:6px;color:#64748b;">ID: <span id="sel-id">—</span></div>
+
+          <div style="margin-top:14px;">
+            <button id="open-diary" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;background:#0B7A6E;color:#fff;">Open Diary</button>
+          </div>
+
+          <hr style="margin:14px 0;">
+
+          <h4 style="margin:8px 0 4px;">Livestock in paddock</h4>
+          <div id="stock">—</div>
+          <button id="refresh-stock" style="margin-top:6px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#f8fafc;">Refresh</button>
+
+          <h4 style="margin:14px 0 4px;">Recent diary entries</h4>
+          <select id="diary-range">
+            <option value="30">30d</option>
+            <option value="90">90d</option>
+            <option value="365">365d</option>
+          </select>
+          <button id="refresh-diary" style="margin-left:6px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#f8fafc;">Refresh</button>
+          <ul id="diary" style="padding-left:18px;margin-top:6px;color:#111827;"></ul>
+        </div>
+
+        <h3 style="margin-top:18px;">Data sources</h3>
         <ul style="padding-left:18px;margin-top:8px;">
-          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank">consentes_station.json</a></li>
-          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank">mt_myrtle.json</a></li>
+          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank" rel="noopener">consentes_station.json</a></li>
+          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank" rel="noopener">mt_myrtle.json</a></li>
         </ul>
+
         <details style="margin-top:10px;">
           <summary>Log</summary>
           <pre id="log" style="white-space:pre-wrap;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px;max-height:220px;overflow:auto;"></pre>
@@ -38,6 +72,7 @@
   </div>
 
 <script>
+/* ---------- helpers ---------- */
 const SOURCES = [
   "https://storage.googleapis.com/consentes-maps/consentes_station.json",
   "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
@@ -47,17 +82,122 @@ function log(msg) {
   const el = document.getElementById('log');
   el.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
 }
-
 const statusEl = document.getElementById('status');
-function setStatus(s) { statusEl.textContent = s; }
+function setStatus(s){ statusEl.textContent = s; }
 
-// Initialize Leaflet
+function getPaddockIdFromFeature(feat){
+  const p = (feat && feat.properties) || {};
+  return p.id || p.paddockId || p.paddock || p.name || feat.id || null;
+}
+function getPaddockNameFromFeature(feat){
+  const p = (feat && feat.properties) || {};
+  return p.name || p.paddock || p.label || getPaddockIdFromFeature(feat) || "Paddock";
+}
+
+/* ---------- leaflet ---------- */
 const map = L.map('map').setView([-20.0, 142.5], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors'
+  maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
+const layers = [];
+let currentPaddockId = null;
+
+/* ---------- firebase init (for data lookups) ---------- */
+const CFG = window.SKYFARM_CONFIG || null;
+if (CFG && !firebase.apps.length) firebase.initializeApp(CFG);
+const db = (firebase.apps.length ? firebase.firestore() : null);
+
+/* Require sign-in for Firestore-backed data (map still draws without it) */
+if (firebase.apps.length) {
+  firebase.auth().onAuthStateChanged(u => {
+    const header = document.querySelector('#sf-header-root #sf-auth');
+    if (header) header.textContent = u ? 'Connected' : 'Connecting…';
+  });
+}
+
+/* ---------- side panel behavior ---------- */
+const selWrap = document.getElementById('sel');
+const selNone = document.getElementById('sel-none');
+const selName = document.getElementById('sel-name');
+const selIdEl = document.getElementById('sel-id');
+const stockEl = document.getElementById('stock');
+const diaryEl = document.getElementById('diary');
+const diaryRange = document.getElementById('diary-range');
+
+document.getElementById('refresh-stock').onclick = ()=> {
+  if (currentPaddockId) loadStock(currentPaddockId);
+};
+document.getElementById('refresh-diary').onclick = ()=> {
+  if (currentPaddockId) loadDiary(currentPaddockId);
+};
+document.getElementById('open-diary').onclick = ()=> {
+  if (currentPaddockId) location.href = `skyfarm-diary.html?paddock=${encodeURIComponent(currentPaddockId)}`;
+};
+
+function showSelection(name, id){
+  selName.textContent = name || id || 'Paddock';
+  selIdEl.textContent = id || '—';
+  selNone.style.display = 'none';
+  selWrap.style.display = '';
+  stockEl.textContent = '…';
+  diaryEl.innerHTML = '<li style="color:#64748b;">Loading…</li>';
+}
+
+/* ---------- Firestore lookups (safe fallbacks) ---------- */
+async function loadStock(paddockId){
+  if (!db) { stockEl.textContent = '—'; return; }
+  try {
+    // Preferred: a doc per paddock with current head count
+    const d = await db.collection('livestock_current').doc(paddockId).get();
+    if (d.exists && typeof d.data().head === 'number') {
+      stockEl.textContent = d.data().head + ' head';
+      return;
+    }
+    // Fallback: latest snapshot document
+    const q = await db.collection('livestock_current').where('paddockId','==',paddockId)
+      .orderBy('ts','desc').limit(1).get();
+    if (!q.empty && typeof q.docs[0].data().head === 'number') {
+      stockEl.textContent = q.docs[0].data().head + ' head';
+    } else {
+      stockEl.textContent = '—';
+    }
+  } catch (e) {
+    stockEl.textContent = '—';
+    log('Stock lookup error: ' + (e.message || e));
+  }
+}
+async function loadDiary(paddockId){
+  if (!db) { diaryEl.innerHTML = '<li>—</li>'; return; }
+  try {
+    const days = parseInt(diaryRange.value || '30', 10);
+    const since = new Date(Date.now() - days*24*60*60*1000);
+    const q = await db.collection('diary')
+      .where('paddockId','==',paddockId)
+      .where('ts','>=', since)
+      .orderBy('ts','desc')
+      .limit(10)
+      .get();
+    if (q.empty) {
+      diaryEl.innerHTML = '<li>—</li>';
+      return;
+    }
+    diaryEl.innerHTML = '';
+    q.forEach(doc => {
+      const d = doc.data();
+      const when = (d.ts && d.ts.toDate) ? d.ts.toDate() : (d.ts instanceof Date ? d.ts : null);
+      const dateStr = when ? when.toISOString().slice(0,10) : '';
+      const li = document.createElement('li');
+      li.textContent = (dateStr ? dateStr + ': ' : '') + (d.text || '(no text)');
+      diaryEl.appendChild(li);
+    });
+  } catch (e) {
+    diaryEl.innerHTML = '<li>—</li>';
+    log('Diary lookup error: ' + (e.message || e));
+  }
+}
+
+/* ---------- load GeoJSON and wire clicks ---------- */
 (async () => {
   try {
     const bounds = [];
@@ -65,36 +205,42 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
     for (const url of SOURCES) {
       try {
-        const response = await fetch(url, {cache: 'no-store'});
-        if (!response.ok) throw new Error(response.statusText);
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(resp.status + ' ' + resp.statusText);
+        const data = await resp.json();
 
-        const data = await response.json();
-        if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')) {
-          const gj = L.geoJSON(data, {
-            style: {color: '#00897B', weight: 2, fillOpacity: 0.3}
-          }).addTo(map);
-          bounds.push(gj.getBounds());
-          log(`Loaded ${url}`);
-        } else {
-          log(`Invalid GeoJSON at ${url}`);
-        }
+        const gj = L.geoJSON(data, {
+          style: { color: '#00897B', weight: 2, fillOpacity: 0.25 },
+          onEachFeature: (feature, layer) => {
+            layer.on('click', async () => {
+              const id = getPaddockIdFromFeature(feature);
+              const name = getPaddockNameFromFeature(feature);
+              currentPaddockId = id;
+              showSelection(name, id);
+              await loadStock(id);
+              await loadDiary(id);
+            });
+          }
+        }).addTo(map);
 
+        layers.push(gj);
+        try { bounds.push(gj.getBounds()); } catch(_) {}
         loaded++;
         setStatus(`Loaded ${loaded} of ${SOURCES.length} files`);
       } catch (err) {
-        log(`Failed to load ${url}: ${err.message}`);
+        log(`Failed to load ${url}: ${err.message || err}`);
       }
     }
 
     if (bounds.length) {
-      let combined = bounds[0];
-      for (let i = 1; i < bounds.length; i++) combined = combined.extend(bounds[i]);
-      map.fitBounds(combined, {padding: [20, 20]});
+      let b = bounds[0];
+      for (let i=1;i<bounds.length;i++) b = b.extend(bounds[i]);
+      map.fitBounds(b, { padding: [20, 20] });
     } else {
-      setStatus("No features drawn");
+      setStatus('No features drawn');
     }
   } catch (err) {
-    setStatus("Error loading map");
+    setStatus('Error loading map');
     log(err);
   }
 })();
