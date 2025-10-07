@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SkyFarm — Map</title>
+  <title>SkyFarm — Property Map</title>
   <link rel="stylesheet" href="skyfarm-shared.css">
 
   <!-- Leaflet -->
@@ -16,18 +16,18 @@
   <script>SkyFarmHeader.mount();</script>
 
   <div class="sf-wrap">
-    <h1>Map</h1>
-    <p id="status">Loading paddocks…</p>
+    <h1>SkyFarm — Property Map</h1>
+    <p id="status">Loading paddock data…</p>
 
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;">
       <div>
         <div id="map" style="height:560px;border:1px solid #e5e7eb;border-radius:12px;"></div>
       </div>
       <aside style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
-        <h3>Data sources</h3>
+        <h3>Data Sources</h3>
         <ul style="padding-left:18px;margin-top:8px;">
-          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank" rel="noopener">consentes_station.json</a></li>
-          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank" rel="noopener">mt_myrtle.json</a></li>
+          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank">consentes_station.json</a></li>
+          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank">mt_myrtle.json</a></li>
         </ul>
         <details style="margin-top:10px;">
           <summary>Log</summary>
@@ -38,55 +38,64 @@
   </div>
 
 <script>
-const SOURCES = ['https://storage.googleapis.com/consentes-maps/consentes_station.json', 'https://storage.googleapis.com/consentes-maps/mt_myrtle.json'];
+const SOURCES = [
+  "https://storage.googleapis.com/consentes-maps/consentes_station.json",
+  "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
+];
 
-function log(msg){
+function log(msg) {
   const el = document.getElementById('log');
   el.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
 }
 
 const statusEl = document.getElementById('status');
-function setStatus(s){ statusEl.textContent = s; }
+function setStatus(s) { statusEl.textContent = s; }
 
-let map = L.map('map').setView([-20.0, 142.5], 6);
+// Initialize Leaflet
+const map = L.map('map').setView([-20.0, 142.5], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '&copy; OpenStreetMap'
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-(async ()=>{
+(async () => {
   try {
     const bounds = [];
     let loaded = 0;
+
     for (const url of SOURCES) {
       try {
-        const resp = await fetch(url, { cache: 'no-store' });
-        if (!resp.ok) throw new Error(resp.status + ' ' + resp.statusText);
-        const data = await resp.json();
-        log('Loaded ' + url);
+        const response = await fetch(url, {cache: 'no-store'});
+        if (!response.ok) throw new Error(response.statusText);
 
+        const data = await response.json();
         if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')) {
-          const gj = L.geoJSON(data);
-          gj.addTo(map);
-          try { bounds.push(gj.getBounds()); } catch(_){}
+          const gj = L.geoJSON(data, {
+            style: {color: '#00897B', weight: 2, fillOpacity: 0.3}
+          }).addTo(map);
+          bounds.push(gj.getBounds());
+          log(`Loaded ${url}`);
         } else {
-          log({warning: 'Not GeoJSON', url});
+          log(`Invalid GeoJSON at ${url}`);
         }
+
         loaded++;
-        setStatus('Loaded ' + loaded + ' of ' + SOURCES.length + ' file(s)');
-      } catch (e) {
-        log('Failed to load ' + url + ': ' + (e.message || e));
+        setStatus(`Loaded ${loaded} of ${SOURCES.length} files`);
+      } catch (err) {
+        log(`Failed to load ${url}: ${err.message}`);
       }
     }
 
     if (bounds.length) {
-      let b = bounds[0];
-      for (let i=1;i<bounds.length;i++) b = b.extend(bounds[i]);
-      map.fitBounds(b, { padding: [12,12] });
+      let combined = bounds[0];
+      for (let i = 1; i < bounds.length; i++) combined = combined.extend(bounds[i]);
+      map.fitBounds(combined, {padding: [20, 20]});
+    } else {
+      setStatus("No features drawn");
     }
-    if (!bounds.length) setStatus('No GeoJSON features drawn');
-  } catch (e) {
-    setStatus('Error initialising map');
-    log(e);
+  } catch (err) {
+    setStatus("Error loading map");
+    log(err);
   }
 })();
 </script>
