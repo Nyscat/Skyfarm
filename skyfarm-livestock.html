@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
 
+<link rel="stylesheet" href="skyfarm-shared.css">
 <style>
   :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; }
   * { box-sizing:border-box; }
@@ -17,34 +18,29 @@
   .wrap { max-width:1200px; margin:0 auto; padding:16px; }
   h1 { margin:12px 0; font-size:1.6rem; }
 
-  /* Header shell (your shared header mounts into #sf-header-root) */
-  #skyfarm-header { position:sticky; top:0; z-index:10; }
-  .spacer { flex:1; }
-  .muted { color:var(--muted); font-size:.9rem; }
-
-  /* Cards / Controls */
   .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
   .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   label { font-size:.9rem; color:#475569; }
   input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+  input[disabled], select[disabled] { background:#f8fafc; color:#64748b; }
   button { cursor:pointer; }
   .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
   .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
   .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
-  .pill { display:inline-block; padding:2px 10px; border-radius:999px; background:#eef2f7; font-size:.85rem; margin:4px 6px 0 0; border:1px solid #e5e7eb; cursor:pointer; }
-  .pill.selected { background:#0B7A6E; color:#fff; border-color:#0B7A6E; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:999px; background:#eef2f7; font-size:.85rem; margin:4px 6px 0 0; border:1px solid #e5e7eb; }
+  .right { text-align:right; }
+  .small { font-size:.9rem; color:#475569; }
+  .w110 { width:110px; } .w140 { width:160px; } .w180 { width:180px; } .w220 { width:220px; }
 
-  /* Table */
   table { width:100%; border-collapse:collapse; }
   th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; }
   th { background:#f1f5f9; }
   .nowrap { white-space:nowrap; }
-  .right { text-align:right; }
-  .w110 { width:110px; } .w140 { width:160px; } .w180 { width:180px; } .w220 { width:220px; }
-  .small { font-size:.9rem; color:#475569; }
-</style>
 
-<link rel="stylesheet" href="skyfarm-shared.css">
+  /* mini badges in summary */
+  .sum-head { font-weight:600; margin:8px 0 4px; }
+</style>
 </head>
 <body>
 <div id="sf-header-root"></div>
@@ -52,10 +48,10 @@
 <script>SkyFarmHeader.mount();</script>
 
 <div class="wrap">
-  <h1>Livestock Management</h1>
+  <h1>Livestock</h1>
 
-  <!-- NEW LIVESTOCK ENTRY FORM -->
-  <div class="card">
+  <!-- ADD NEW -->
+  <div class="card" id="addCard">
     <div class="row">
       <div>
         <label>Property</label><br/>
@@ -98,34 +94,33 @@
     </div>
   </div>
 
-  <!-- FILTER & TABLE -->
+  <!-- FILTERS -->
   <div class="card">
     <div class="row" style="gap:12px">
       <div>
-        <label class="small">Property view</label><br/>
+        <label class="small">View</label><br/>
         <select id="propSel" class="w220">
+          <option value="all">All Properties (Summary)</option>
           <option value="s7PlDM9wrEpxuJ6DGIab">Consentes</option>
           <option value="TRuxtRBx2zJlwZnRGYKJ">Mt Myrtle</option>
           <option value="P0dQ0H2FWHeqqxejflZs">Gerawin</option>
         </select>
       </div>
-      <div>
+      <div id="searchWrap">
         <label class="small">Search</label><br/>
         <input id="search" class="w220" placeholder="paddock / species / class" />
       </div>
       <button id="refreshBtn" class="btn">Refresh</button>
       <button id="exportBtn" class="btn">Export CSV</button>
-      <span class="spacer"></span>
-      <span id="status" class="muted">Loading…</span>
-    </div>
-    <div class="row small">
       <span class="pill" id="countPill">0 rows</span>
       <span class="pill" id="totalPill">Total: 0</span>
+      <span class="muted" id="status" style="margin-left:auto">Loading…</span>
     </div>
   </div>
 
-  <div class="card">
-    <table>
+  <!-- TABLE AREA -->
+  <div class="card" id="tableCard">
+    <table id="rowsTable">
       <thead>
         <tr>
           <th>ID</th>
@@ -139,16 +134,26 @@
       </thead>
       <tbody id="rowsTbody"><tr><td colspan="7">Loading…</td></tr></tbody>
     </table>
-  </div>
 
-  <div class="card">
-    <strong>Totals by Paddock</strong>
-    <div id="totalsByPaddock" class="small" style="margin-top:8px"></div>
+    <!-- SUMMARY TABLE (shown when "all" selected) -->
+    <div id="summaryWrap" style="display:none">
+      <div class="sum-head">Totals across all properties</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Species</th>
+            <th>Class</th>
+            <th class="right">Total head</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
 <script>
-/*** 1) CLASSES & ORDER (single source of truth) ***/
+/*** 1) Class sets & order ***/
 const CLASSES_BY_SPECIES = {
   "Cattle": [
     "PTE Cow","PTIC Cow","Joined Cow",
@@ -160,89 +165,75 @@ const CLASSES_BY_SPECIES = {
   "Sheep": [
     "Cull Ewes","Ewes","Weaner Ewes","Weaner Weathers","Mixed Sex Lambs","Rams","Missing"
   ],
-  // Goats: keep free-text (no fixed order yet)
+  // Goats: free text for now
 };
-
-// Build ordering index per species
 function classIndex(species){
   const arr = CLASSES_BY_SPECIES[species] || [];
   return Object.fromEntries(arr.map((c,i)=>[c,i]));
 }
 function compareByClass(a,b){
-  // Sorts by species -> class order -> location
   const ia = classIndex(a.species)[a.class] ?? 9999;
   const ib = classIndex(b.species)[b.class] ?? 9999;
   if (a.species !== b.species) return a.species.localeCompare(b.species);
   if (ia !== ib) return ia - ib;
-  return String(a.location || '').localeCompare(String(b.location || ''));
+  return String(a.location||'').localeCompare(String(b.location||''));
 }
 
-/*** 2) Firebase setup ***/
-const firebaseConfig = {
+/*** 2) Firebase ***/
+firebase.initializeApp({
   apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
   authDomain: "consentes-pastoral.firebaseapp.com",
   projectId: "consentes-pastoral",
   appId: "1:494858780013:web:d87497b370c82eeab06e64"
-};
-firebase.initializeApp(firebaseConfig);
+});
 const db = firebase.firestore();
 const auth = firebase.auth();
 
 /*** 3) DOM refs ***/
 const $ = s => document.querySelector(s);
-const statusEl=$('#status');
-const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'), newClassHidden=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg');
-const classPillsWrap = $('#classPills');
+const statusEl=$('#status'), countPill=$('#countPill'), totalPill=$('#totalPill');
+const propSel=$('#propSel'), searchInp=$('#search'), searchWrap=$('#searchWrap');
+const refreshBtn=$('#refreshBtn'), exportBtn=$('#exportBtn');
+const tableCard=$('#tableCard'), rowsTbody=$('#rowsTbody');
+const summaryWrap=$('#summaryWrap'), summaryBody=$('#summaryBody');
 
-const propSel=$('#propSel'), searchInp=$('#search'), refreshBtn=$('#refreshBtn'), exportBtn=$('#exportBtn');
-const rowsTbody=$('#rowsTbody'), countPill=$('#countPill'), totalPill=$('#totalPill'), totalsByPaddock=$('#totalsByPaddock');
+const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'), newClassHidden=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg'), classPillsWrap=$('#classPills');
 
 let allRows=[];
 
-/*** 4) Class pill renderer for the Add form ***/
+/*** 4) Add-form pills ***/
 function renderClassPills(species){
   classPillsWrap.innerHTML = '';
   const set = CLASSES_BY_SPECIES[species];
-  if (!set){ // Goats or other → free-text
-    const b = document.createElement('span');
-    b.className = 'muted';
-    b.textContent = 'Enter a custom class in the table after adding (no fixed set for this species).';
-    classPillsWrap.appendChild(b);
-    newClassHidden.value = '';
-    return;
-  }
+  if (!set) { newClassHidden.value=''; classPillsWrap.innerHTML='<span class="muted">Free text for Goats (set after adding).</span>'; return; }
   set.forEach(cls=>{
-    const pill = document.createElement('button');
-    pill.type = 'button';
-    pill.className = 'pill';
-    pill.textContent = cls;
-    pill.onclick = ()=>{
-      newClassHidden.value = cls;
-      classPillsWrap.querySelectorAll('.pill').forEach(x=>x.classList.remove('selected'));
-      pill.classList.add('selected');
+    const b=document.createElement('button');
+    b.type='button'; b.className='btn pill'; b.textContent=cls;
+    b.onclick=()=>{
+      newClassHidden.value=cls;
+      classPillsWrap.querySelectorAll('.pill').forEach(x=>x.style.background='');
+      b.style.background='#0B7A6E'; b.style.color='#fff'; b.style.borderColor='#0B7A6E';
     };
-    classPillsWrap.appendChild(pill);
+    classPillsWrap.appendChild(b);
   });
-  // default to first item
   classPillsWrap.querySelector('.pill')?.click();
 }
-newSpecies.addEventListener('change', ()=> renderClassPills(newSpecies.value));
+newSpecies.onchange = ()=> renderClassPills(newSpecies.value);
 renderClassPills(newSpecies.value);
 
 /*** 5) Init & events ***/
 (async()=>{
-  try{await firebase.firestore().enablePersistence({synchronizeTabs:true});}catch{}
-  // NOTE: if you don’t want anonymous access, swap this for your email/password sign-in.
+  try{await db.enablePersistence({synchronizeTabs:true});}catch{}
   await auth.signInAnonymously();
   propSel.onchange=loadRows;
-  searchInp.oninput=render;
+  searchInp.oninput=renderTable;
   refreshBtn.onclick=loadRows;
   exportBtn.onclick=exportCsv;
   addRowBtn.onclick=addLivestock;
   await loadRows();
 })();
 
-/*** 6) Add livestock row ***/
+/*** 6) Add livestock ***/
 async function addLivestock(){
   const pid=newPropSel.value, location=newLocation.value.trim(), species=newSpecies.value, klass=newClassHidden.value.trim(), count=Number(newCount.value||0);
   if(!location) return alert('Please enter paddock.');
@@ -254,81 +245,146 @@ async function addLivestock(){
       propertyId:pid, location, species, class:klass || '(Unspecified)', count,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-    addMsg.textContent='Added!';
-    newLocation.value=''; newCount.value='';
-    // keep species and class selection as-is for the next add
+    addMsg.textContent='Added!'; newLocation.value=''; newCount.value='';
     await loadRows();
-  }catch(e){
-    console.error(e);
-    addMsg.textContent='Failed to add';
-  }finally{
-    addRowBtn.disabled=false;
-    setTimeout(()=>addMsg.textContent='',3000);
-  }
+  }catch(e){ console.error(e); addMsg.textContent='Failed to add'; }
+  finally{ addRowBtn.disabled=false; setTimeout(()=>addMsg.textContent='',2500); }
 }
 
-/*** 7) Load rows ***/
+/*** 7) Load rows or summary ***/
 async function loadRows(){
-  rowsTbody.innerHTML='<tr><td colspan="7">Loading…</td></tr>'; statusEl.textContent='Loading…';
+  statusEl.textContent='Loading…';
+  rowsTbody.innerHTML='<tr><td colspan="7">Loading…</td></tr>';
+  summaryBody.innerHTML='';
   allRows=[];
+  const mode = propSel.value;
+
+  // toggle UI for summary vs table
+  const summaryMode = (mode === 'all');
+  document.getElementById('addCard').style.display = summaryMode ? 'none' : '';
+  document.getElementById('rowsTable').style.display = summaryMode ? 'none' : '';
+  summaryWrap.style.display = summaryMode ? '' : 'none';
+  searchWrap.style.display = summaryMode ? 'none' : ''; // search only in per-property view
+
   try{
-    const pid=propSel.value;
-    const snap=await db.collection('livestock').where('propertyId','==',pid).get();
+    let snap;
+    if (summaryMode) {
+      snap = await db.collection('livestock').get();
+    } else {
+      snap = await db.collection('livestock').where('propertyId','==',mode).get();
+    }
     snap.forEach(d=>{
       const r=d.data();
       allRows.push({id:d.id,...r,updatedAt:r.updatedAt?.toDate?.()});
     });
-    allRows.sort(compareByClass);
-    render(); statusEl.textContent='Loaded';
-  }catch(e){console.error(e);statusEl.textContent='Error loading';}
+
+    if (summaryMode) {
+      renderSummary(allRows);
+      statusEl.textContent='Loaded';
+    } else {
+      allRows.sort(compareByClass);
+      renderTable();
+      statusEl.textContent='Loaded';
+    }
+  }catch(e){ console.error(e); statusEl.textContent='Error loading'; }
 }
 
-/*** 8) Render table (uses class order; per-row class editor switches by species) ***/
+/*** 8) SUMMARY RENDERER (All Properties) ***/
+function renderSummary(rows){
+  // group by species -> class using your order
+  const totals = {};
+  for (const r of rows) {
+    const species = r.species || '(Unknown)';
+    const cls = r.class || '(Unspecified)';
+    totals[species] = totals[species] || {};
+    totals[species][cls] = (totals[species][cls] || 0) + Number(r.count || 0);
+  }
+
+  // build sorted rows per species
+  summaryBody.innerHTML = '';
+  let grand = 0;
+
+  const speciesList = Object.keys(totals).sort(); // species alphabetic
+  for (const sp of speciesList) {
+    const order = CLASSES_BY_SPECIES[sp] || Object.keys(totals[sp]).sort();
+    for (const cls of order) {
+      if (!(cls in totals[sp])) continue;
+      const sum = totals[sp][cls]; grand += sum;
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(sp)}</td>
+        <td>${escapeHtml(cls)}</td>
+        <td class="right">${sum}</td>`;
+      summaryBody.appendChild(tr);
+    }
+    // include any custom classes not in fixed set
+    for (const cls of Object.keys(totals[sp])) {
+      if ((CLASSES_BY_SPECIES[sp]||[]).includes(cls)) continue;
+      const sum = totals[sp][cls]; grand += 0; // already counted above
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(sp)}</td>
+        <td>${escapeHtml(cls)} (custom)</td>
+        <td class="right">${sum}</td>`;
+      summaryBody.appendChild(tr);
+    }
+  }
+
+  // pills on top
+  countPill.textContent = `${rows.length} rows`;
+  totalPill.textContent = `Grand total: ${speciesList.reduce((a,sp)=>a+Object.values(totals[sp]).reduce((x,y)=>x+y,0),0)}`;
+}
+
+/*** 9) TABLE (Per property) ***/
 function filtered(){
   const q=(searchInp.value||'').toLowerCase();
   if(!q) return allRows;
   return allRows.filter(r=>`${r.location} ${r.species} ${r.class}`.toLowerCase().includes(q));
 }
-function render(){
-  const rows=filtered();
-  countPill.textContent=`${rows.length} rows`;
-  const total=rows.reduce((a,b)=>a+Number(b.count||0),0);
-  totalPill.textContent=`Total: ${total}`;
-  if(!rows.length){rowsTbody.innerHTML='<tr><td colspan="7">No rows</td></tr>';totalsByPaddock.textContent='';return;}
+function renderTable(){
+  const rows = filtered();
+  countPill.textContent = `${rows.length} rows`;
+  totalPill.textContent = `Total: ${rows.reduce((a,b)=>a+Number(b.count||0),0)}`;
+
+  if (!rows.length) { rowsTbody.innerHTML = '<tr><td colspan="7">No rows</td></tr>'; return; }
   rowsTbody.innerHTML='';
-  for(const r of rows){
+
+  for (const r of rows) {
     const tr=document.createElement('tr');
     const updatedStr = r.updatedAt ? r.updatedAt.toLocaleString() : '';
-    tr.innerHTML=`
+    tr.innerHTML = `
       <td class="small">${String(r.id).slice(0,6)}…</td>
-      <td><input class="loc" value="${escapeHtml(r.location||'')}" /></td>
+      <td><input class="loc" value="${escapeHtml(r.location||'')}" disabled /></td>
       <td>
-        <select class="spec w140">
+        <select class="spec w140" disabled>
           <option ${r.species==='Cattle'?'selected':''}>Cattle</option>
           <option ${r.species==='Sheep'?'selected':''}>Sheep</option>
           <option ${r.species==='Goats'?'selected':''}>Goats</option>
         </select>
       </td>
       <td class="clsCell"></td>
-      <td class="right"><input type="number" class="cnt w110" value="${Number(r.count||0)}" /></td>
+      <td class="right"><input type="number" class="cnt w110" value="${Number(r.count||0)}" disabled /></td>
       <td class="small">${updatedStr}</td>
-      <td><button class="btn primary" data-s>Save</button> <button class="btn danger" data-d>Delete</button></td>`;
+      <td>
+        <button class="btn" data-edit>Edit</button>
+        <button class="btn primary" data-save style="display:none">Save</button>
+        <button class="btn" data-cancel style="display:none">Cancel</button>
+        <button class="btn danger" data-del>Delete</button>
+      </td>`;
 
-    // Build class editor suited to species
     const clsCell = tr.querySelector('.clsCell');
-    const buildClassEditor = (species, val) => {
+    const buildClassEditor = (species, val, disabled) => {
       clsCell.innerHTML='';
       const set = CLASSES_BY_SPECIES[species];
       if (set) {
         const sel = document.createElement('select');
         sel.className = 'w180 cls';
+        sel.disabled = !!disabled;
         set.forEach(c=>{
           const opt=document.createElement('option');
-          opt.textContent=c; opt.value=c;
-          if (c===val) opt.selected=true;
+          opt.textContent=c; opt.value=c; if (c===val) opt.selected=true;
           sel.appendChild(opt);
         });
-        // If existing value isn’t in the fixed set, append it at end
         if (val && !set.includes(val)) {
           const opt=document.createElement('option');
           opt.textContent=val + ' (custom)'; opt.value=val; opt.selected=true;
@@ -337,50 +393,50 @@ function render(){
         clsCell.appendChild(sel);
       } else {
         const inp = document.createElement('input');
-        inp.className='w180 cls';
-        inp.value = val || '';
+        inp.className='w180 cls'; inp.value = val || ''; inp.disabled = !!disabled;
         clsCell.appendChild(inp);
       }
     };
-    buildClassEditor(r.species, r.class);
+    buildClassEditor(r.species, r.class, true);
 
-    // react to species change (swap class options)
-    tr.querySelector('.spec').addEventListener('change', (ev)=>{
-      buildClassEditor(ev.target.value, '');
-    });
+    const locEl=tr.querySelector('.loc'), specEl=tr.querySelector('.spec'), clsEl=()=>tr.querySelector('.cls'), cntEl=tr.querySelector('.cnt');
+    const btnEdit=tr.querySelector('[data-edit]'), btnSave=tr.querySelector('[data-save]'), btnCancel=tr.querySelector('[data-cancel]'), btnDel=tr.querySelector('[data-del]');
 
-    tr.querySelector('[data-s]').onclick=()=>saveRow(r.id,tr);
-    tr.querySelector('[data-d]').onclick=()=>deleteRow(r.id);
+    function setEditable(on){
+      locEl.disabled = !on; specEl.disabled = !on; cntEl.disabled = !on;
+      buildClassEditor(specEl.value, clsEl().value, !on);
+      btnEdit.style.display = on ? 'none' : '';
+      btnSave.style.display = on ? '' : 'none';
+      btnCancel.style.display = on ? '' : 'none';
+    }
+    specEl.addEventListener('change', ()=> { if (!specEl.disabled) buildClassEditor(specEl.value, '', specEl.disabled); });
+
+    btnEdit.onclick = ()=> setEditable(true);
+    btnCancel.onclick = ()=> loadRows();
+    btnSave.onclick = async ()=>{
+      const spec=specEl.value;
+      const cls = (clsEl().tagName==='SELECT') ? clsEl().value : clsEl().value.trim();
+      const cnt=Number(cntEl.value||0);
+      await db.collection('livestock').doc(r.id).set({
+        location:locEl.value.trim(), species:spec, class:cls, count:cnt,
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+      await loadRows();
+    };
+    btnDel.onclick = async()=>{ if(confirm('Delete this row?')){ await db.collection('livestock').doc(r.id).delete(); await loadRows(); } };
+
     rowsTbody.appendChild(tr);
   }
-
-  // Totals by paddock
-  const totals={};
-  for(const r of rows){totals[r.location]=(totals[r.location]||0)+Number(r.count||0);}
-  totalsByPaddock.innerHTML=Object.entries(totals).map(([loc,sum])=>`<span class="pill">${escapeHtml(loc)}: ${sum}</span>`).join(' ');
 }
 
-/*** 9) Save / Delete / Export ***/
-async function saveRow(id,tr){
-  const loc=tr.querySelector('.loc').value.trim();
-  const spec=tr.querySelector('.spec').value;
-  const clsEl=tr.querySelector('.cls');
-  const cls = (clsEl.tagName==='SELECT') ? clsEl.value : clsEl.value.trim();
-  const cnt=Number(tr.querySelector('.cnt').value||0);
-  if(cnt<0) return alert('Invalid count');
-  await db.collection('livestock').doc(id).set({
-    location:loc,species:spec,class:cls,count:cnt,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-  await loadRows();
-}
-async function deleteRow(id){
-  if(!confirm('Delete this row?'))return;
-  await db.collection('livestock').doc(id).delete();
-  await loadRows();
-}
+/*** 10) Export CSV ***/
 function exportCsv(){
-  const rows=filtered();
+  const mode = propSel.value;
+  if (mode === 'all') {
+    alert('Export is for per-property view. Select a property to export paddock rows.');
+    return;
+  }
+  const rows = filtered();
   const propName=propSel.selectedOptions[0]?.textContent||'';
   const head='Property,Paddock,Species,Class,Count,DocID';
   const lines=rows.map(r=>[propName,r.location,r.species,r.class,r.count,r.id].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
@@ -388,8 +444,9 @@ function exportCsv(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`livestock_${propName}.csv`;a.click();
 }
 
-/*** 10) Utils ***/
+/*** utils ***/
 const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
 </script>
 </body>
 </html>
