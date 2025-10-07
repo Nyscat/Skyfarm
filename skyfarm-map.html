@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SkyFarm — Property Map</title>
-  <link rel="stylesheet" href="skyfarm-shared.css">
+  <link rel="stylesheet" href="skyfarm-shared.css" />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
@@ -13,21 +13,21 @@
 <body>
   <div id="sf-header-root"></div>
   <script src="skyfarm-header.js"></script>
-  <script>SkyFarmHeader.mount();</script>
+  <script>SkyFarmHeader.mount?.();</script>
 
   <div class="sf-wrap">
     <h1>SkyFarm — Property Map</h1>
     <p id="status">Loading paddock data…</p>
 
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
       <div>
         <div id="map" style="height:560px;border:1px solid #e5e7eb;border-radius:12px;"></div>
       </div>
       <aside style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
         <h3>Data Sources</h3>
         <ul style="padding-left:18px;margin-top:8px;">
-          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank">consentes_station.json</a></li>
-          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank">mt_myrtle.json</a></li>
+          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank" rel="noopener">consentes_station.json</a></li>
+          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank" rel="noopener">mt_myrtle.json</a></li>
         </ul>
         <details style="margin-top:10px;">
           <summary>Log</summary>
@@ -38,63 +38,77 @@
   </div>
 
 <script>
-const SOURCES = [
+const SOURCES_PRIMARY = [
   "https://storage.googleapis.com/consentes-maps/consentes_station.json",
   "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
 ];
-
-function log(msg) {
-  const el = document.getElementById('log');
-  el.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
-}
+// Fallback copies you place in your repo:
+//   /maps/consentes_station.json
+//   /maps/mt_myrtle.json
+const SOURCES_FALLBACK = [
+  "maps/consentes_station.json",
+  "maps/mt_myrtle.json"
+];
 
 const statusEl = document.getElementById('status');
-function setStatus(s) { statusEl.textContent = s; }
+const logEl = document.getElementById('log');
 
-// Initialize Leaflet
+function setStatus(s){ statusEl.textContent = s; }
+function log(msg){
+  logEl.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
+}
+
 const map = L.map('map').setView([-20.0, 142.5], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors'
+  maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-(async () => {
+async function fetchWithFallback(primary, fallback){
+  // Try primary (GCS). If fetch fails (e.g., CORS), try local fallback.
+  try {
+    const r = await fetch(primary, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    log(`Loaded ${primary}`);
+    return await r.json();
+  } catch (e) {
+    log(`Primary failed (${primary}): ${e.message}. Trying fallback: ${fallback}`);
+    const r2 = await fetch(fallback, { cache: 'no-store' });
+    if (!r2.ok) throw new Error(`Fallback HTTP ${r2.status}`);
+    log(`Loaded fallback ${fallback}`);
+    return await r2.json();
+  }
+}
+
+(async ()=>{
   try {
     const bounds = [];
     let loaded = 0;
 
-    for (const url of SOURCES) {
+    for (let i=0;i<SOURCES_PRIMARY.length;i++){
       try {
-        const response = await fetch(url, {cache: 'no-store'});
-        if (!response.ok) throw new Error(response.statusText);
-
-        const data = await response.json();
+        const data = await fetchWithFallback(SOURCES_PRIMARY[i], SOURCES_FALLBACK[i]);
         if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')) {
-          const gj = L.geoJSON(data, {
-            style: {color: '#00897B', weight: 2, fillOpacity: 0.3}
-          }).addTo(map);
-          bounds.push(gj.getBounds());
-          log(`Loaded ${url}`);
+          const gj = L.geoJSON(data, { style: { color:'#00897B', weight:2, fillOpacity:.25 } }).addTo(map);
+          try { bounds.push(gj.getBounds()); } catch(_) {}
+          loaded++;
+          setStatus(`Loaded ${loaded} of ${SOURCES_PRIMARY.length} files`);
         } else {
-          log(`Invalid GeoJSON at ${url}`);
+          log(`Invalid GeoJSON at index ${i}`);
         }
-
-        loaded++;
-        setStatus(`Loaded ${loaded} of ${SOURCES.length} files`);
       } catch (err) {
-        log(`Failed to load ${url}: ${err.message}`);
+        log(`Failed to load index ${i}: ${err.message}`);
       }
     }
 
     if (bounds.length) {
-      let combined = bounds[0];
-      for (let i = 1; i < bounds.length; i++) combined = combined.extend(bounds[i]);
-      map.fitBounds(combined, {padding: [20, 20]});
+      let b = bounds[0];
+      for (let i=1;i<bounds.length;i++) b = b.extend(bounds[i]);
+      map.fitBounds(b, { padding: [20,20] });
     } else {
-      setStatus("No features drawn");
+      setStatus('No features drawn');
     }
   } catch (err) {
-    setStatus("Error loading map");
+    setStatus('Error loading map');
     log(err);
   }
 })();
