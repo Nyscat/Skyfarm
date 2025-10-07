@@ -49,6 +49,8 @@
 <script src="skyfarm-header.js"></script>
 <script>SkyFarmHeader.mount();</script>
 
+
+<script>SkyFarmAuth.requireAuth();</script>
 <!-- SkyFarm mini header/nav -->
 
 <script>
@@ -228,7 +230,7 @@ const cfg = {
     firebase.initializeApp(cfg);
     db = firebase.firestore();
     try{ await firebase.firestore().enablePersistence({synchronizeTabs:true}); }catch(_){}
-    await firebase.auth().signInAnonymously();
+    await // anonymous sign-in removed
     document.getElementById('status').textContent = 'Connected';
   }catch(e){
     document.getElementById('status').textContent = 'Auth failed';
@@ -616,6 +618,21 @@ layerToggle.addEventListener('change', ()=>{
   try{ await loadLocalJSON('./consentes_station-2025-10-04_13-07-19.json','Consentes + Gerawin'); }catch(_){}
   try{ await loadLocalJSON('./mt_myrtle-2025-10-04_13-07-08.json','Mt Myrtle'); }catch(_){}
 })();
+</script>
+
+
+<script>
+window.addEventListener('skyfarm:authorized', async (ev)=>{
+  try {
+    if (typeof initMapAndData === 'function') {
+      await initMapAndData();
+    }
+  } catch (e) {
+    console.error('Map init error:', e);
+    const statusEl = document.getElementById('status');
+    if (statusEl) statusEl.textContent = 'Map init error';
+  }
+});
 </script>
 
 </body>
