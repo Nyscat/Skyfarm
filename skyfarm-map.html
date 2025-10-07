@@ -4,106 +4,130 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SkyFarm — Property Map</title>
+
+  <!-- Optional shared styles/header (safe if missing) -->
   <link rel="stylesheet" href="skyfarm-shared.css" />
 
   <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:#f6fbf8; margin:0; color:#0f172a; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    h1 { margin: 12px 0; font-size: 1.6rem; }
+    .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
+  </style>
 </head>
 <body>
+  <!-- Optional site header -->
   <div id="sf-header-root"></div>
   <script src="skyfarm-header.js"></script>
-  <script>SkyFarmHeader.mount?.();</script>
+  <script>window.SkyFarmHeader?.mount?.();</script>
 
-  <div class="sf-wrap">
+  <div class="wrap">
     <h1>SkyFarm — Property Map</h1>
     <p id="status">Loading paddock data…</p>
 
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
-      <div>
-        <div id="map" style="height:560px;border:1px solid #e5e7eb;border-radius:12px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
+      <div class="panel" style="padding:0;">
+        <div id="map" style="height:560px;border-radius:12px;"></div>
       </div>
-      <aside style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
+
+      <aside class="panel">
         <h3>Data Sources</h3>
         <ul style="padding-left:18px;margin-top:8px;">
           <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank" rel="noopener">consentes_station.json</a></li>
           <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank" rel="noopener">mt_myrtle.json</a></li>
         </ul>
+
         <details style="margin-top:10px;">
           <summary>Log</summary>
-          <pre id="log" style="white-space:pre-wrap;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px;max-height:220px;overflow:auto;"></pre>
+          <pre id="log" style="white-space:pre-wrap;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px;max-height:240px;overflow:auto;"></pre>
         </details>
+
+        <div style="margin-top:10px;font-size:.9rem;color:#475569;">
+          Tip: keep a copy of your JSONs in <code>/maps/</code>:
+          <div class="panel" style="margin-top:6px">
+            <code>/maps/consentes_station.json</code><br>
+            <code>/maps/mt_myrtle.json</code>
+          </div>
+          The page will auto-fallback to those if cloud fetches are blocked.
+        </div>
       </aside>
     </div>
   </div>
 
 <script>
-const SOURCES_PRIMARY = [
+/* --------- config --------- */
+const CLOUD_URLS = [
   "https://storage.googleapis.com/consentes-maps/consentes_station.json",
-  "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
-];
-// Fallback copies you place in your repo:
-//   /maps/consentes_station.json
-//   /maps/mt_myrtle.json
-const SOURCES_FALLBACK = [
-  "maps/consentes_station.json",
-  "maps/mt_myrtle.json"
+  "https://storage.googleapis.com/consentes-maps/mt_myrtle.json",
 ];
 
+const LOCAL_FALLBACKS = [
+  "maps/consentes_station.json",
+  "maps/mt_myrtle.json",
+];
+
+/* --------- helpers --------- */
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
-
 function setStatus(s){ statusEl.textContent = s; }
-function log(msg){
-  logEl.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
-}
+function log(msg){ logEl.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n"; }
 
+/* --------- map --------- */
 const map = L.map('map').setView([-20.0, 142.5], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-async function fetchWithFallback(primary, fallback){
-  // Try primary (GCS). If fetch fails (e.g., CORS), try local fallback.
+/* --------- fetching with fallback --------- */
+async function fetchWithFallback(primaryUrl, fallbackUrl){
   try {
-    const r = await fetch(primary, { cache: 'no-store' });
+    const r = await fetch(primaryUrl, { cache: 'no-store' });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    log(`Loaded ${primary}`);
+    log(`Loaded ${primaryUrl}`);
     return await r.json();
   } catch (e) {
-    log(`Primary failed (${primary}): ${e.message}. Trying fallback: ${fallback}`);
-    const r2 = await fetch(fallback, { cache: 'no-store' });
+    log(`Primary failed: ${primaryUrl}\n→ ${e.message}\nTrying fallback: ${fallbackUrl}`);
+    const r2 = await fetch(fallbackUrl, { cache: 'no-store' });
     if (!r2.ok) throw new Error(`Fallback HTTP ${r2.status}`);
-    log(`Loaded fallback ${fallback}`);
+    log(`Loaded fallback ${fallbackUrl}`);
     return await r2.json();
   }
 }
 
-(async ()=>{
+/* --------- main --------- */
+(async () => {
   try {
     const bounds = [];
     let loaded = 0;
 
-    for (let i=0;i<SOURCES_PRIMARY.length;i++){
+    for (let i = 0; i < CLOUD_URLS.length; i++){
       try {
-        const data = await fetchWithFallback(SOURCES_PRIMARY[i], SOURCES_FALLBACK[i]);
+        const data = await fetchWithFallback(CLOUD_URLS[i], LOCAL_FALLBACKS[i]);
         if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')) {
-          const gj = L.geoJSON(data, { style: { color:'#00897B', weight:2, fillOpacity:.25 } }).addTo(map);
-          try { bounds.push(gj.getBounds()); } catch(_) {}
+          const layer = L.geoJSON(data, {
+            style: { color:'#00897B', weight:2, fillOpacity:.25 }
+          }).addTo(map);
+
+          try { bounds.push(layer.getBounds()); } catch(_){}
           loaded++;
-          setStatus(`Loaded ${loaded} of ${SOURCES_PRIMARY.length} files`);
+          setStatus(`Loaded ${loaded} of ${CLOUD_URLS.length} files`);
         } else {
           log(`Invalid GeoJSON at index ${i}`);
         }
       } catch (err) {
-        log(`Failed to load index ${i}: ${err.message}`);
+        log(`Failed to load source ${i}: ${err.message}`);
       }
     }
 
-    if (bounds.length) {
+    if (bounds.length){
       let b = bounds[0];
       for (let i=1;i<bounds.length;i++) b = b.extend(bounds[i]);
-      map.fitBounds(b, { padding: [20,20] });
+      map.fitBounds(b, { padding:[20,20] });
     } else {
       setStatus('No features drawn');
     }
