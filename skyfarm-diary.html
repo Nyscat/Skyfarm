@@ -5,772 +5,457 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SkyFarm — Diary</title>
 
-  <!-- Firebase (compat) -->
+  <!-- Firebase compat SDKs (same major as your Chemicals page) -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
   <style>
     :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); margin:0; color:var(--ink); }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
-    h1 { margin: 12px 0; font-size: 1.6rem; }
+    * { box-sizing:border-box; }
+    html,body { height:100%; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+           margin:0; background:var(--bg); color:var(--ink); }
 
-    /* Header (simple, like Chemical page) */
-    #skyfarm-header { position:sticky; top:0; z-index:10; }
-    #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
-    #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
-    #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
-    #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
+    /* Header (match Chemicals look) */
+    #sf-header { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line); }
+    #sf-header .bar { display:flex; align-items:center; gap:14px; padding:10px 16px; }
+    #sf-header .brand { display:flex; align-items:center; gap:8px; color:var(--brand); text-decoration:none; font-weight:700; }
+    #sf-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+    #sf-header nav a[aria-current="page"] { text-decoration:underline; }
     .spacer { flex:1; }
     .muted { color:var(--muted); font-size:.9rem; }
-    .hidden { display:none; }
-    .small { font-size:.9rem; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; border:1px solid #cbd5e1; }
 
-    /* Cards / Controls */
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    h1 { margin: 10px 0 14px; font-size: 1.6rem; }
+
     .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0; }
     .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
-    label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
-    input, select, button, textarea { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
+    label { display:block; font-size:.9rem; color:#475569; margin-bottom:4px; }
+    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
     button { cursor:pointer; }
     .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
     .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
     .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
     .disabled { opacity:.55; pointer-events:none; }
+    .small { font-size:.9rem; }
+    .w110 { width:110px; } .w140 { width:140px; } .w200 { width:200px; } .w240 { width:240px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; border:1px solid #cbd5e1; }
 
     table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; font-size: .95rem; }
-    th { background:#f1f5f9; position: sticky; top: 0; z-index: 1; }
-    .nowrap { white-space: nowrap; }
-    .w80 { width:80px; } .w110 { width:110px; } .w140 { width:140px; } .w200 { width:200px; } .w240 { width:240px; }
+    th, td { border-bottom:1px solid var(--line); padding:8px; text-align:left; vertical-align:top; }
+    th { background:#f1f5f9; }
 
-    /* Auth overlay */
-    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+    /* Action queue */
+    #actionQueue { margin-top:8px; }
+    #actionQueue .item { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px; border:1px dashed #d1d5db; border-radius:10px; background:#fafafa; }
+    #actionQueue .item .meta { font-size:.9rem; color:#334155; }
+    #actionQueue .item .remove { margin-left:auto; }
+
+    /* Sign-in overlay */
+    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.08); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 8px}
-    .status-bad{color:#b45309}
   </style>
 </head>
 <body>
-
-<!-- Header -->
-<div id="skyfarm-header">
-  <div class="bar">
-    <a class="brand" href="index.html">🌱 SkyFarm</a>
-    <nav>
-      <a href="skyfarm-diary.html" aria-current="page">Diary</a>
-      <a href="skyfarm-chemical.html">Chemicals</a>
-      <a href="skyfarm-map.html">Map</a>
-    </nav>
-    <span class="spacer"></span>
-    <span id="authWho" class="muted">Checking sign-in…</span>
-    <button id="signOutBtn" class="danger hidden">Sign out</button>
-  </div>
-</div>
-
-<div class="wrap">
-  <h1>Diary</h1>
-
-  <!-- Entry form -->
-  <div class="card">
-    <div class="row">
-      <div>
-        <label>Property</label>
-        <select id="propSel" class="w240"></select>
-      </div>
-      <div>
-        <label>Date</label>
-        <input id="dateInp" type="date"/>
-      </div>
-      <div>
-        <label>Time</label>
-        <input id="timeInp" type="time"/>
-      </div>
-      <div>
-        <label>Activity</label>
-        <select id="activitySel" class="w240">
-          <option>Mustering / Moving stock</option>
-          <option>Trucking (sales/transfer)</option>
-          <option>Ploughing</option>
-          <option>Planting</option>
-          <option>Spraying</option>
-          <option>General note</option>
-        </select>
-      </div>
+  <!-- Simple header (matches Chemicals page) -->
+  <header id="sf-header">
+    <div class="bar">
+      <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+      <nav>
+        <a href="skyfarm-diary.html" aria-current="page">Diary</a>
+        <a href="skyfarm-map.html">Map</a>
+        <a href="skyfarm-chemical.html">Chemicals</a>
+      </nav>
       <span class="spacer"></span>
-      <div>
-        <label>&nbsp;</label>
-        <span id="status" class="muted">—</span>
-      </div>
+      <span id="authWho" class="muted">Checking sign-in…</span>
+      <button id="signOutBtn" class="btn danger" style="display:none;">Sign out</button>
     </div>
+  </header>
 
-    <div class="row">
-      <div style="min-width:260px">
-        <label>Paddock</label>
-        <select id="paddockSel" class="w240"><option value="">(choose)</option></select>
-        <div class="small muted" id="paddockHint">Yards are shown first.</div>
-      </div>
-      <div style="flex:1; min-width:260px">
-        <label>Notes</label>
-        <input id="notesInp" placeholder="optional"/>
-      </div>
-    </div>
+  <div class="wrap">
+    <h1>Diary</h1>
 
-    <!-- Stock details -->
-    <div class="row" id="stockRow" style="display:none">
-      <div>
-        <label>Species</label>
-        <select id="speciesSel">
-          <option value="Cattle">Cattle</option>
-          <option value="Sheep">Sheep</option>
-          <option value="Goats">Goats</option>
-        </select>
-      </div>
-      <div>
-        <label>Class</label>
-        <input id="classInp" placeholder="e.g. Weaners" class="w200" list="classOptions"/>
-        <datalist id="classOptions"></datalist>
-      </div>
-      <div>
-        <label>Head</label>
-        <input id="headInp" type="number" min="0" step="1" class="w110"/>
-      </div>
-      <div id="truckBuyerBox">
-        <label>Buyer / Dest</label>
-        <input id="truckBuyer" placeholder="e.g. Roma Saleyards" class="w200"/>
-      </div>
-      <div id="truckRefBox">
-        <label>Docket / Ref</label>
-        <input id="truckRef" placeholder="NVD / docket" class="w200"/>
-      </div>
-    </div>
-
-    <!-- Live paddock stock context (chips) -->
-    <div id="stockContext" class="row small" style="gap:6px; color:#334155;"></div>
-
-    <!-- Mustering section -->
-    <div id="musterBox" class="card hidden" style="margin-top:8px">
-      <div class="row"><strong>Mustering details</strong></div>
-      <div class="row small" id="musterContext" style="gap:6px; color:#334155;"></div>
-
+    <div class="card">
       <div class="row">
         <div>
-          <label>Expected (auto)</label>
-          <input id="mExp" type="number" class="w110" disabled/>
+          <label>Property</label>
+          <select id="propSel" class="w240"></select>
         </div>
         <div>
-          <label>Actual</label>
-          <input id="mAct" type="number" class="w110"/>
+          <label>Date</label>
+          <input id="dateInp" type="date" class="w140"/>
         </div>
         <div>
-          <label>Delta (auto)</label>
-          <input id="mDelta" type="number" class="w110" disabled/>
+          <label>Time</label>
+          <input id="timeInp" type="time" class="w110"/>
+        </div>
+        <div>
+          <label>Activity</label>
+          <select id="activitySel" class="w240">
+            <option>Mustering / Moving stock</option>
+            <option>Trucking (sale)</option>
+            <option>Transfer stock (Out)</option>
+            <option>Transfer stock (In)</option>
+            <option>Spraying paddocks</option>
+            <option>Chemical (stock)</option>
+            <option>Ploughing</option>
+            <option>Planting</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <span class="spacer"></span>
+        <div class="muted small" id="status">—</div>
+      </div>
+
+      <div class="row">
+        <div style="min-width:260px">
+          <label>Paddock</label>
+          <select id="paddockSel" class="w240"><option value="">(choose)</option></select>
+          <div class="small muted">Yards paddocks appear first.</div>
         </div>
         <div style="flex:1; min-width:260px">
-          <label>Reason / notes</label>
-          <input id="mReason" placeholder="e.g. counted late, moved to North 2…"/>
+          <label>Notes</label>
+          <input id="notesInp" placeholder="optional"/>
         </div>
       </div>
 
       <div class="row">
+        <button id="addActionBtn" class="btn">Add action</button>
+        <button id="saveAllBtn" class="primary">Save all actions</button>
+        <span id="msg" class="muted"></span>
+        <span class="spacer"></span>
+        <button id="resetBtn" class="btn">Reset form</button>
+      </div>
+
+      <!-- Action queue preview -->
+      <div id="actionQueue" class="row" style="display:none; flex-direction:column; gap:8px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <strong>Recent entries</strong>
+        <span class="spacer"></span>
         <div>
-          <label>Add calves</label>
-          <input id="mAddCalves" type="number" class="w110"/>
+          <label>Year</label>
+          <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
         </div>
-        <div>
-          <label>Add weaners</label>
-          <input id="mAddWeaners" type="number" class="w110"/>
-        </div>
+        <button id="refreshBtn" class="btn">Refresh</button>
       </div>
-
-      <div class="row"><strong>Classes in paddock</strong></div>
-      <div class="row" style="overflow:auto">
-        <table id="mClassTable" style="min-width:720px">
-          <thead>
-            <tr>
-              <th>Class</th>
-              <th>Current</th>
-              <th>New count (optional)</th>
-              <th>Reclass to</th>
-              <th>Qty</th>
-              <th>Missing</th>
-            </tr>
-          </thead>
-          <tbody id="mClassBody"><tr><td colspan="6" class="muted">Pick property + paddock + species…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="muted">Set a <em>New count</em> to overwrite a class total, or use <em>Reclass to + Qty</em> to move headcounts between classes. Use <em>Missing</em> for stock not found.</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="entriesTbody"><tr><td colspan="5">Loading…</td></tr></tbody>
+      </table>
     </div>
-
-    <!-- Multi-action controls -->
-    <div class="row">
-      <button id="addActionBtn" class="btn" type="button">Add action</button>
-      <button id="saveBatchBtn" class="primary" type="button">Save all actions</button>
-      <span id="batchMsg" class="muted"></span>
-      <span class="spacer"></span>
-      <button id="resetBtn" class="btn" type="button">Reset form</button>
-    </div>
-
-    <div id="actionsList" class="card small" style="display:none">
-      <strong>Actions queued for this day</strong>
-      <ol id="actionsOl" style="margin-top:6px"></ol>
-    </div>
-    <span id="msg" class="muted" aria-live="polite"></span>
   </div>
 
-  <!-- Recent entries -->
-  <div class="card">
-    <div class="row">
-      <strong>Recent entries</strong>
-      <span class="spacer"></span>
-      <div>
-        <label>Year</label>
-        <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
-      </div>
-      <button id="refreshBtn" class="btn" type="button">Refresh</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
-        </tr>
-      </thead>
-      <tbody id="entriesTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Email/Password Auth Overlay -->
-<div id="authOverlay">
-  <div id="authCard">
-    <h2>Sign in to SkyFarm</h2>
-    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div class="row">
-      <div style="flex:1; min-width:260px">
-        <label>Email</label>
-        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
-      </div>
-      <div style="flex:1; min-width:220px">
-        <label>Password</label>
-        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
-      </div>
-    </div>
-    <div class="row">
-      <button id="signInBtn" class="primary" type="button">Sign in</button>
-      <span id="authMsg" class="muted"></span>
-      <span class="spacer"></span>
-      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
-    </div>
-  </div>
-</div>
-
-<script>
-/* -------------------------------------------------------
-   Firebase init (compat)
-------------------------------------------------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",  // <-- uppercase I
-  authDomain: "consentes-pastoral.firebaseapp.com",
-  projectId: "consentes-pastoral",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64"
-};
-firebase.initializeApp(firebaseConfig);
-const db   = firebase.firestore();
-const auth = firebase.auth();
-
-  <script>
-// ------- Sign-in overlay helpers -------
-const overlay = document.getElementById('authOverlay');
-const showOverlay = (show) => { overlay.style.display = show ? 'flex' : 'none'; };
-
-async function requireSignedIn() {
-  return new Promise((resolve) => {
-    firebase.auth().onAuthStateChanged(async (u) => {
-      const who = document.getElementById('authState') || document.getElementById('status'); // optional label you may have
-      if (u) {
-        if (who) who.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
-        showOverlay(false);
-        try {
-          // refresh paddocks/entries after successful login (you already have these functions)
-          if (typeof onPropertyChange === 'function') await onPropertyChange();
-          if (typeof refreshEntries === 'function') await refreshEntries();
-        } catch (e) { console.warn(e); }
-        resolve(true);
-      } else {
-        if (who) who.textContent = 'Not signed in';
-        showOverlay(true);
-        resolve(false);
-      }
-    });
-  });
-}
-
-// ------- Wire up the overlay buttons -------
-document.getElementById('signInBtn').onclick = async () => {
-  const email = (document.getElementById('siEmail').value || '').trim();
-  const pass  = document.getElementById('siPass').value || '';
-  const msgEl = document.getElementById('authMsg');
-  msgEl.textContent = 'Signing in…';
-  try {
-    await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    await firebase.auth().signInWithEmailAndPassword(email, pass);
-    msgEl.textContent = 'Signed in.';
-    showOverlay(false);
-  } catch (e) {
-    msgEl.textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown error');
-  }
-};
-document.getElementById('closeOverlayBtn').onclick = () => showOverlay(false);
-
-// ------- Kick off auth check on load -------
-requireSignedIn();
-</script>
-/* -------------------------------------------------------
-   Helpers & Constants
-------------------------------------------------------- */
-const $ = s => document.querySelector(s);
-const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
-const errText = e => e?.message || e?.code || 'Unknown error';
-const todayISO = () => new Date().toISOString().slice(0,10);
-const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-const yBounds = (y)=>({ start:`${y}-01-01`, end:`${y}-12-31` });
-
-const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
-
-const propertyIds = {
-  "Consentes": "s7PIDM9wrEpxuJ6DGlab",   // ✅ correct ID
-  "Mt Myrtle": "TRuxtRBx2zJIwZnRGYKJ",    // ✅ correct ID
-  "Gerawin": "P0dQ0H2FWHeqqxejfJzS"       // ✅ correct ID
-};
-  
-const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
-
-/* -------------------------------------------------------
-   Auth (email/password only)
-------------------------------------------------------- */
-const overlay = $('#authOverlay');
-const signOutBtn = $('#signOutBtn');
-const authWho = $('#authWho');
-
-function showOverlay(show){ overlay.style.display = show ? 'flex' : 'none'; }
-
-$('#signInBtn').onclick = async ()=>{
-  const email = $('#siEmail').value.trim();
-  const pass  = $('#siPass').value;
-  $('#authMsg').textContent = 'Signing in…';
-  try{
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    await auth.signInWithEmailAndPassword(email, pass);
-    $('#authMsg').textContent = 'Signed in.';
-    showOverlay(false);
-    await afterSignedIn();
-  }catch(e){
-    $('#authMsg').textContent = 'Sign-in failed: ' + errText(e);
-  }
-};
-
-$('#signOutBtn').onclick = async ()=>{ 
-  try{ await auth.signOut(); location.reload(); }catch(e){} 
-};
-
-$('#closeOverlayBtn').onclick = ()=>{ showOverlay(false); };
-
-function requireSignedIn(){
-  return new Promise(resolve=>{
-    auth.onAuthStateChanged(async u=>{
-      if(u){
-        authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
-        signOutBtn.classList.remove('hidden');
-        showOverlay(false);
-        await afterSignedIn();
-        resolve(true);
-      }else{
-        authWho.textContent = 'Not signed in';
-        signOutBtn.classList.add('hidden');
-        showOverlay(true);
-        resolve(false);
-      }
-    });
-  });
-}
-
-async function afterSignedIn(){
-  // Load paddocks for selected property, refresh entries
-  await loadPaddocksForProperty($('#propSel').value);
-  await refreshEntries();
-}
-
-/* -------------------------------------------------------
-   Elements
-------------------------------------------------------- */
-const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'), activitySel = $('#activitySel');
-const paddockSel = $('#paddockSel'), notesInp = $('#notesInp');
-const speciesSel = $('#speciesSel'), classInp = $('#classInp'), headInp = $('#headInp');
-const truckBuyer = $('#truckBuyer'), truckRef = $('#truckRef');
-const stockRow = $('#stockRow'), stockContext = $('#stockContext');
-const musterBox = $('#musterBox'), mExp=$('#mExp'), mAct=$('#mAct'), mDelta=$('#mDelta'), mReason=$('#mReason'),
-      mAddCalves=$('#mAddCalves'), mAddWeaners=$('#mAddWeaners'), mClassBody=$('#mClassBody'), musterContext=$('#musterContext');
-const entriesTbody = $('#entriesTbody');
-const yearInp = $('#yearInp');
-
-/* -------------------------------------------------------
-   Property + Paddocks
-------------------------------------------------------- */
-function initProperties(){
-  propSel.innerHTML =
-    '<option value="ALL">(All properties)</option>' +
-    Object.entries(PROPERTY_IDS).map(([name,id]) => `<option value="${id}">${name}</option>`).join('');
-  propSel.value = PROPERTY_IDS["Mt Myrtle"]; // default
-}
-
-async function loadPaddocksForProperty(propertyId){
-  if (!auth.currentUser) return; // rules likely need auth
-  if (!propertyId || propertyId === 'ALL') {
-    paddockSel.innerHTML = '<option value="">(choose a property)</option>';
-    return;
-  }
-  paddockSel.innerHTML = '<option value="">(loading…)</option>';
-  try {
-    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
-    const rows = [];
-    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
-
-    // Sort: yards first, then by name
-    rows.sort((a,b)=>{
-      const ya = !!a.isYards, yb = !!b.isYards;
-      if (ya !== yb) return ya ? -1 : 1;
-      return String(a.name||'').localeCompare(String(b.name||''));
-    });
-
-    if (!rows.length) {
-      paddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
-      return;
-    }
-    paddockSel.innerHTML = '<option value="">(choose)</option>' +
-      rows.map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}${p.isYards?' — Yards':''}</option>`).join('');
-  } catch (e) {
-    console.error('Paddocks load error:', e);
-    paddockSel.innerHTML = '<option value="">(load error)</option>';
-  }
-}
-
-/* -------------------------------------------------------
-   Livestock context (paddock classes) + Mustering
-------------------------------------------------------- */
-async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
-  if (!propertyId || !paddockName) return [];
-  const speciesLC = String(speciesUI||'Cattle').toLowerCase();
-
-  // exact
-  let snap = await db.collection('livestock')
-    .where('propertyId','==',propertyId)
-    .where('location','==',paddockName)
-    .where('species','==',speciesUI)
-    .get();
-
-  // common case variants
-  if (snap.empty){
-    const title = speciesLC.charAt(0).toUpperCase()+speciesLC.slice(1);
-    for (const sp of [title, speciesLC.toUpperCase()]){
-      const s2 = await db.collection('livestock')
-        .where('propertyId','==',propertyId)
-        .where('location','==',paddockName)
-        .where('species','==',sp)
-        .get();
-      if (!s2.empty) { snap = s2; break; }
-    }
-  }
-
-  const rows=[];
-  if (snap.empty){
-    const s3 = await db.collection('livestock')
-      .where('propertyId','==',propertyId)
-      .where('location','==',paddockName)
-      .get();
-    s3.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
-    return rows.filter(r => String(r.species||'').toLowerCase() === speciesLC);
-  } else {
-    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
-    return rows;
-  }
-}
-
-async function updatePaddockContext(){
-  const pid = propSel.value;
-  if (pid==='ALL'){ stockContext.innerHTML=''; return; }
-
-  const act = activitySel.value;
-  const isStockMove = (act==='Trucking (sales/transfer)' || act==='Mustering / Moving stock');
-  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const speciesUI = speciesSel.value || 'Cattle';
-
-  // datalist seed
-  $('#classOptions').innerHTML = SUGGESTED_CLASSES.map(c=>`<option value="${escapeHtml(c)}"></option>`).join('');
-
-  if (!isStockMove || !paddockName){
-    stockContext.innerHTML = '';
-    buildMusterTable([]); // clear
-    return;
-  }
-
-  const rows = await fetchLivestockClasses(pid, paddockName, speciesUI);
-  rows.sort((a,b)=>String(a.class||'').localeCompare(String(b.class||'')));
-
-  // quick-pick chips
-  if (rows.length){
-    const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
-    stockContext.innerHTML = [
-      `<span class="pill">In ${escapeHtml(paddockName)}: ${total} head</span>`,
-      ...rows.map(r =>
-        `<button type="button" class="pill" role="button" data-cls="${escapeHtml(r.class||'')}" data-head="${Number(r.count||0)}" title="Click to fill class & head">`+
-        `${escapeHtml(r.class||'')}: ${Number(r.count||0)}</button>`
-      )
-    ].join(' ');
-    stockContext.querySelectorAll('.pill[data-cls]').forEach(btn=>{
-      btn.onclick = () => {
-        classInp.value = btn.dataset.cls || '';
-        headInp.value  = btn.dataset.head || '';
-        headInp.focus();
-      };
-    });
-  } else {
-    stockContext.innerHTML = `<span class="muted">No livestock lines found for ${escapeHtml(paddockName)} (${escapeHtml(speciesUI)}).</span>`;
-  }
-
-  // mustering table + expected total
-  if (act==='Mustering / Moving stock'){
-    buildMusterTable(rows);
-  } else {
-    buildMusterTable([]);
-  }
-}
-
-function buildMusterTable(rows){
-  if (!rows || !rows.length){
-    mExp.value = '';
-    mDelta.value = (Number(mAct.value||0) - 0) || 0;
-    musterContext.innerHTML = '';
-    mClassBody.innerHTML = '<tr><td colspan="6" class="muted">Pick property + paddock + species…</td></tr>';
-    return;
-  }
-  const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
-  mExp.value = total;
-  mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0;
-
-  const parts = rows.map(r=>`${escapeHtml(r.class||'')}: ${Number(r.count||0)}`);
-  musterContext.innerHTML = `<span class="pill">Expected total: ${total}</span> ${parts.length? ' | ' + parts.join(', ') : ''}`;
-
-  // render table rows
-  mClassBody.innerHTML = rows.map(r=>`
-    <tr data-id="${r.id||''}" data-class="${escapeHtml(r.class||'')}">
-      <td>${escapeHtml(r.class||'')}</td>
-      <td>${Number(r.count||0)}</td>
-      <td><input class="mc-new w110" type="number" min="0" /></td>
-      <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" list="classOptions"/></td>
-      <td><input class="mc-qty w110" type="number" min="0" /></td>
-      <td><input class="mc-miss w110" type="number" min="0" /></td>
-    </tr>
-  `).join('');
-}
-
-/* -------------------------------------------------------
-   Activity toggles
-------------------------------------------------------- */
-function onActivityChange(){
-  const act = activitySel.value;
-  const isStockAct = (act==='Trucking (sales/transfer)' || act==='Mustering / Moving stock');
-
-  stockRow.style.display = isStockAct ? '' : 'none';
-  musterBox.classList.toggle('hidden', act!=='Mustering / Moving stock');
-
-  updatePaddockContext();
-}
-
-/* -------------------------------------------------------
-   Add many actions (batch) + Save
-------------------------------------------------------- */
-const actions = []; // queued actions for the day
-const addActionBtn  = $('#addActionBtn');
-const saveBatchBtn  = $('#saveBatchBtn');
-const actionsListEl = $('#actionsList');
-const actionsOl     = $('#actionsOl');
-const batchMsg      = $('#batchMsg');
-
-function currentActionFromUI(){
-  const propertyId   = propSel.value;
-  const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '';
-  const date = dateInp.value || todayISO();
-  const time = timeInp.value || '';
-  const activity = activitySel.value || 'General note';
-  const paddockId = paddockSel.value || '';
-  const paddock   = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const species   = speciesSel.value || '';
-  const livestockClass = classInp.value || '';
-  const headCount = headInp.value ? Number(headInp.value) : null;
-  const notes     = notesInp.value || '';
-  const truckB    = truckBuyer.value || '';
-  const truckR    = truckRef.value || '';
-
-  // Mustering extras (we only store what user typed; inventory deltas are out-of-scope here)
-  const muster = (activity==='Mustering / Moving stock') ? {
-    expected: mExp.value ? Number(mExp.value) : null,
-    actual:   mAct.value ? Number(mAct.value) : null,
-    delta:    mDelta.value ? Number(mDelta.value) : null,
-    reason:   mReason.value || '',
-    adds:     { calves: mAddCalves.value ? Number(mAddCalves.value) : 0, weaners: mAddWeaners.value ? Number(mAddWeaners.value) : 0 },
-    classes:  Array.from(document.querySelectorAll('#mClassBody tr')).map(tr=>({
-      cls: tr.getAttribute('data-class') || '',
-      newCount: tr.querySelector('.mc-new')?.value ? Number(tr.querySelector('.mc-new').value) : null,
-      reclassTo: tr.querySelector('.mc-to')?.value || '',
-      reclassQty: tr.querySelector('.mc-qty')?.value ? Number(tr.querySelector('.mc-qty').value) : 0,
-      missing: tr.querySelector('.mc-miss')?.value ? Number(tr.querySelector('.mc-miss').value) : 0,
-    }))
-  } : null;
-
-  return {
-    propertyId, propertyName, date, time, activity,
-    paddockId, paddock, notes,
-    species, livestockClass, headCount,
-    truckBuyer: truckB, truckRef: truckR,
-    muster
-  };
-}
-
-function renderQueued(){
-  actionsListEl.style.display = actions.length ? 'block' : 'none';
-  actionsOl.innerHTML = actions.map((a,i)=>(
-    `<li><span class="pill">${escapeHtml(a.activity)}</span> ${escapeHtml(a.propertyName)} — ${escapeHtml(a.paddock||'(no paddock)')}${a.notes? ' — ' + escapeHtml(a.notes) : ''} <button data-i="${i}" class="btn">Remove</button></li>`
-  )).join('');
-  actionsOl.querySelectorAll('button[data-i]').forEach(b=>{
-    b.onclick = () => { actions.splice(Number(b.dataset.i),1); renderQueued(); };
-  });
-}
-
-addActionBtn.onclick = () => {
-  const a = currentActionFromUI();
-  if (!a.propertyId || a.propertyId==='ALL'){ alert('Choose a specific property'); return; }
-  actions.push(a);
-  renderQueued();
-  batchMsg.textContent = 'Action added.';
-  setTimeout(()=>batchMsg.textContent='', 1500);
-};
-
-saveBatchBtn.onclick = async () => {
-  if (!actions.length) { alert('No actions queued. Click “Add action” first.'); return; }
-  const batchId = 'b_'+Date.now();
-  batchMsg.textContent = 'Saving…';
-  try{
-    const batch = db.batch();
-    actions.forEach((a, idx) => {
-      const ref = db.collection('diaryEntries').doc();
-      batch.set(ref, {
-        ...a,
-        batchId, batchIndex: idx,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      }, { merge:true });
-    });
-    await batch.commit();
-    actions.length = 0;
-    renderQueued();
-    batchMsg.textContent = 'Saved.';
-    setTimeout(()=>batchMsg.textContent='', 1500);
-    refreshEntries();
-  }catch(e){
-    console.error(e);
-    batchMsg.textContent = 'Save failed.';
-  }
-};
-
-/* -------------------------------------------------------
-   Listing (simple)
-------------------------------------------------------- */
-async function refreshEntries(){
-  if(!auth.currentUser){
-    entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">Sign in to load entries…</td></tr>';
-    return;
-  }
-  entriesTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
-  const y = Number(yearInp.value || new Date().getFullYear());
-  const {start,end} = yBounds(y);
-  try{
-    const snap = await db.collection('diaryEntries')
-      .where('date','>=',start).where('date','<=',end)
-      .orderBy('date','desc').limit(100).get();
-    const rows=[];
-    snap.forEach(d => {
-      const r = { id:d.id, ...(d.data()||{}) };
-      rows.push(`
-        <tr>
-          <td>${escapeHtml(r.date||'')}</td>
-          <td>${escapeHtml(r.propertyName||'')}</td>
-          <td>${escapeHtml(r.activity||'')}</td>
-          <td>${escapeHtml(r.paddock||'')}</td>
-          <td>${escapeHtml(r.notes||'')}</td>
-          <td class="nowrap"><button class="btn danger" onclick="delEntry('${r.id}')">Delete</button></td>
-        </tr>
-      `);
-    });
-    entriesTbody.innerHTML = rows.length? rows.join('') : '<tr><td colspan="6" class="muted">No entries.</td></tr>';
-  }catch(e){
-    console.error(e);
-    entriesTbody.innerHTML = '<tr><td colspan="6" class="status-bad">Failed to read entries. Check console.</td></tr>';
-  }
-}
-
-window.delEntry = async function(id){
-  if(!confirm('Delete this entry?')) return;
-  try{
-    await db.collection('diaryEntries').doc(id).delete();
-    await refreshEntries();
-    setMsg('Deleted.');
-  }catch(e){
-    alert('Delete failed: ' + errText(e));
-  }
-};
-
-/* -------------------------------------------------------
-   Bootstrap
-------------------------------------------------------- */
-(async function init(){
-  initProperties();
-  dateInp.value = todayISO();
-  yearInp.value = new Date().getFullYear();
-
-  propSel.onchange = async ()=>{ await loadPaddocksForProperty(propSel.value); await updatePaddockContext(); };
-  paddockSel.onchange = updatePaddockContext;
-  speciesSel.onchange = updatePaddockContext;
-  activitySel.onchange = onActivityChange;
-  $('#refreshBtn').onclick = refreshEntries;
-  mAct.oninput = ()=>{ mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0; };
-
-  await requireSignedIn();
-})();
-</script>
   <!-- Sign-in overlay -->
-<div id="authOverlay" style="position:fixed;inset:0;background:rgba(15,23,42,.08);display:none;align-items:center;justify-content:center;z-index:9999">
-  <div style="width:min(520px,92vw);background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px">
-    <h2 style="margin:0 0 8px">Sign in to SkyFarm</h2>
-    <p style="margin-top:0;color:#64748b">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
-      <div style="flex:1;min-width:260px">
-        <label>Email</label>
-        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px"/>
+  <div id="authOverlay">
+    <div id="authCard">
+      <h2>Sign in to SkyFarm</h2>
+      <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
+      <div class="row">
+        <div style="flex:1; min-width:260px">
+          <label>Email</label>
+          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
+        </div>
+        <div style="flex:1; min-width:220px">
+          <label>Password</label>
+          <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
+        </div>
       </div>
-      <div style="flex:1;min-width:220px">
-        <label>Password</label>
-        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px"/>
+      <div class="row">
+        <button id="signInBtn" class="primary">Sign in</button>
+        <span id="authMsg" class="muted small"></span>
+        <span class="spacer"></span>
+        <button id="closeOverlayBtn" class="btn">Close</button>
       </div>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button id="signInBtn" style="background:#0B7A6E;color:#fff;border:1px solid #0B7A6E;border-radius:10px;padding:8px 16px;cursor:pointer">Sign in</button>
-      <span id="authMsg" style="color:#64748b"></span>
-      <div style="flex:1"></div>
-      <button id="closeOverlayBtn" style="border:1px solid #cbd5e1;border-radius:10px;padding:8px 16px;cursor:pointer">Close</button>
     </div>
   </div>
-</div>
+
+  <!-- EVERYTHING below lives in a real <script> tag so the browser executes it -->
+  <script>
+    /* -------------------------------------------------------
+       Firebase init (compat) — WEB KEYS (public by design)
+    ------------------------------------------------------- */
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+      authDomain: "consentes-pastoral.firebaseapp.com",
+      projectId: "consentes-pastoral",
+      appId: "1:494858780013:web:d87497b370c82eeab06e64"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db   = firebase.firestore();
+    const auth = firebase.auth();
+
+    /* -------------------------------------------------------
+       Helpers & constants
+    ------------------------------------------------------- */
+    const $ = s => document.querySelector(s);
+    const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms) setTimeout(()=>$('#msg').textContent='', ms); };
+    const setStatus = t => $('#status').textContent = t || '';
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+    const yBounds = (y)=>({ start:`${y}-01-01`, end:`${y}-12-31` });
+
+    // Your three properties (from your screenshots)
+    const PROPERTY_IDS = {
+      "Consentes": "s7PIDM9wrEpxuJ6DGlab",
+      "Mt Myrtle": "TRuxtRBx2zJIwZnRGYKJ",
+      "Gerawin":   "P0dQ0H2FWHeqqxejfJzS"
+    };
+    const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
+
+    /* -------------------------------------------------------
+       Sign-in overlay (Email/Password only)
+    ------------------------------------------------------- */
+    const overlay = $('#authOverlay');
+    const authWho = $('#authWho');
+    const signOutBtn = $('#signOutBtn');
+
+    function showOverlay(show){ overlay.style.display = show ? 'flex' : 'none'; }
+
+    $('#signInBtn').onclick = async ()=>{
+      const email = $('#siEmail').value.trim();
+      const pass  = $('#siPass').value;
+      $('#authMsg').textContent = 'Signing in…';
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithEmailAndPassword(email, pass);
+        $('#authMsg').textContent = 'Signed in.';
+        showOverlay(false);
+        await afterSignIn();
+      }catch(e){
+        $('#authMsg').textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown error');
+      }
+    };
+    $('#closeOverlayBtn').onclick = ()=> showOverlay(false);
+    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+    function requireAuth(){
+      return new Promise(resolve=>{
+        auth.onAuthStateChanged(u=>{
+          if(u){
+            authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+            signOutBtn.style.display = 'inline-flex';
+            showOverlay(false);
+            resolve(true);
+          }else{
+            authWho.textContent = 'Not signed in';
+            signOutBtn.style.display = 'none';
+            showOverlay(true);
+            resolve(false);
+          }
+        });
+      });
+    }
+
+    async function afterSignIn(){
+      await initProperties();
+      await onPropertyChange(); // loads paddocks for the selected property
+      await refreshEntries();
+    }
+
+    /* -------------------------------------------------------
+       Properties & Paddocks
+    ------------------------------------------------------- */
+    const propSel     = $('#propSel');
+    const paddockSel  = $('#paddockSel');
+
+    async function initProperties(){
+      // Build property list
+      propSel.innerHTML = Object.keys(PROPERTY_IDS)
+        .sort()
+        .map(n=>`<option value="${PROPERTY_IDS[n]}">${n}</option>`)
+        .join('');
+      // Default to Mt Myrtle (requested)
+      const DEFAULT_ID = PROPERTY_IDS["Mt Myrtle"];
+      if (DEFAULT_ID) propSel.value = DEFAULT_ID;
+
+      propSel.onchange = onPropertyChange;
+    }
+
+    async function onPropertyChange(){
+      const pid = propSel.value;
+      if(!pid){ paddockSel.innerHTML='<option value="">(choose property)</option>'; return; }
+      paddockSel.innerHTML = '<option value="">(loading…)</option>';
+      setStatus('Loading paddocks…');
+
+      try{
+        const snap = await db.collection('paddocks').where('propertyId','==',pid).get();
+        const paddocks = [];
+        snap.forEach(d => paddocks.push({ id:d.id, ...(d.data()||{}) }));
+
+        // Yards first (isYards true), then by name
+        paddocks.sort((a,b)=>{
+          const ay = a.isYards ? 1 : 0, by = b.isYards ? 1 : 0;
+          if (by - ay !== 0) return by - ay;
+          const an = String(a.name||'').toLowerCase(), bn = String(b.name||'').toLowerCase();
+          return an.localeCompare(bn);
+        });
+
+        if (!paddocks.length){
+          paddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
+        } else {
+          paddockSel.innerHTML =
+            '<option value="">(choose)</option>' +
+            paddocks.map(p => `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>`).join('');
+        }
+        setStatus('');
+      }catch(e){
+        console.error(e);
+        paddockSel.innerHTML = '<option value="">(load error)</option>';
+        setStatus('Paddocks load error');
+      }
+    }
+
+    /* -------------------------------------------------------
+       Multi-action queue & Save
+    ------------------------------------------------------- */
+    const dateInp     = $('#dateInp');
+    const timeInp     = $('#timeInp');
+    const activitySel = $('#activitySel');
+    const notesInp    = $('#notesInp');
+
+    const addActionBtn = $('#addActionBtn');
+    const saveAllBtn   = $('#saveAllBtn');
+    const resetBtn     = $('#resetBtn');
+    const actionQueue  = $('#actionQueue');
+
+    let queued = []; // { propertyId, propertyName, date, time, activity, paddockId, paddockName, notes }
+
+    dateInp.value = todayISO();
+    $('#yearInp').value = new Date().getFullYear();
+
+    addActionBtn.onclick = ()=>{
+      const propId = propSel.value;
+      if (!propId) return alert('Choose a property');
+      const propName = PROPERTY_NAME_BY_ID[propId] || '(Unknown)';
+
+      const paddockId = paddockSel.value || null;
+      const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+
+      const item = {
+        propertyId: propId,
+        propertyName: propName,
+        date: dateInp.value || todayISO(),
+        time: timeInp.value || '',
+        activity: activitySel.value,
+        paddockId,
+        paddockName: paddockName || null,
+        notes: notesInp.value || ''
+      };
+      queued.push(item);
+      renderQueue();
+      setMsg('Action added to queue.', 1500);
+    };
+
+    function renderQueue(){
+      if (!queued.length){ actionQueue.style.display='none'; actionQueue.innerHTML=''; return; }
+      actionQueue.style.display = 'flex';
+      actionQueue.innerHTML = queued.map((q,i)=>`
+        <div class="item">
+          <div class="meta">
+            <strong>${escapeHtml(q.propertyName)}</strong> · ${escapeHtml(q.activity)}
+            ${q.paddockName ? ` · ${escapeHtml(q.paddockName)}` : ''} · ${escapeHtml(q.date)} ${escapeHtml(q.time||'')}
+            ${q.notes ? ` — ${escapeHtml(q.notes)}` : ''}
+          </div>
+          <button class="btn danger remove" data-i="${i}">Remove</button>
+        </div>
+      `).join('');
+      actionQueue.querySelectorAll('.remove').forEach(btn=>{
+        btn.onclick = ()=>{ const i = Number(btn.dataset.i); queued.splice(i,1); renderQueue(); };
+      });
+    }
+
+    saveAllBtn.onclick = async ()=>{
+      if (!queued.length) return alert('Add at least one action first.');
+      try{
+        setMsg('Saving…', 4000);
+        const batch = db.batch();
+        queued.forEach(q=>{
+          const ref = db.collection('diaryEntries').doc();
+          batch.set(ref, {
+            propertyId: q.propertyId, propertyName: q.propertyName,
+            date: q.date, time: q.time,
+            activity: q.activity,
+            paddockId: q.paddockId || null, paddock: q.paddockName || null,
+            notes: q.notes || '',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge:true });
+        });
+        await batch.commit();
+        queued = []; renderQueue();
+        setMsg('Saved all actions.');
+        await refreshEntries();
+      }catch(e){
+        console.error(e);
+        alert('Save failed: ' + (e?.message||e));
+      }
+    };
+
+    resetBtn.onclick = ()=>{
+      dateInp.value = todayISO();
+      timeInp.value = '';
+      activitySel.value = 'Mustering / Moving stock';
+      paddockSel.value = '';
+      notesInp.value = '';
+      queued = []; renderQueue();
+      setMsg('Form reset.', 1200);
+    };
+
+    /* -------------------------------------------------------
+       Recent entries (simple list by year)
+    ------------------------------------------------------- */
+    const entriesTbody = $('#entriesTbody');
+    $('#refreshBtn').onclick = refreshEntries;
+
+    async function refreshEntries(){
+      entriesTbody.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+      try{
+        const y = Number($('#yearInp').value || new Date().getFullYear());
+        const {start, end} = yBounds(y);
+        let q = db.collection('diaryEntries')
+                  .where('date','>=',start)
+                  .where('date','<=',end)
+                  .orderBy('date','desc')
+                  .limit(100);
+        const snap = await q.get();
+        const rows = [];
+        snap.forEach(doc=>{
+          const d = { id:doc.id, ...(doc.data()||{}) };
+          rows.push(`<tr>
+            <td>${escapeHtml(d.date||'')}</td>
+            <td>${escapeHtml(d.propertyName||'')}</td>
+            <td>${escapeHtml(d.activity||'')}</td>
+            <td>${escapeHtml(d.paddock||'')}</td>
+            <td>${escapeHtml(d.notes||'')}</td>
+          </tr>`);
+        });
+        entriesTbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="5">No entries.</td></tr>';
+      }catch(e){
+        console.error(e);
+        entriesTbody.innerHTML = '<tr><td colspan="5">Load failed (console).</td></tr>';
+      }
+    }
+
+    /* -------------------------------------------------------
+       Bootstrap
+    ------------------------------------------------------- */
+    (async function init(){
+      setStatus('Connecting…');
+      await requireAuth();            // shows overlay if not signed in
+      if (auth.currentUser){
+        setStatus('Connected');
+        await afterSignIn();
+      }
+    })();
+  </script>
 </body>
 </html>
