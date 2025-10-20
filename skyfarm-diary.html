@@ -555,8 +555,10 @@ async function onPaddockOrSpeciesChange(){
   if (isStockMove && paddockName){
     rows = await fetchLivestockClasses(pid, paddockName, speciesUI);
   } else if (isStockIn) {
-    rows = SUGGESTED_CLASSES.map(cls => ({ id: null, class: cls, count: 0 }));
-  }
+  // Suggest only classes you already use on this property/species.
+  const used = await fetchUsedClasses(pid, speciesUI);
+  rows = (used.length ? used : SUGGESTED_CLASSES).map(cls => ({ id: null, class: cls, count: 0 }));
+}
 
   rows.sort((a,b)=> String(a.class||'').localeCompare(String(b.class||'')));
   $('#classOptions').innerHTML = rows.map(r=>`<option value="${escapeHtml(r.class||'')}"></option>`).join('');
