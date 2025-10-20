@@ -460,7 +460,49 @@ async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
     return rows;
   }
 }
+<script>
+// Distinct classes you’ve actually used on this property/species.
+// 1) looks in `livestock` (current holdings), and
+// 2) also mines recent `diaryEntries` for any classes you’ve entered.
+async function fetchUsedClasses(propertyId, speciesUI){
+  if (!propertyId) return [];
+  const speciesLC = String(speciesUI||'Cattle').toLowerCase();
+  const variants = [speciesUI, speciesLC.charAt(0).toUpperCase()+speciesLC.slice(1), speciesLC.toUpperCase()];
 
+  const seen = new Set();
+
+  // From current livestock lines
+  for (const sp of variants){
+    const snap = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .where('species','==',sp)
+      .get();
+    snap.forEach(d => {
+      const cls = (d.data()||{}).class;
+      if (cls) seen.add(String(cls));
+    });
+  }
+
+  // From diary entries (last ~500 rows for this property/species)
+  try {
+    const snap2 = await db.collection('diaryEntries')
+      .where('propertyId','==',propertyId)
+      .where('species','==',speciesUI)
+      .limit(500)
+      .get();
+    snap2.forEach(d => {
+      const cls = (d.data()||{}).livestockClass;
+      if (cls) seen.add(String(cls));
+    });
+  } catch(e) {
+    // ok if this collection or index isn’t there; we still have livestock classes
+    console.warn('class mining (diary) skipped:', e?.code||e?.message);
+  }
+
+  const list = Array.from(seen).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+  return list;
+}
+</script>
 /* -------------------------------------------------------
    UI logic (activity toggles + mustering table)
 ------------------------------------------------------- */
