@@ -5,62 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SkyFarm — Diary</title>
 
-  <!-- Firebase compat SDKs (same major as your Chemicals page) -->
+  <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
   <style>
-    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
-    * { box-sizing:border-box; }
-    html,body { height:100%; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-           margin:0; background:var(--bg); color:var(--ink); }
+    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; --warn:#9a3412; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); margin:0; color:var(--ink); }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
 
-    /* Header (match Chemicals look) */
-    #sf-header { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line); }
-    #sf-header .bar { display:flex; align-items:center; gap:14px; padding:10px 16px; }
-    #sf-header .brand { display:flex; align-items:center; gap:8px; color:var(--brand); text-decoration:none; font-weight:700; }
+    /* Header */
+    #sf-header { position:sticky; top:0; z-index:10; }
+    #sf-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--line); }
+    #sf-header .brand { display:flex; align-items:center; gap:8px; color:var(--brand); font-weight:700; text-decoration:none; }
     #sf-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
     #sf-header nav a[aria-current="page"] { text-decoration:underline; }
     .spacer { flex:1; }
     .muted { color:var(--muted); font-size:.9rem; }
+    .hidden { display:none; }
 
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
-    h1 { margin: 10px 0 14px; font-size: 1.6rem; }
-
+    /* Cards / form */
+    h1 { margin: 12px 0; font-size: 1.6rem; }
     .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0; }
     .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
-    label { display:block; font-size:.9rem; color:#475569; margin-bottom:4px; }
+    label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
     input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
     button { cursor:pointer; }
     .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
     .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
     .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
     .disabled { opacity:.55; pointer-events:none; }
+
+    .w80{width:80px}.w110{width:110px}.w140{width:140px}.w200{width:200px}.w240{width:240px}
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; border:1px solid #cbd5e1; }
     .small { font-size:.9rem; }
-    .w110 { width:110px; } .w140 { width:140px; } .w200 { width:200px; } .w240 { width:240px; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; border:1px solid #cbd5e1; }
+    .status-warn{ color:var(--warn) }
 
+    /* Table */
     table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom:1px solid var(--line); padding:8px; text-align:left; vertical-align:top; }
-    th { background:#f1f5f9; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; font-size: .95rem; vertical-align: top; }
+    th { background:#f1f5f9; position:sticky; top:0; }
+    .nowrap { white-space: nowrap; }
 
-    /* Action queue */
-    #actionQueue { margin-top:8px; }
-    #actionQueue .item { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px; border:1px dashed #d1d5db; border-radius:10px; background:#fafafa; }
-    #actionQueue .item .meta { font-size:.9rem; color:#334155; }
-    #actionQueue .item .remove { margin-left:auto; }
-
-    /* Sign-in overlay */
-    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.08); display:none; align-items:center; justify-content:center; z-index:50}
+    /* Auth overlay */
+    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
-    #authCard h2{margin:0 0 8px}
+    #authCard h2{margin:0 0 10px}
   </style>
 </head>
 <body>
-  <!-- Simple header (matches Chemicals page) -->
-  <header id="sf-header">
+  <!-- Header -->
+  <div id="sf-header">
     <div class="bar">
       <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
       <nav>
@@ -70,14 +67,15 @@
       </nav>
       <span class="spacer"></span>
       <span id="authWho" class="muted">Checking sign-in…</span>
-      <button id="signOutBtn" class="btn danger" style="display:none;">Sign out</button>
+      <button id="signOutBtn" class="danger hidden">Sign out</button>
     </div>
-  </header>
+  </div>
 
   <div class="wrap">
     <h1>Diary</h1>
 
-    <div class="card">
+    <!-- Main form -->
+    <div class="card" id="formCard">
       <div class="row">
         <div>
           <label>Property</label>
@@ -85,76 +83,197 @@
         </div>
         <div>
           <label>Date</label>
-          <input id="dateInp" type="date" class="w140"/>
+          <input id="dateInp" type="date"/>
         </div>
         <div>
           <label>Time</label>
-          <input id="timeInp" type="time" class="w110"/>
+          <input id="timeInp" type="time"/>
         </div>
         <div>
           <label>Activity</label>
           <select id="activitySel" class="w240">
-            <option>Mustering / Moving stock</option>
-            <option>Trucking (sale)</option>
-            <option>Transfer stock (Out)</option>
-            <option>Transfer stock (In)</option>
-            <option>Spraying paddocks</option>
-            <option>Chemical (stock)</option>
-            <option>Ploughing</option>
-            <option>Planting</option>
-            <option>Other</option>
+            <option value="Ploughing">Ploughing</option>
+            <option value="Planting">Planting</option>
+            <option value="Spraying paddocks">Spraying paddocks</option>
+            <option value="Chemical (stock)">Chemical (stock)</option>
+            <option value="Trucking (sale)">Trucking (sale)</option>
+            <option value="Move stock">Move stock (Paddock → Paddock/Yards)</option>
+            <option value="Transfer stock (In)">Transfer stock (In)</option>
+            <option value="Transfer stock (Out)">Transfer stock (Out)</option>
+            <option value="Cattle Received (Purchase)">Cattle Received (Purchase)</option>
+            <option value="Mustering">Mustering</option>
+            <option value="Other">Other</option>
           </select>
         </div>
         <span class="spacer"></span>
-        <div class="muted small" id="status">—</div>
+        <div class="muted" id="status">—</div>
       </div>
 
       <div class="row">
         <div style="min-width:260px">
           <label>Paddock</label>
           <select id="paddockSel" class="w240"><option value="">(choose)</option></select>
-          <div class="small muted">Yards paddocks appear first.</div>
+          <div class="small muted">Yards appear at the top.</div>
         </div>
+
+        <div id="transferPropRow" class="hidden" style="min-width:260px">
+          <label>To/From Property</label>
+          <select id="transferPropSel" class="w240"><option value="">(choose)</option></select>
+        </div>
+
         <div style="flex:1; min-width:260px">
           <label>Notes</label>
           <input id="notesInp" placeholder="optional"/>
         </div>
       </div>
 
-      <div class="row">
-        <button id="addActionBtn" class="btn">Add action</button>
-        <button id="saveAllBtn" class="primary">Save all actions</button>
-        <span id="msg" class="muted"></span>
-        <span class="spacer"></span>
-        <button id="resetBtn" class="btn">Reset form</button>
+      <!-- Stock fields -->
+      <div id="stockRow" class="row hidden">
+        <div>
+          <label>Species</label>
+          <select id="speciesSel" class="w140">
+            <option value="Cattle">Cattle</option>
+            <option value="Sheep">Sheep</option>
+            <option value="Goats">Goats</option>
+          </select>
+        </div>
+        <div>
+          <label>Class</label>
+          <input id="classInp" list="classOptions" class="w200" placeholder="e.g. Weaners"/>
+          <datalist id="classOptions"></datalist>
+        </div>
+        <div>
+          <label>Head</label>
+          <input id="headInp" type="number" min="0" step="1" class="w110"/>
+        </div>
+        <div id="stockDetail1">
+          <label>Buyer / Dest (Trucking)</label>
+          <input id="truckBuyer" class="w200" placeholder="e.g. Roma"/>
+        </div>
+        <div id="stockDetail2">
+          <label>Docket / Ref</label>
+          <input id="truckRef" class="w200" placeholder="NVD / docket"/>
+        </div>
       </div>
 
-      <!-- Action queue preview -->
-      <div id="actionQueue" class="row" style="display:none; flex-direction:column; gap:8px;"></div>
+      <!-- Chemical fields -->
+      <div id="chemRow" class="row hidden">
+        <div>
+          <label>Chemical</label>
+          <select id="chemSel" class="w240"><option value="">(choose)</option></select>
+        </div>
+        <div>
+          <label>Qty used</label>
+          <input id="chemQty" type="number" min="0" step="0.01" class="w110"/>
+        </div>
+        <div>
+          <label>Unit</label>
+          <input id="chemUnit" class="w80" placeholder="KG/L" disabled/>
+        </div>
+        <div><label>&nbsp;</label><span id="chemHint" class="pill">context</span></div>
+      </div>
+
+      <!-- Live paddock stock context -->
+      <div id="stockContext" class="row small" style="gap:6px; color:#334155;"></div>
+
+      <!-- Mustering panel -->
+      <div id="musterBox" class="card hidden" style="margin-top:8px">
+        <div class="row"><strong>Mustering details</strong></div>
+        <div class="row small" id="musterContext" style="gap:6px; color:#334155;"></div>
+
+        <div class="row">
+          <div>
+            <label>Expected (auto)</label>
+            <input id="mExp" type="number" class="w110" disabled/>
+          </div>
+          <div>
+            <label>Actual</label>
+            <input id="mAct" type="number" class="w110"/>
+          </div>
+          <div>
+            <label>Delta (auto)</label>
+            <input id="mDelta" type="number" class="w110" disabled/>
+          </div>
+          <div style="flex:1; min-width:260px">
+            <label>Reason / notes</label>
+            <input id="mReason" placeholder="e.g. counted late, moved to North 2…"/>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Add calves</label>
+            <input id="mAddCalves" type="number" class="w110"/>
+          </div>
+          <div>
+            <label>Add weaners</label>
+            <input id="mAddWeaners" type="number" class="w110"/>
+          </div>
+          <div class="spacer"></div>
+          <button id="addClassRowBtn" class="btn">Add class row</button>
+        </div>
+
+        <div class="row">
+          <strong>Reclass / counts by class</strong>
+        </div>
+        <div class="row" style="overflow:auto">
+          <table id="mClassTable" style="min-width:760px">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Expected</th>
+                <th>New count</th>
+                <th>Reclass to</th>
+                <th>Qty</th>
+                <th>Missing</th>
+              </tr>
+            </thead>
+            <tbody id="mClassBody"><tr><td colspan="6" class="muted">Pick property + paddock + species…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="muted small">Set a <em>New count</em> to overwrite a class total, or use <em>Reclass to + Qty</em> to move headcounts between classes. Use <em>Missing</em> to hold animals that didn’t turn up.</div>
+      </div>
+
+      <!-- Save + multi-action -->
+      <div class="row">
+        <button id="saveBtn" class="primary">Save entry</button>
+        <button id="resetBtn" class="btn" type="button">Reset</button>
+        <span id="msg" class="muted" aria-live="polite"></span>
+      </div>
+
+      <div class="row">
+        <button id="addActionBtn" class="btn">Add action</button>
+        <button id="saveBatchBtn" class="primary">Save all actions</button>
+        <span id="batchMsg" class="muted"></span>
+      </div>
+
+      <div id="actionsList" class="card small" style="display:none">
+        <strong>Actions queued for this day</strong>
+        <ol id="actionsOl" style="margin-top:6px"></ol>
+      </div>
     </div>
 
+    <!-- Recent entries -->
     <div class="card">
       <div class="row">
         <strong>Recent entries</strong>
         <span class="spacer"></span>
-        <div>
-          <label>Year</label>
-          <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
-        </div>
+        <label>Year</label>
+        <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
         <button id="refreshBtn" class="btn">Refresh</button>
       </div>
       <table>
         <thead>
           <tr>
-            <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th>
+            <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Rain (mm)</th><th>Chemical</th><th>Head</th><th></th>
           </tr>
         </thead>
-        <tbody id="entriesTbody"><tr><td colspan="5">Loading…</td></tr></tbody>
+        <tbody id="entriesTbody"><tr><td colspan="8">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Sign-in overlay -->
+  <!-- Auth overlay -->
   <div id="authOverlay">
     <div id="authCard">
       <h2>Sign in to SkyFarm</h2>
@@ -162,300 +281,495 @@
       <div class="row">
         <div style="flex:1; min-width:260px">
           <label>Email</label>
-          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
+          <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
         </div>
         <div style="flex:1; min-width:220px">
           <label>Password</label>
-          <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
+          <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
         </div>
       </div>
       <div class="row">
         <button id="signInBtn" class="primary">Sign in</button>
-        <span id="authMsg" class="muted small"></span>
+        <span id="authMsg" class="muted"></span>
         <span class="spacer"></span>
-        <button id="closeOverlayBtn" class="btn">Close</button>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- EVERYTHING below lives in a real <script> tag so the browser executes it -->
-  <script>
-    /* -------------------------------------------------------
-       Firebase init (compat) — WEB KEYS (public by design)
-    ------------------------------------------------------- */
-    const firebaseConfig = {
-      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-      authDomain: "consentes-pastoral.firebaseapp.com",
-      projectId: "consentes-pastoral",
-      appId: "1:494858780013:web:d87497b370c82eeab06e64"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db   = firebase.firestore();
-    const auth = firebase.auth();
+<script>
+/* -------------------------------------------------------
+   Firebase init (compat)
+------------------------------------------------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJlGvBwmW70", // <- corrected key
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
 
-    /* -------------------------------------------------------
-       Helpers & constants
-    ------------------------------------------------------- */
-    const $ = s => document.querySelector(s);
-    const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms) setTimeout(()=>$('#msg').textContent='', ms); };
-    const setStatus = t => $('#status').textContent = t || '';
-    const todayISO = () => new Date().toISOString().slice(0,10);
-    const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-    const yBounds = (y)=>({ start:`${y}-01-01`, end:`${y}-12-31` });
+/* -------------------------------------------------------
+   Helpers & constants
+------------------------------------------------------- */
+const $ = s => document.querySelector(s);
+const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
+const setStatus = (t, warn=false)=>{ const el=$('#status'); el.textContent=t||''; el.classList.toggle('status-warn', !!warn); };
+const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const todayISO = () => new Date().toISOString().slice(0,10);
+const yBounds = y => ({ start:`${y}-01-01`, end:`${y}-12-31` });
 
-    // Your three properties (from your screenshots)
-    const PROPERTY_IDS = {
-      "Consentes": "s7PIDM9wrEpxuJ6DGlab",
-      "Mt Myrtle": "TRuxtRBx2zJIwZnRGYKJ",
-      "Gerawin":   "P0dQ0H2FWHeqqxejfJzS"
-    };
-    const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
+const PROPERTY_IDS = {
+  "Consentes": "s7PlDM9wrEpxuJ6DGlab",
+  "Mt Myrtle": "TRuxtRBx2zJlwZnRGYKJ",
+  "Gerawin":   "P0dQ0H2FWHeqqxejfZs",
+};
+const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
+const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
 
-    /* -------------------------------------------------------
-       Sign-in overlay (Email/Password only)
-    ------------------------------------------------------- */
-    const overlay = $('#authOverlay');
-    const authWho = $('#authWho');
-    const signOutBtn = $('#signOutBtn');
+/* -------------------------------------------------------
+   Elements
+------------------------------------------------------- */
+const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'), activitySel = $('#activitySel');
+const paddockSel = $('#paddockSel'), notesInp = $('#notesInp');
+const transferPropRow = $('#transferPropRow'), transferPropSel = $('#transferPropSel');
+const speciesSel = $('#speciesSel'), classInp = $('#classInp'), headInp = $('#headInp'), truckBuyer=$('#truckBuyer'), truckRef=$('#truckRef');
+const chemRow = $('#chemRow'), chemSel = $('#chemSel'), chemQty = $('#chemQty'), chemUnit = $('#chemUnit'), chemHint = $('#chemHint');
+const stockRow = $('#stockRow'), stockDetail1 = $('#stockDetail1'), stockDetail2 = $('#stockDetail2');
+const stockContext = $('#stockContext');
+const musterBox = $('#musterBox'), mExp=$('#mExp'), mAct=$('#mAct'), mDelta=$('#mDelta'), mReason=$('#mReason'), mAddCalves=$('#mAddCalves'), mAddWeaners=$('#mAddWeaners'), mClassBody=$('#mClassBody'), addClassRowBtn=$('#addClassRowBtn'), musterContext=$('#musterContext');
+const yearInp = $('#yearInp'), refreshBtn = $('#refreshBtn'), entriesTbody = $('#entriesTbody');
 
-    function showOverlay(show){ overlay.style.display = show ? 'flex' : 'none'; }
+const addActionBtn = $('#addActionBtn'), saveBatchBtn = $('#saveBatchBtn'), actionsListEl = $('#actionsList'), actionsOl = $('#actionsOl'), batchMsg = $('#batchMsg');
 
-    $('#signInBtn').onclick = async ()=>{
-      const email = $('#siEmail').value.trim();
-      const pass  = $('#siPass').value;
-      $('#authMsg').textContent = 'Signing in…';
-      try{
-        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        await auth.signInWithEmailAndPassword(email, pass);
-        $('#authMsg').textContent = 'Signed in.';
-        showOverlay(false);
-        await afterSignIn();
-      }catch(e){
-        $('#authMsg').textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown error');
-      }
-    };
-    $('#closeOverlayBtn').onclick = ()=> showOverlay(false);
-    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+const authOverlay = $('#authOverlay'), authWho = $('#authWho'), signOutBtn = $('#signOutBtn');
+const signInBtn = $('#signInBtn'), closeOverlayBtn = $('#closeOverlayBtn');
 
-    function requireAuth(){
-      return new Promise(resolve=>{
-        auth.onAuthStateChanged(u=>{
-          if(u){
-            authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
-            signOutBtn.style.display = 'inline-flex';
-            showOverlay(false);
-            resolve(true);
-          }else{
-            authWho.textContent = 'Not signed in';
-            signOutBtn.style.display = 'none';
-            showOverlay(true);
-            resolve(false);
-          }
-        });
-      });
+/* -------------------------------------------------------
+   Auth overlay helpers
+------------------------------------------------------- */
+function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+
+signInBtn.onclick = async ()=>{
+  const email = $('#siEmail').value.trim();
+  const pass  = $('#siPass').value;
+  $('#authMsg').textContent = 'Signing in…';
+  try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.signInWithEmailAndPassword(email, pass);
+    $('#authMsg').textContent = 'Signed in.';
+    showOverlay(false);
+    await onPropertyChange();
+    await refreshEntries();
+  }catch(e){
+    $('#authMsg').textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
+  }
+};
+signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+closeOverlayBtn.onclick = ()=> showOverlay(false);
+
+/* -------------------------------------------------------
+   Paddocks / Chemicals / Livestock
+------------------------------------------------------- */
+async function loadPaddocksForProperty(propertyId) {
+  if (!propertyId || propertyId === 'ALL') {
+    paddockSel.innerHTML = '<option value="">(choose a property)</option>';
+    return;
+  }
+  paddockSel.innerHTML = '<option value="">(loading…)</option>';
+
+  try {
+    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
+    const rows = [];
+    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
+
+    rows.sort((a,b) => {
+      const ya = !!a.isYards, yb = !!b.isYards;
+      if (ya !== yb) return ya ? -1 : 1;
+      return String(a.name||'').localeCompare(String(b.name||''));
+    });
+
+    if (!rows.length) {
+      paddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
+      return;
     }
 
-    async function afterSignIn(){
-      await initProperties();
-      await onPropertyChange(); // loads paddocks for the selected property
+    paddockSel.innerHTML =
+      '<option value="">(choose)</option>' +
+      rows.map(p => `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}${p.isYards?' — Yards':''}</option>`).join('');
+  } catch (e) {
+    console.error('Paddock load error:', e);
+    paddockSel.innerHTML = '<option value="">(load error)</option>';
+  }
+}
+
+async function loadChemicalsForProperty(propertyId){
+  chemSel.innerHTML = '<option value="">(loading…)</option>';
+  if (!propertyId || propertyId === 'ALL'){ chemSel.innerHTML='<option value="">(choose property)</option>'; return; }
+  try{
+    const snap = await db.collection('chemicals').where('propertyId','==',propertyId).get();
+    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...(d.data()||{})}));
+    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+    chemSel.innerHTML = '<option value="">(choose)</option>' + rows.map(c => {
+      return `<option value="${c.id}" data-unit="${escapeHtml(c.unit||'')}">${escapeHtml(c.name||'Unnamed')} (${escapeHtml(c.unit||'')}) — ${Number(c.quantity||0)} left</option>`;
+    }).join('');
+    chemSel.onchange = ()=> chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
+    chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
+  }catch(e){
+    console.error('Chem load error:', e);
+    chemSel.innerHTML='<option value="">(load error)</option>';
+  }
+}
+
+// Case / field tolerant class fetch
+async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
+  if (!propertyId || !paddockName) return [];
+  const speciesLC = String(speciesUI||'Cattle').toLowerCase();
+
+  let snap = await db.collection('livestock')
+    .where('propertyId','==',propertyId)
+    .where('location','==',paddockName)
+    .where('species','==',speciesUI)
+    .get();
+
+  if (snap.empty){
+    const title = speciesLC.charAt(0).toUpperCase() + speciesLC.slice(1);
+    for (const sp of [title, speciesLC.toUpperCase()]){
+      const s2 = await db.collection('livestock')
+        .where('propertyId','==',propertyId)
+        .where('location','==',paddockName)
+        .where('species','==',sp)
+        .get();
+      if (!s2.empty){ snap = s2; break; }
+    }
+  }
+
+  const rows=[];
+  if (snap.empty){
+    const s3 = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .where('location','==',paddockName)
+      .get();
+    s3.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
+    return rows.filter(r => String(r.species||'').toLowerCase() === speciesLC);
+  } else {
+    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
+    return rows;
+  }
+}
+
+/* -------------------------------------------------------
+   UI logic (activity toggles + mustering table)
+------------------------------------------------------- */
+function onActivityChange(){
+  const act = activitySel.value;
+
+  const needsChem = (act==='Spraying paddocks' || act==='Chemical (stock)' || act==='Trucking (sale)');
+  chemRow.classList.toggle('hidden', !needsChem);
+  chemHint.textContent = (act==='Spraying paddocks') ? 'paddock spray'
+                     : (act==='Trucking (sale)' ? 'backline before transport' : 'stock treatment');
+
+  const needsStock = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering' || act==='Cattle Received (Purchase)' || act.startsWith('Transfer stock'));
+  stockRow.classList.toggle('hidden', !needsStock);
+
+  const needsTransferProp = (act==='Transfer stock (In)' || act==='Transfer stock (Out)');
+  transferPropRow.classList.toggle('hidden', !needsTransferProp);
+
+  const needsTruckDetails = (act==='Trucking (sale)' || act==='Cattle Received (Purchase)');
+  stockDetail1.classList.toggle('hidden', !needsTruckDetails);
+  stockDetail2.classList.toggle('hidden', !needsTruckDetails);
+  stockDetail1.querySelector('label').textContent = (act==='Trucking (sale)') ? 'Buyer / Dest (Trucking)' : 'Seller / Source';
+  stockDetail1.querySelector('input').placeholder = (act==='Trucking (sale)') ? 'e.g. Roma' : 'e.g. Mt Myrtle';
+
+  musterBox.classList.toggle('hidden', act!=='Mustering');
+  if (act==='Cattle Received (Purchase)') speciesSel.value = 'Cattle';
+
+  // refresh paddock/species context when activity changes
+  onPaddockOrSpeciesChange();
+}
+
+async function onPaddockOrSpeciesChange(){
+  const pid = propSel.value;
+  const act = activitySel.value;
+  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const speciesUI = speciesSel.value || 'Cattle';
+
+  // Mustering / move / trucking context
+  const isStockMove = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering' || act==='Transfer stock (Out)');
+  const isStockIn   = (act==='Cattle Received (Purchase)' || act==='Transfer stock (In)');
+
+  if ((!paddockName && !isStockIn) || pid==='ALL'){
+    $('#classOptions').innerHTML = SUGGESTED_CLASSES.map(r=>`<option value="${escapeHtml(r)}"></option>`).join('');
+    musterContext.innerHTML=''; stockContext.innerHTML='';
+    mClassBody.innerHTML='<tr><td colspan="6" class="muted">Pick property + paddock + species…</td></tr>';
+    mExp.value='';
+    return;
+  }
+
+  let rows = [];
+  if (isStockMove && paddockName){
+    rows = await fetchLivestockClasses(pid, paddockName, speciesUI);
+  } else if (isStockIn) {
+    rows = SUGGESTED_CLASSES.map(cls => ({ id: null, class: cls, count: 0 }));
+  }
+
+  rows.sort((a,b)=> String(a.class||'').localeCompare(String(b.class||'')));
+  $('#classOptions').innerHTML = rows.map(r=>`<option value="${escapeHtml(r.class||'')}"></option>`).join('');
+
+  // Live stock chips
+  if (isStockMove && paddockName){
+    const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
+    if (rows.length){
+      stockContext.innerHTML = [
+        `<span class="pill">In ${escapeHtml(paddockName)}: ${total} head</span>`,
+        ...rows.map(r =>
+          `<button type="button" class="pill" role="button" data-cls="${escapeHtml(r.class||'')}" data-head="${Number(r.count||0)}" title="Click to fill class & head">`+
+          `${escapeHtml(r.class||'')}: ${Number(r.count||0)}</button>`
+        )
+      ].join(' ');
+      stockContext.querySelectorAll('.pill[data-cls]').forEach(btn=>{
+        btn.onclick = () => { classInp.value = btn.dataset.cls || ''; headInp.value  = btn.dataset.head || ''; headInp.focus(); };
+      });
+    } else {
+      stockContext.innerHTML = `<span class="muted">No livestock lines found for ${escapeHtml(paddockName)} (${escapeHtml(speciesUI)}).</span>`;
+    }
+  } else {
+    stockContext.innerHTML = '';
+  }
+
+  // Mustering expected + table
+  if (act==='Mustering'){
+    const total = rows.reduce((s,r)=>s+Number(r.count||0),0);
+    mExp.value = total;
+    mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0;
+
+    const parts = rows.map(r=>`${escapeHtml(r.class||'')}: ${Number(r.count||0)}`);
+    musterContext.innerHTML = `<span class="pill">Expected total: ${total}</span> ${parts.length? ' | ' + parts.join(', ') : ''}`;
+
+    const existingClasses = new Set(rows.map(r=>String(r.class||'')));
+    for (const cls of SUGGESTED_CLASSES){
+      if (!existingClasses.has(cls)) rows.push({ id:null, class:cls, count:0, _new:true });
+    }
+
+    mClassBody.innerHTML = rows.map(r=>`
+      <tr data-id="${r.id||''}" data-class="${escapeHtml(r.class||'')}">
+        <td><input class="mc-class w200" value="${escapeHtml(r.class||'')}" ${r.id ? 'disabled' : ''} /></td>
+        <td><input class="mc-current w110" value="${Number(r.count||0)}" disabled /></td>
+        <td><input class="mc-new w110" type="number" min="0" /></td>
+        <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" /></td>
+        <td><input class="mc-qty w110" type="number" min="0" /></td>
+        <td><input class="mc-miss w110" type="number" min="0" /></td>
+      </tr>`).join('');
+  } else {
+    mClassBody.innerHTML = '<tr><td colspan="6" class="muted">Mustering not selected.</td></tr>';
+  }
+}
+
+addClassRowBtn.onclick = ()=>{
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input class="mc-class w200" placeholder="New class name" /></td>
+    <td><input class="mc-current w110" value="0" disabled /></td>
+    <td><input class="mc-new w110" type="number" min="0" /></td>
+    <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" /></td>
+    <td><input class="mc-qty w110" type="number" min="0" /></td>
+    <td><input class="mc-miss w110" type="number" min="0" /></td>`;
+  mClassBody.appendChild(tr);
+};
+
+/* -------------------------------------------------------
+   Save single entry (simple write, no side-effects here)
+   You already have sophisticated revert/apply logic; keep it if needed.
+------------------------------------------------------- */
+async function saveEntry(){
+  if (propSel.value==='ALL') return alert('Select a specific property to save.');
+  const propertyId   = propSel.value;
+  const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '';
+  const date = dateInp.value || todayISO(), time = timeInp.value || '';
+  const activity = activitySel.value;
+  const paddockId = paddockSel.value || '', paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const notes = notesInp.value || '';
+  const species = speciesSel.value || '', klass = classInp.value || ''; const head = parseInt(headInp.value||0,10);
+  const chemId = chemSel.value || null, chemQ = parseFloat(chemQty.value||0), chemU = chemUnit.value || '', chemName = chemId ? (chemSel.selectedOptions[0]?.textContent.split('(')[0].trim() || null) : null;
+
+  const payload = {
+    propertyId, propertyName, date, time, activity,
+    paddockId: paddockId || null, paddock: paddockName || null,
+    notes,
+    species: (activity==='Mustering' || activity==='Move stock' || activity==='Trucking (sale)' || activity==='Chemical (stock)' || activity.startsWith('Transfer') || activity==='Cattle Received (Purchase)') ? species : null,
+    livestockClass: (klass||null),
+    headCount: (isFinite(head) && head>0) ? head : null,
+    chemicalId: chemId || null, chemicalName: chemName, chemQty: chemId ? chemQ : null, chemUnit: chemId ? chemU : null,
+    truckBuyer: (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckBuyer.value || '') : null,
+    truckRef:   (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckRef.value || '')   : null,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    await db.collection('diaryEntries').add(payload);
+    setMsg('Saved');
+    await refreshEntries();
+  } catch(e){
+    console.error(e);
+    setMsg('Save failed', 3000);
+  }
+}
+
+/* -------------------------------------------------------
+   Multi-action batch (queue + save with shared batchId)
+------------------------------------------------------- */
+const actions = [];
+function renderQueued(){
+  actionsListEl.style.display = actions.length ? 'block' : 'none';
+  actionsOl.innerHTML = actions.map((a,i)=>(
+    `<li><span class="pill">${escapeHtml(a.activity)}</span> ${escapeHtml(a.propertyName)} — ${escapeHtml(a.paddock||'(no paddock)')}${a.notes? ' — ' + escapeHtml(a.notes) : ''} <button data-i="${i}" class="btn">Remove</button></li>`
+  )).join('');
+  actionsOl.querySelectorAll('button[data-i]').forEach(b=>{
+    b.onclick = () => { actions.splice(Number(b.dataset.i),1); renderQueued(); };
+  });
+}
+function currentActionFromUI(){
+  const propertyId   = propSel.value;
+  const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '';
+  const date = dateInp.value || todayISO(), time = timeInp.value || '';
+  const activity = activitySel.value;
+  const paddockId = paddockSel.value || '', paddock = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const notes = notesInp.value || '';
+  const species = speciesSel.value || '', livestockClass = classInp.value || '';
+  const headCount = headInp.value ? Number(headInp.value) : null;
+  const chemicalId = chemSel.value || null, chemicalName = chemicalId ? (chemSel.selectedOptions[0]?.textContent.split('(')[0].trim()||null) : null, chemQty = chemicalId ? Number(chemQty.value||0) : null, chemUnit = chemicalId ? (chemUnit.value||'') : null;
+  return { propertyId, propertyName, date, time, activity, paddockId, paddock, notes, species, livestockClass, headCount, chemicalId, chemicalName, chemQty, chemUnit };
+}
+addActionBtn.onclick = ()=>{
+  if (propSel.value==='ALL') { alert('Choose a specific property'); return; }
+  const a = currentActionFromUI();
+  actions.push(a);
+  renderQueued();
+  batchMsg.textContent = 'Action added.'; setTimeout(()=>batchMsg.textContent='', 1500);
+};
+saveBatchBtn.onclick = async ()=>{
+  if (!actions.length) { alert('No actions queued. Click “Add action” first.'); return; }
+  const batchId = 'b_'+Date.now();
+  batchMsg.textContent = 'Saving…';
+  try{
+    const batch = db.batch();
+    actions.forEach((a, idx)=>{
+      const ref = db.collection('diaryEntries').doc();
+      batch.set(ref, { ...a, batchId, batchIndex: idx, createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+    });
+    await batch.commit();
+    actions.length = 0; renderQueued();
+    batchMsg.textContent = 'Saved.'; setTimeout(()=>batchMsg.textContent='', 1500);
+    await refreshEntries();
+  }catch(e){
+    console.error(e);
+    batchMsg.textContent = 'Save failed.'; setTimeout(()=>batchMsg.textContent='', 2500);
+  }
+};
+
+/* -------------------------------------------------------
+   Listing
+------------------------------------------------------- */
+async function refreshEntries(){
+  entriesTbody.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
+  const y = Number(yearInp.value || new Date().getFullYear());
+  const {start,end} = yBounds(y);
+  try{
+    const snap = await db.collection('diaryEntries').where('date','>=',start).where('date','<=',end).orderBy('date','desc').limit(200).get();
+    const rows=[];
+    snap.forEach(doc=>{
+      const d = { id:doc.id, ...doc.data() };
+      rows.push(`<tr>
+        <td>${escapeHtml(d.date||'')}</td>
+        <td>${escapeHtml(d.propertyName||'')}</td>
+        <td>${escapeHtml(d.activity||'')}</td>
+        <td>${escapeHtml(d.paddock||'')}</td>
+        <td>${Number(d.rainfallMm||0) || ''}</td>
+        <td>${escapeHtml(d.chemicalName||'')}</td>
+        <td>${Number(d.headCount||0) || ''}</td>
+        <td class="nowrap"><button class="btn danger" onclick="delEntry('${d.id}')">Delete</button></td>
+      </tr>`);
+    });
+    entriesTbody.innerHTML = rows.length? rows.join('') : '<tr><td colspan="8">No entries.</td></tr>';
+  }catch(e){
+    console.error(e);
+    entriesTbody.innerHTML = '<tr><td colspan="8">Load failed.</td></tr>';
+  }
+}
+window.delEntry = async function(id){
+  if(!confirm('Delete this entry?')) return;
+  try{ await db.collection('diaryEntries').doc(id).delete(); await refreshEntries(); }
+  catch(e){ console.error(e); alert('Delete failed'); }
+};
+
+/* -------------------------------------------------------
+   Property change + bootstrap
+------------------------------------------------------- */
+activitySel.onchange = onActivityChange;
+paddockSel.onchange  = onPaddockOrSpeciesChange;
+speciesSel.onchange  = onPaddockOrSpeciesChange;
+refreshBtn.onclick   = refreshEntries;
+$('#saveBtn').onclick = saveEntry;
+$('#resetBtn').onclick = ()=>{
+  dateInp.value = todayISO(); timeInp.value=''; notesInp.value='';
+  activitySel.value='Ploughing'; onActivityChange();
+  paddockSel.value=''; chemSel.value=''; chemQty.value=''; chemUnit.value='';
+  speciesSel.value='Cattle'; classInp.value=''; headInp.value='';
+  truckBuyer.value=''; truckRef.value='';
+  mExp.value=''; mAct.value=''; mDelta.value=''; mReason.value='';
+  mAddCalves.value=''; mAddWeaners.value='';
+  mClassBody.innerHTML='<tr><td colspan="6">Pick property + paddock + species…</td></tr>';
+  stockContext.innerHTML='';
+};
+
+propSel.onchange = async ()=>{
+  // populate transfer list excluding current property
+  transferPropSel.innerHTML = '<option value="">(choose)</option>' +
+    Object.entries(PROPERTY_IDS).filter(([n,id])=> id!==propSel.value)
+      .map(([n,id])=>`<option value="${id}">${n}</option>`).join('');
+
+  await loadPaddocksForProperty(propSel.value);
+  await loadChemicalsForProperty(propSel.value);
+  await onPaddockOrSpeciesChange();
+};
+
+/* -------------------------------------------------------
+   Init
+------------------------------------------------------- */
+(async function init(){
+  // Property select
+  propSel.innerHTML =
+    '<option value="ALL">(All properties)</option>' +
+    Object.entries(PROPERTY_IDS).map(([name,id])=>`<option value="${id}">${name}</option>`).join('');
+  propSel.value = 'TRuxtRBx2zJlwZnRGYKJ'; // default Mt Myrtle
+
+  yearInp.value = new Date().getFullYear();
+  dateInp.value = todayISO();
+
+  setStatus('Connecting…');
+
+  auth.onAuthStateChanged(async (u)=>{
+    if (u){
+      authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+      signOutBtn.classList.remove('hidden');
+      showOverlay(false);
+
+      await loadPaddocksForProperty(propSel.value);
+      await loadChemicalsForProperty(propSel.value);
+      onActivityChange();
       await refreshEntries();
+      setStatus('Connected');
+    } else {
+      authWho.textContent = 'Not signed in';
+      signOutBtn.classList.add('hidden');
+      setStatus('Please sign in', true);
+      showOverlay(true);
     }
-
-    /* -------------------------------------------------------
-       Properties & Paddocks
-    ------------------------------------------------------- */
-    const propSel     = $('#propSel');
-    const paddockSel  = $('#paddockSel');
-
-    async function initProperties(){
-      // Build property list
-      propSel.innerHTML = Object.keys(PROPERTY_IDS)
-        .sort()
-        .map(n=>`<option value="${PROPERTY_IDS[n]}">${n}</option>`)
-        .join('');
-      // Default to Mt Myrtle (requested)
-      const DEFAULT_ID = PROPERTY_IDS["Mt Myrtle"];
-      if (DEFAULT_ID) propSel.value = DEFAULT_ID;
-
-      propSel.onchange = onPropertyChange;
-    }
-
-    async function onPropertyChange(){
-      const pid = propSel.value;
-      if(!pid){ paddockSel.innerHTML='<option value="">(choose property)</option>'; return; }
-      paddockSel.innerHTML = '<option value="">(loading…)</option>';
-      setStatus('Loading paddocks…');
-
-      try{
-        const snap = await db.collection('paddocks').where('propertyId','==',pid).get();
-        const paddocks = [];
-        snap.forEach(d => paddocks.push({ id:d.id, ...(d.data()||{}) }));
-
-        // Yards first (isYards true), then by name
-        paddocks.sort((a,b)=>{
-          const ay = a.isYards ? 1 : 0, by = b.isYards ? 1 : 0;
-          if (by - ay !== 0) return by - ay;
-          const an = String(a.name||'').toLowerCase(), bn = String(b.name||'').toLowerCase();
-          return an.localeCompare(bn);
-        });
-
-        if (!paddocks.length){
-          paddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
-        } else {
-          paddockSel.innerHTML =
-            '<option value="">(choose)</option>' +
-            paddocks.map(p => `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>`).join('');
-        }
-        setStatus('');
-      }catch(e){
-        console.error(e);
-        paddockSel.innerHTML = '<option value="">(load error)</option>';
-        setStatus('Paddocks load error');
-      }
-    }
-
-    /* -------------------------------------------------------
-       Multi-action queue & Save
-    ------------------------------------------------------- */
-    const dateInp     = $('#dateInp');
-    const timeInp     = $('#timeInp');
-    const activitySel = $('#activitySel');
-    const notesInp    = $('#notesInp');
-
-    const addActionBtn = $('#addActionBtn');
-    const saveAllBtn   = $('#saveAllBtn');
-    const resetBtn     = $('#resetBtn');
-    const actionQueue  = $('#actionQueue');
-
-    let queued = []; // { propertyId, propertyName, date, time, activity, paddockId, paddockName, notes }
-
-    dateInp.value = todayISO();
-    $('#yearInp').value = new Date().getFullYear();
-
-    addActionBtn.onclick = ()=>{
-      const propId = propSel.value;
-      if (!propId) return alert('Choose a property');
-      const propName = PROPERTY_NAME_BY_ID[propId] || '(Unknown)';
-
-      const paddockId = paddockSel.value || null;
-      const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-
-      const item = {
-        propertyId: propId,
-        propertyName: propName,
-        date: dateInp.value || todayISO(),
-        time: timeInp.value || '',
-        activity: activitySel.value,
-        paddockId,
-        paddockName: paddockName || null,
-        notes: notesInp.value || ''
-      };
-      queued.push(item);
-      renderQueue();
-      setMsg('Action added to queue.', 1500);
-    };
-
-    function renderQueue(){
-      if (!queued.length){ actionQueue.style.display='none'; actionQueue.innerHTML=''; return; }
-      actionQueue.style.display = 'flex';
-      actionQueue.innerHTML = queued.map((q,i)=>`
-        <div class="item">
-          <div class="meta">
-            <strong>${escapeHtml(q.propertyName)}</strong> · ${escapeHtml(q.activity)}
-            ${q.paddockName ? ` · ${escapeHtml(q.paddockName)}` : ''} · ${escapeHtml(q.date)} ${escapeHtml(q.time||'')}
-            ${q.notes ? ` — ${escapeHtml(q.notes)}` : ''}
-          </div>
-          <button class="btn danger remove" data-i="${i}">Remove</button>
-        </div>
-      `).join('');
-      actionQueue.querySelectorAll('.remove').forEach(btn=>{
-        btn.onclick = ()=>{ const i = Number(btn.dataset.i); queued.splice(i,1); renderQueue(); };
-      });
-    }
-
-    saveAllBtn.onclick = async ()=>{
-      if (!queued.length) return alert('Add at least one action first.');
-      try{
-        setMsg('Saving…', 4000);
-        const batch = db.batch();
-        queued.forEach(q=>{
-          const ref = db.collection('diaryEntries').doc();
-          batch.set(ref, {
-            propertyId: q.propertyId, propertyName: q.propertyName,
-            date: q.date, time: q.time,
-            activity: q.activity,
-            paddockId: q.paddockId || null, paddock: q.paddockName || null,
-            notes: q.notes || '',
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge:true });
-        });
-        await batch.commit();
-        queued = []; renderQueue();
-        setMsg('Saved all actions.');
-        await refreshEntries();
-      }catch(e){
-        console.error(e);
-        alert('Save failed: ' + (e?.message||e));
-      }
-    };
-
-    resetBtn.onclick = ()=>{
-      dateInp.value = todayISO();
-      timeInp.value = '';
-      activitySel.value = 'Mustering / Moving stock';
-      paddockSel.value = '';
-      notesInp.value = '';
-      queued = []; renderQueue();
-      setMsg('Form reset.', 1200);
-    };
-
-    /* -------------------------------------------------------
-       Recent entries (simple list by year)
-    ------------------------------------------------------- */
-    const entriesTbody = $('#entriesTbody');
-    $('#refreshBtn').onclick = refreshEntries;
-
-    async function refreshEntries(){
-      entriesTbody.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
-      try{
-        const y = Number($('#yearInp').value || new Date().getFullYear());
-        const {start, end} = yBounds(y);
-        let q = db.collection('diaryEntries')
-                  .where('date','>=',start)
-                  .where('date','<=',end)
-                  .orderBy('date','desc')
-                  .limit(100);
-        const snap = await q.get();
-        const rows = [];
-        snap.forEach(doc=>{
-          const d = { id:doc.id, ...(doc.data()||{}) };
-          rows.push(`<tr>
-            <td>${escapeHtml(d.date||'')}</td>
-            <td>${escapeHtml(d.propertyName||'')}</td>
-            <td>${escapeHtml(d.activity||'')}</td>
-            <td>${escapeHtml(d.paddock||'')}</td>
-            <td>${escapeHtml(d.notes||'')}</td>
-          </tr>`);
-        });
-        entriesTbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="5">No entries.</td></tr>';
-      }catch(e){
-        console.error(e);
-        entriesTbody.innerHTML = '<tr><td colspan="5">Load failed (console).</td></tr>';
-      }
-    }
-
-    /* -------------------------------------------------------
-       Bootstrap
-    ------------------------------------------------------- */
-    (async function init(){
-      setStatus('Connecting…');
-      await requireAuth();            // shows overlay if not signed in
-      if (auth.currentUser){
-        setStatus('Connected');
-        await afterSignIn();
-      }
-    })();
-  </script>
+  });
+})();
+</script>
 </body>
 </html>
