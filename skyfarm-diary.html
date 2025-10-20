@@ -10,29 +10,31 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
 
   <style>
-    /* STYLES ADOPTED FROM CHEMICAL INVENTORY PAGE */
+    /* FULL STYLES ADOPTED FROM CHEMICAL INVENTORY PAGE */
     :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); margin:0; color:var(--ink); }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
     h1 { margin: 12px 0; font-size: 1.6rem; }
 
-    /* Header (Adapted from chemical header styles) */
-    .topbar { display:flex; align-items:center; gap:12px; padding:10px 0; }
-    .brand { color:var(--brand); font-weight:700; text-decoration:none; display:flex; align-items:center; gap:10px; }
-    nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+    /* Header (Manual implementation of the Chemical page's header style) */
+    #skyfarm-header { position:sticky; top:0; z-index:10; }
+    #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
+    #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
+    #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+    #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
     .spacer { flex:1; }
     .muted { color:var(--muted); font-size:.9rem; }
     .hidden { display:none; }
-
+    
     /* Cards / Controls */
     .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0; }
     .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
     label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
     
-    /* CRITICAL FIX: Ensure inputs/selects fill their parent container */
+    /* CRITICAL FIX: Ensure inputs/selects fill their parent container, and buttons don't */
     input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; width: 100%; } 
-    button { cursor:pointer; width: auto; } /* Buttons shouldn't take full width */
+    button { cursor:pointer; width: auto; }
     
     .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
     .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
@@ -47,7 +49,7 @@
     th { background:#f1f5f9; }
     .nowrap { white-space: nowrap; }
 
-    /* Sign-in overlay (Hidden by default, shown by JS if not signed in) */
+    /* Sign-in overlay */
     #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 8px}
@@ -55,20 +57,21 @@
   </style>
 </head>
 <body>
-<div class="wrap">
 
-    <div class="topbar">
-    <div class="brand">🌱 SkyFarm</div>
+<div id="skyfarm-header">
+  <div class="bar">
+    <a class="brand" href="#">🌱 SkyFarm</a>
     <nav>
-      <a id="navDiary" href="#" aria-current="page">Diary</a>
-      <a id="navMap" href="#">Map</a>
-      <a id="navChem" href="#">Chemicals</a>
+      <a id="navDiary" href="skyfarm-diary.html" aria-current="page">Diary</a>
+      <a id="navMap" href="skyfarm-map.html">Map</a>
+      <a id="navChem" href="skyfarm-chemical.html">Chemicals</a>
     </nav>
     <span class="spacer"></span>
     <span id="authWho" class="muted">Checking sign-in…</span>
     <button id="signOutBtn" class="danger hidden" style="width: auto;">Sign out</button>
   </div>
-
+</div>
+<div class="wrap">
   <h1>SkyFarm — Diary</h1>
 
     <div class="card">
@@ -229,7 +232,6 @@ $('#signOutBtn').onclick = async ()=>{
 };
 
 $('#closeOverlayBtn').onclick = ()=>{ 
-    // This allows the user to close the overlay but will require signing in again.
     showOverlay(false); 
 };
 
@@ -312,9 +314,10 @@ async function refreshEntries(){
 ------------------------------------------------------- */
 (async function init(){
   const base = location.origin || '';
-  $('#navDiary').href = base + '/skyfarm-diary.html';
-  $('#navMap').href   = base + '/skyfarm-map.html';
-  $('#navChem').href  = base + '/skyfarm-chemical.html';
+  // Ensure nav links use full relative paths for consistency
+  $('#navDiary').href = 'skyfarm-diary.html';
+  $('#navMap').href   = 'skyfarm-map.html';
+  $('#navChem').href  = 'skyfarm-chemical.html';
 
   $('#dateInp').value = new Date().toISOString().slice(0,10);
   
