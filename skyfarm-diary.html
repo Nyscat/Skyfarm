@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ok, so here's the code, where it last looked ok, but it wouldn't sign in. Can you change the API in here to the correct one and fix that maybe? <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
@@ -261,10 +261,10 @@ const setStatus = t => { const el=$('#status'); el.textContent = t||''; el.class
 const setMsg = (t, ms=3000) => { $('#msg').textContent = t||''; if(t&&ms) setTimeout(()=>$('#msg').textContent='', ms); };
 const todayISO = () => new Date().toISOString().slice(0,10);
 const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-const yBounds = (y)=>({ start:`${y}-01-01`, end:`${y}-12-31` });
+const yBounds = (y)=>({ start:${y}-01-01, end:${y}-12-31 });
 const fmtDateKey = d => d;
-function fyLabel(dateStr){ const [y,m]=dateStr.split('-').map(Number); return (m>=7)?`${y}-${String(y+1).slice(2)}`:`${y-1}-${String(y).slice(2)}`; }
-function missingDocId({propertyId, paddock, species, cls, fy}){ const safe=s=>String(s||'').replace(/[^\w.-]/g,'_'); return `${safe(propertyId)}__${safe(paddock)}__${safe(species)}__${safe(cls)}__${safe(fy)}`; }
+function fyLabel(dateStr){ const [y,m]=dateStr.split('-').map(Number); return (m>=7)?${y}-${String(y+1).slice(2)}:${y-1}-${String(y).slice(2)}; }
+function missingDocId({propertyId, paddock, species, cls, fy}){ const safe=s=>String(s||'').replace(/[^\w.-]/g,'_'); return ${safe(propertyId)}__${safe(paddock)}__${safe(species)}__${safe(cls)}__${safe(fy)}; }
 
 /*** URL params (optional deep-links) ***/
 const url = new URL(location.href);
@@ -312,7 +312,7 @@ let editingId = null, originalEntry = null;
   } catch(e){ console.error(e); setStatus('Auth issue (check Anonymous Sign-in & Authorized domains)'); }
 
   // properties (+ All)
-  const propOptions = Object.keys(propertyIds).map(n=>`<option value="${propertyIds[n]}">${n}</option>`).join('');
+  const propOptions = Object.keys(propertyIds).map(n=><option value="${propertyIds[n]}">${n}</option>).join('');
   propSel.innerHTML = '<option value="ALL">(All properties)</option>' + propOptions;
 
   // transfer list (all)
@@ -340,7 +340,7 @@ let editingId = null, originalEntry = null;
   // Preselect from URL
   if (urlPropId || urlPropName){
     const pid = urlPropId || propertyIds[urlPropName] || '';
-    if (pid && propSel.querySelector(`option[value="${pid}"]`)) propSel.value = pid;
+    if (pid && propSel.querySelector(option[value="${pid}"])) propSel.value = pid;
   }
   await onPropertyChange();
 
@@ -402,7 +402,7 @@ async function onPropertyChange(){
   // Update transfer dropdown to exclude the currently selected property
   transferPropSel.innerHTML = '<option value="">(choose property)</option>' +
     Object.entries(propertyIds).filter(([n,id]) => id !== pid)
-      .map(([n,id])=>`<option value="${id}">${n}</option>`).join('');
+      .map(([n,id])=><option value="${id}">${n}</option>).join('');
 
   if (pid==='ALL'){
     paddockSel.innerHTML = '<option value="">(choose a property to select paddock)</option>';
@@ -423,14 +423,14 @@ async function onPropertyChange(){
   const paddockSnap = await db.collection('paddocks').where('propertyId','==',pid).get();
   paddockSnap.forEach(d=>paddocks.push({id:d.id, ...d.data()}));
   paddockSel.innerHTML='<option value="">(choose)</option>'+paddocks.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-    .map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>`).join('');
+    .map(p=><option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>).join('');
 
   // gauges
   gauges=[]; gaugeSel.innerHTML='<option>(loading…)</option>';
   const gaugeSnap = await db.collection('gauges').where('propertyId','==',pid).get();
   gaugeSnap.forEach(d=>gauges.push({id:d.id, ...d.data()}));
   gaugeSel.innerHTML='<option value="">(choose)</option>'+gauges.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-    .map(g=>`<option value="${g.id}" data-name="${escapeHtml(g.name||'')}">${escapeHtml(g.name||'(unnamed)')}</option>`).join('');
+    .map(g=><option value="${g.id}" data-name="${escapeHtml(g.name||'')}">${escapeHtml(g.name||'(unnamed)')}</option>).join('');
 
   // chems
   chems=[]; chemSel.innerHTML='<option>(loading…)</option>';
@@ -473,7 +473,7 @@ function buildChemDropdown(){
   if(!list.length){ chemSel.innerHTML='<option value="">(no chemicals available)</option>'; chemUnit.value=''; return; }
   chemSel.innerHTML = '<option value="">(choose chemical)</option>' +
     list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-      .map(c=>`<option value="${c.id}" data-unit="${c.unit||''}">${escapeHtml(c.name||'Unnamed')} (${c.unit||''}) — ${Number(c.quantity||0)} left</option>`).join('');
+      .map(c=><option value="${c.id}" data-unit="${c.unit||''}">${escapeHtml(c.name||'Unnamed')} (${c.unit||''}) — ${Number(c.quantity||0)} left</option>).join('');
   chemSel.onchange = ()=> chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
   chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
 }
@@ -530,7 +530,7 @@ async function onPaddockOrSpeciesChange(){
   const speciesUI = speciesSel.value || 'Cattle';
 
   if (!paddockName && !isStockIn){
-    classOptions.innerHTML = SUGGESTED_CLASSES.map(r=>`<option value="${escapeHtml(r)}"></option>`).join('');
+    classOptions.innerHTML = SUGGESTED_CLASSES.map(r=><option value="${escapeHtml(r)}"></option>).join('');
     musterContext.innerHTML=''; stockContext.innerHTML='';
     mClassBody.innerHTML='<tr><td colspan="6">Pick property + paddock + species…</td></tr>';
     mExp.value='';
@@ -545,17 +545,17 @@ async function onPaddockOrSpeciesChange(){
   }
 
   rows.sort((a,b)=>String(a.class||'').localeCompare(String(b.class||'')));
-  classOptions.innerHTML = rows.map(r=>`<option value="${escapeHtml(r.class||'')}"></option>`).join('');
+  classOptions.innerHTML = rows.map(r=><option value="${escapeHtml(r.class||'')}"></option>).join('');
 
   // show current stock for Trucking/Move and add quick-pick chips
   if (isStockMove && paddockName){
     const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
     if (rows.length){
       stockContext.innerHTML = [
-        `<span class="pill">In ${escapeHtml(paddockName)}: ${total} head</span>`,
+        <span class="pill">In ${escapeHtml(paddockName)}: ${total} head</span>,
         ...rows.map(r =>
-          `<button type="button" class="pill" role="button" data-cls="${escapeHtml(r.class||'')}" data-head="${Number(r.count||0)}" title="Click to fill class & head">`+
-          `${escapeHtml(r.class||'')}: ${Number(r.count||0)}</button>`
+          <button type="button" class="pill" role="button" data-cls="${escapeHtml(r.class||'')}" data-head="${Number(r.count||0)}" title="Click to fill class & head">+
+          ${escapeHtml(r.class||'')}: ${Number(r.count||0)}</button>
         )
       ].join(' ');
       stockContext.querySelectorAll('.pill[data-cls]').forEach(btn=>{
@@ -566,7 +566,7 @@ async function onPaddockOrSpeciesChange(){
         };
       });
     } else {
-      stockContext.innerHTML = `<span class="muted">No livestock lines found for ${escapeHtml(paddockName)} (${escapeHtml(speciesUI)}).</span>`;
+      stockContext.innerHTML = <span class="muted">No livestock lines found for ${escapeHtml(paddockName)} (${escapeHtml(speciesUI)}).</span>;
     }
   } else {
     stockContext.innerHTML = '';
@@ -584,15 +584,15 @@ async function onPaddockOrSpeciesChange(){
     mExp.value = total;
     mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0;
 
-    const parts = rows.map(r=>`${escapeHtml(r.class||'')}: ${Number(r.count||0)}`);
-    musterContext.innerHTML = `<span class="pill">Expected total: ${total}</span> ${parts.length? ' | ' + parts.join(', ') : ''}`;
+    const parts = rows.map(r=>${escapeHtml(r.class||'')}: ${Number(r.count||0)});
+    musterContext.innerHTML = <span class="pill">Expected total: ${total}</span> ${parts.length? ' | ' + parts.join(', ') : ''};
 
     const existingClasses = new Set(rows.map(r=>String(r.class||'')));
     for (const cls of SUGGESTED_CLASSES){
       if (!existingClasses.has(cls)) rows.push({ id:null, class:cls, count:0, _new:true });
     }
 
-    mClassBody.innerHTML = rows.map(r=>`
+    mClassBody.innerHTML = rows.map(r=>
       <tr data-id="${r.id||''}" data-class="${escapeHtml(r.class||'')}">
         <td><input class="mc-class w200" value="${escapeHtml(r.class||'')}" ${r.id ? 'disabled' : ''} /></td>
         <td><input class="mc-current w110" value="${Number(r.count||0)}" disabled /></td>
@@ -600,7 +600,7 @@ async function onPaddockOrSpeciesChange(){
         <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" /></td>
         <td><input class="mc-qty w110" type="number" min="0" /></td>
         <td><input class="mc-miss w110" type="number" min="0" /></td>
-      </tr>`).join('');
+      </tr>).join('');
   } else {
     mClassBody.innerHTML = '<tr><td colspan="6" class="muted">Mustering not selected.</td></tr>';
   }
@@ -608,13 +608,13 @@ async function onPaddockOrSpeciesChange(){
 
 function addMusterClassRow(){
   const tr = document.createElement('tr');
-  tr.innerHTML = `
+  tr.innerHTML = 
     <td><input class="mc-class w200" placeholder="New class name" /></td>
     <td><input class="mc-current w110" value="0" disabled /></td>
     <td><input class="mc-new w110" type="number" min="0" /></td>
     <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" /></td>
     <td><input class="mc-qty w110" type="number" min="0" /></td>
-    <td><input class="mc-miss w110" type="number" min="0" /></td>`;
+    <td><input class="mc-miss w110" type="number" min="0" /></td>;
   mClassBody.appendChild(tr);
 }
 
@@ -773,11 +773,11 @@ async function saveEntry(){
       if ((isTruckingSale || isMoveStock || isTransferOut) && Number(payload.headCount||0)>0 && payload.species && payload.livestockClass && payload.paddock){
         const q = db.collection('livestock').where('propertyId','==',payload.propertyId).where('location','==',payload.paddock).where('species','==',payload.species).where('class','==',payload.livestockClass);
         const s = await tx.get(q);
-        if (s.empty) throw new Error(`No ${payload.livestockClass} in ${payload.paddock} to move/sell.`);
+        if (s.empty) throw new Error(No ${payload.livestockClass} in ${payload.paddock} to move/sell.);
         s.forEach(doc=>{
           const cur=Number((doc.data()||{}).count||0);
           const next=cur-Number(payload.headCount||0);
-          if(next<0) throw new Error(`${payload.activity} would make class count negative in ${payload.paddock}`);
+          if(next<0) throw new Error(${payload.activity} would make class count negative in ${payload.paddock});
           tx.update(doc.ref, {count: next});
         });
 
@@ -792,7 +792,7 @@ async function saveEntry(){
             activity: 'Transfer stock (In)',
             paddockId: null, paddock: null,
             chemicalId: null, chemQty: null, chemUnit: null, chemicalName: null,
-            notes: `Received from ${payload.propertyName}. [Link to OUT entry: ${entryId}]`,
+            notes: Received from ${payload.propertyName}. [Link to OUT entry: ${entryId}],
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           };
           tx.set(db.collection('diaryEntries').doc(transferInId), transferInPayload, { merge:true });
@@ -904,7 +904,7 @@ async function refreshEntries(){
   const rows=[];
   snap.forEach(doc=>{
     const d = { id:doc.id, ...doc.data() };
-    rows.push(`<tr>
+    rows.push(<tr>
       <td>${escapeHtml(d.date||'')}</td>
       <td>${escapeHtml(d.propertyName||'')}</td>
       <td>${escapeHtml(d.activity||'')}</td>
@@ -916,7 +916,7 @@ async function refreshEntries(){
         <button onclick="editEntry('${d.id}')">Edit</button>
         <button class="danger" onclick="delEntry('${d.id}')">Delete</button>
       </td>
-    </tr>`);
+    </tr>);
   });
   entriesTbody.innerHTML = rows.length? rows.join('') : '<tr><td colspan="8">No entries.</td></tr>';
 }
@@ -933,13 +933,13 @@ window.editEntry = async function(id){
     activitySel.value = d.activity || 'Other'; onActivityChange();
     notesInp.value = d.notes || '';
 
-    if (d.paddockId && paddockSel.querySelector(`option[value="${d.paddockId}"]`)) {
+    if (d.paddockId && paddockSel.querySelector(option[value="${d.paddockId}"])) {
       paddockSel.value = d.paddockId;
     } else {
       if (d.paddock) trySelectPaddockByName(d.paddock);
     }
 
-    if (d.transferPropId && transferPropSel.querySelector(`option[value="${d.transferPropId}"]`)){
+    if (d.transferPropId && transferPropSel.querySelector(option[value="${d.transferPropId}"])){
       transferPropSel.value = d.transferPropId;
     }
 
@@ -1064,9 +1064,9 @@ function exportYearCsv(){
       rows.push([0,1,2,3,4,5,6].map(i => (tds[i]?.textContent||'').replace(/[\n\r]+/g,' ').trim()));
     }
   });
-  const csv = rows.map(r=>r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv = rows.map(r=>r.map(v => "${String(v).replace(/"/g,'""')}").join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `skyfarm-diary-${yearInp.value||new Date().getFullYear()}.csv`; a.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = skyfarm-diary-${yearInp.value||new Date().getFullYear()}.csv; a.click();
 }
 
 function printYear(){ window.print(); }
