@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SkyFarm — Diary (Email/Password only)</title>
+  <title>SkyFarm — Diary</title>
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
@@ -16,6 +16,9 @@
     body{margin:16px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--ink)}
     .wrap{max-width:1100px; margin:0 auto}
     h1{margin:0 0 12px; font-size:1.6rem}
+    .topbar{display:flex; align-items:center; gap:12px; margin-bottom:8px}
+    .brand{font-weight:700}
+    .pill{padding:4px 10px; border-radius:999px; background:#e2e8f0; text-decoration:none; color:#0f172a; font-size:.9rem}
     .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0}
     .row{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0}
     label{display:block; font-size:.9rem; color:#475569; margin-bottom:4px}
@@ -29,16 +32,13 @@
     table{width:100%; border-collapse:collapse}
     th,td{border-bottom:1px solid var(--line); padding:8px; text-align:left}
     th{background:#f1f5f9}
-    .pill{padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem}
-    .topbar{display:flex; align-items:center; gap:10px; margin-bottom:8px}
-    .topbar .brand{font-weight:600}
-    .status-ok{color:#0B7A6E}
-    .status-bad{color:#b45309}
     /* Sign-in overlay */
     #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 8px}
     .small{font-size:.9rem}
+    .status-ok{color:#0B7A6E}
+    .status-bad{color:#b45309}
   </style>
 </head>
 <body>
@@ -47,9 +47,9 @@
   <!-- Header -->
   <div class="topbar">
     <div class="brand">🌱 SkyFarm</div>
-    <a id="navDiary" href="#" class="pill">Diary</a>
-    <a id="navMap" href="#" class="pill">Map</a>
-    <a id="navChem" href="#" class="pill">Chemicals</a>
+    <a id="navDiary" class="pill" href="#">Diary</a>
+    <a id="navMap" class="pill" href="#">Map</a>
+    <a id="navChem" class="pill" href="#">Chemicals</a>
     <span class="spacer"></span>
     <span id="authWho" class="muted">Checking sign-in…</span>
     <button id="signOutBtn" class="danger hidden">Sign out</button>
@@ -75,12 +75,12 @@
       <div>
         <label>Activity</label>
         <select id="activitySel" style="min-width:220px">
-          <option value="Mustering / Moving stock">Mustering / Moving stock</option>
-          <option value="Trucking">Trucking (sales/transfer)</option>
-          <option value="Ploughing">Ploughing</option>
-          <option value="Planting">Planting</option>
-          <option value="Spraying">Spraying</option>
-          <option value="General note">General note</option>
+          <option>Mustering / Moving stock</option>
+          <option>Trucking (sales/transfer)</option>
+          <option>Ploughing</option>
+          <option>Planting</option>
+          <option>Spraying</option>
+          <option>General note</option>
         </select>
       </div>
       <span class="spacer"></span>
@@ -94,7 +94,7 @@
       <div style="min-width:260px">
         <label>Paddock</label>
         <select id="paddockSel" style="min-width:260px"><option value="">(choose)</option></select>
-        <div class="small"><a id="typePaddockLink" href="javascript:void(0)">Can’t see it? Type paddock name instead.</a></div>
+        <div class="small"><a href="javascript:void(0)">Can’t see it? Type paddock name instead.</a></div>
       </div>
       <div style="min-width:260px; flex:1">
         <label>Notes</label>
@@ -102,7 +102,6 @@
       </div>
     </div>
 
-    <!-- Weather quick stub -->
     <div class="row">
       <button id="getWeatherBtn">Get weather</button>
       <span id="weatherText" class="muted"></span>
@@ -126,9 +125,9 @@
     </div>
     <table>
       <thead>
-      <tr>
-        <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
-      </tr>
+        <tr>
+          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
+        </tr>
       </thead>
       <tbody id="entriesTbody"><tr><td colspan="6">Sign in to load entries…</td></tr></tbody>
     </table>
@@ -162,45 +161,44 @@
 <script>
 /* -------------------------------------------------------
    Firebase init (compat) — Email/Password ONLY
+   (Fixed apiKey & storageBucket)
 ------------------------------------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJlGvBwmW70",
   authDomain: "consentes-pastoral.firebaseapp.com",
   projectId: "consentes-pastoral",
   storageBucket: "consentes-pastoral.appspot.com",
-  messagingSenderId: "494858780013",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64",
-  measurementId: "G-9MSLTVW70N"
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
 /* -------------------------------------------------------
-   Helpers & small UI bits
+   Helpers
 ------------------------------------------------------- */
 const $ = s => document.querySelector(s);
 const setStatus = t => {
   const el = $('#status');
   el.textContent = t || '';
-  el.className = (/connected/i.test(t||'')) ? 'status-ok' : (/issue|error|denied/i.test(t||'') ? 'status-bad' : 'muted');
+  el.className = (/connected/i.test(t||'')) ? 'status-ok' : (/issue|error|denied|sign in/i.test(t||'') ? 'status-bad' : 'muted');
 };
 const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
 const todayISO = ()=> new Date().toISOString().slice(0,10);
 const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 
 /* -------------------------------------------------------
-   Properties (IDs you provided)
+   Properties (IDs you gave)
 ------------------------------------------------------- */
 const PROPS = [
-  { id:"s7PlDM9wrEpxuJ6DGIab", name:"Consentes" },
-  { id:"P0dQ0H2FWHeqqxejflZs", name:"Gerawin" },
-  { id:"TRuxtRBX2zJlwZnRGYKJ", name:"Mt Myrtle" }
+  { id:"s7PlDM9wrEpxuJ6DGIab", name:"Consentes", lat:-20.263323, lon:141.609607 },
+  { id:"P0dQ0H2FWHeqqxejflZs", name:"Gerawin",   lat:-20.114428, lon:141.751857 },
+  { id:"TRuxtRBX2zJlwZnRGYKJ", name:"Mt Myrtle", lat:-26.566565, lon:149.997202 }
 ];
-const DEFAULT_PROP_ID = "TRuxtRBX2zJlwZnRGYKJ"; // Mt Myrtle
+const DEFAULT_PROP_ID = "TRuxtRBX2zJlwZnRGYKJ";
 
 /* -------------------------------------------------------
-   Auth flow (no anonymous)
+   Auth (no anonymous)
 ------------------------------------------------------- */
 const overlay = $('#authOverlay');
 const signOutBtn = $('#signOutBtn');
@@ -223,10 +221,7 @@ $('#signInBtn').onclick = async ()=>{
   }
 };
 $('#closeOverlayBtn').onclick = ()=> showOverlay(false);
-
-signOutBtn.onclick = async ()=>{
-  try{ await auth.signOut(); }catch(e){}
-};
+signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); }catch(e){} };
 
 async function requireSignedIn(){
   setStatus('Checking sign-in…');
@@ -249,7 +244,7 @@ async function requireSignedIn(){
 }
 
 /* -------------------------------------------------------
-   Diary UI bootstrap (runs after sign-in)
+   UI & Data
 ------------------------------------------------------- */
 const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'),
       activitySel = $('#activitySel'), notesInp = $('#notesInp'),
@@ -292,8 +287,8 @@ async function saveEntry(){
   const activity = activitySel.value;
   const paddock = paddockSel.selectedOptions[0]?.dataset?.name || '';
   const notes = notesInp.value || '';
-
   if(!propertyId){ throw new Error('Pick a property'); }
+
   const payload = {
     propertyId, propertyName, date, time, activity,
     paddock, user: (auth.currentUser?.email || 'User'),
@@ -310,14 +305,15 @@ async function refreshEntries(){
   const propertyId = propSel.value;
   entriesTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
   try{
-    const since = new Date(); since.setDate(since.getDate()-30);
-    const q = db.collection('diaryEntries')
+    const snap = await db.collection('diaryEntries')
       .where('propertyId','==',propertyId)
       .orderBy('date','desc')
-      .limit(50);
-    const snap = await q.get();
+      .limit(50)
+      .get();
+
     const rows=[];
     snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
+
     if(!rows.length){
       entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">No entries.</td></tr>';
       return;
@@ -333,7 +329,10 @@ async function refreshEntries(){
       </tr>`).join('');
     document.querySelectorAll('.btnDel').forEach(b=>{
       b.onclick = async ()=>{
-        if(confirm('Delete this diary entry?')){ await db.collection('diaryEntries').doc(b.dataset.id).delete(); refreshEntries(); }
+        if(confirm('Delete this diary entry?')){
+          await db.collection('diaryEntries').doc(b.dataset.id).delete();
+          refreshEntries();
+        }
       };
     });
   }catch(e){
@@ -342,23 +341,19 @@ async function refreshEntries(){
   }
 }
 
-/* Weather stub (wired later) */
+/* Weather stub (wire later) */
 $('#getWeatherBtn').onclick = async ()=>{
   const propId = propSel.value;
-  const coords = {
-    "s7PlDM9wrEpxuJ6DGIab": { lat:-20.263323, lon:141.609607 }, // Consentes
-    "P0dQ0H2FWHeqqxejflZs": { lat:-20.114428, lon:141.751857 }, // Gerawin
-    "TRuxtRBX2zJlwZnRGYKJ": { lat:-26.566565, lon:149.997202 }  // Mt Myrtle
-  }[propId] || {};
+  const p = PROPS.find(x=>x.id===propId) || {};
   const d = dateInp.value || todayISO();
   $('#weatherText').textContent = 'Fetching…';
   try{
-    // Stub — replace with your backend later
-    const res = await fetch(`/weather?date=${encodeURIComponent(d)}&lat=${coords.lat}&lon=${coords.lon}`);
+    // stub endpoint you can implement later
+    const res = await fetch(`/weather?date=${encodeURIComponent(d)}&lat=${p.lat}&lon=${p.lon}`);
     if(!res.ok) throw new Error('weather fetch failed');
     const w = await res.json();
     $('#weatherText').textContent = `min ${w.minC}°C / max ${w.maxC}°C • ${w.mm}mm • wind ${w.windKph} kph`;
-  }catch(e){
+  }catch(_){
     $('#weatherText').textContent = 'Weather service not connected yet';
   }
 };
@@ -367,7 +362,7 @@ $('#getWeatherBtn').onclick = async ()=>{
    Page bootstrap
 ------------------------------------------------------- */
 (async function init(){
-  // Basic nav (adjust if you have other files)
+  // Simple nav (adjust if you have other files deployed)
   const base = location.origin || '';
   $('#navDiary').href = base + '/skyfarm-diary.html';
   $('#navMap').href   = base + '/skyfarm-map.html';
