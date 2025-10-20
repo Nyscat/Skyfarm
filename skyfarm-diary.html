@@ -10,14 +10,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
 
   <style>
-    /* FULL STYLES ADOPTED FROM CHEMICAL INVENTORY PAGE */
+    /* FULL STYLES ADOPTED AND CORRECTED FOR DIARY PAGE */
     :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); margin:0; color:var(--ink); }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
     h1 { margin: 12px 0; font-size: 1.6rem; }
 
-    /* Header (Manual implementation of the Chemical page's header style) */
+    /* Header */
     #skyfarm-header { position:sticky; top:0; z-index:10; }
     #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
     #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
@@ -32,9 +32,13 @@
     .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
     label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
     
-    /* CRITICAL FIX: Ensure inputs/selects fill their parent container, and buttons don't */
-    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; width: 100%; } 
-    button { cursor:pointer; width: auto; }
+    /* *** FINAL CRITICAL FIX: Ensure form fields expand to 100% of their parent DIV *** */
+    input, select, textarea { 
+      width: 100%; 
+    } 
+    
+    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    button { cursor:pointer; width: auto; } /* Buttons should not take full width */
     
     .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
     .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
@@ -49,7 +53,7 @@
     th { background:#f1f5f9; }
     .nowrap { white-space: nowrap; }
 
-    /* Sign-in overlay */
+    /* Sign-in overlay (Hidden by default, shown by JS if not signed in) */
     #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 8px}
