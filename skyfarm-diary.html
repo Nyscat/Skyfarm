@@ -5,63 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SkyFarm — Diary</title>
 
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
   <style>
-    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; }
+    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
     * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:#f6fbf8; margin:0; color:var(--ink); }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); margin:0; color:var(--ink); }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
     h1 { margin: 12px 0; font-size: 1.6rem; }
 
-    /* Header (match Chemical page) */
-    #skyfarm-header { position:sticky; top:0; z-index:10; }
-    #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
-    #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
-    #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
-    #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
+    /* Header */
+    #sf-header { position:sticky; top:0; z-index:10; }
+    #sf-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--line); }
+    #sf-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
+    #sf-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+    #sf-header nav a[aria-current="page"] { text-decoration:underline; }
     .spacer { flex:1; }
     .muted { color:var(--muted); font-size:.9rem; }
     .hidden { display:none; }
 
     /* Cards / Controls */
-    .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0; }
     .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
     label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
-    input, select, button, textarea { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
-    textarea { min-height:80px; width:100%; }
+    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
     button { cursor:pointer; }
     .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
     .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
     .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
     .disabled { opacity:.55; pointer-events:none; }
+
+    .w80{width:80px} .w110{width:110px} .w140{width:140px} .w200{width:200px} .w240{width:240px}
+
+    table { width:100%; border-collapse:collapse; }
+    th, td { border-bottom:1px solid var(--line); padding:8px; text-align:left; font-size:.95rem; }
+    th { background:#f1f5f9; }
     .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; border:1px solid #cbd5e1; }
     .small { font-size:.9rem; }
-    .nowrap { white-space:nowrap; }
-    .w80 { width:80px; } .w110 { width:110px; } .w140 { width:140px; } .w200 { width:200px; } .w240 { width:240px; } .w320 { width:320px; }
 
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: .95rem; vertical-align: top; }
-    th { background:#f1f5f9; }
-
-    /* Sign-in overlay */
-    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+    /* Auth overlay */
+    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.08); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
-    #authCard h2{margin:0 0 8px}
-    #authMsg{min-height:1.4em}
   </style>
-
-  <!-- optional shared bits (safe if missing) -->
-  <link rel="stylesheet" href="skyfarm-shared.css">
 </head>
 <body>
+
 <!-- Header -->
-<div id="skyfarm-header">
+<div id="sf-header">
   <div class="bar">
-    <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+    <a class="brand" href="#">🌱 SkyFarm</a>
     <nav>
       <a href="skyfarm-diary.html" aria-current="page">Diary</a>
       <a href="skyfarm-map.html">Map</a>
@@ -76,9 +71,7 @@
 <div class="wrap">
   <h1>Diary</h1>
 
-  <!-- Entry form -->
-  <div class="card" id="entryCard">
-    <!-- Top line -->
+  <div class="card">
     <div class="row">
       <div>
         <label>Property</label>
@@ -89,208 +82,127 @@
         <input id="dateInp" type="date"/>
       </div>
       <div>
-        <label>Time (optional)</label>
+        <label>Time</label>
         <input id="timeInp" type="time"/>
       </div>
       <div>
-        <label>Paddock</label>
-        <select id="paddockSel" class="w240"><option value="">(choose)</option></select>
-      </div>
-      <div>
-        <label>User</label>
-        <input id="userInp" class="w200" placeholder="Nyssa/Paul" />
-      </div>
-      <span class="spacer"></span>
-      <div><label>&nbsp;</label><span id="status" class="muted">—</span></div>
-    </div>
-
-    <!-- Activity -->
-    <div class="row">
-      <div>
         <label>Activity</label>
         <select id="activitySel" class="w240">
-          <option value="Mustering / Moving stock">Mustering / Moving stock</option>
-          <option value="Trucking (sales/transfer)">Trucking (sales/transfer)</option>
-          <option value="Ploughing">Ploughing</option>
-          <option value="Planting">Planting</option>
-          <option value="Spraying">Spraying</option>
-          <option value="General note">General note</option>
+          <option>Ploughing</option>
+          <option>Planting</option>
+          <option>Spraying paddocks</option>
+          <option>Mustering</option>
+          <option>Move stock</option>
+          <option>Trucking (sale)</option>
+          <option>Other</option>
         </select>
       </div>
-      <div class="w320" style="flex:1; min-width:260px">
+      <span class="spacer"></span>
+      <div class="muted" id="status">—</div>
+    </div>
+
+    <div class="row">
+      <div style="min-width:260px">
+        <label>Paddock</label>
+        <select id="paddockSel" class="w240"><option value="">(choose)</option></select>
+        <div class="small muted"><em>Yards</em> paddocks appear first.</div>
+      </div>
+      <div style="flex:1; min-width:260px">
         <label>Notes</label>
         <input id="notesInp" placeholder="optional"/>
       </div>
-      <div>
-        <label>Get weather</label><br/>
-        <button id="weatherBtn" class="btn">Fetch</button>
-      </div>
     </div>
 
-    <!-- Weather -->
-    <div class="row" id="weatherRow">
-      <div><label>Min °C</label><input id="wMin" type="number" step="0.1" class="w110"/></div>
-      <div><label>Max °C</label><input id="wMax" type="number" step="0.1" class="w110"/></div>
-      <div><label>Rain (mm)</label><input id="wMm" type="number" step="0.1" class="w110"/></div>
-      <div><label>Wind (kph)</label><input id="wWind" type="number" step="0.1" class="w110"/></div>
-      <div class="small muted" style="margin-top:26px">Weather shown at bottom of saved entry</div>
-    </div>
-
-    <!-- Spraying -->
-    <div id="sprayBox" class="card hidden" style="margin-top:8px">
-      <div class="row"><strong>Spraying</strong> <span class="muted small">(Use on paddock)</span></div>
-      <div class="row">
-        <button id="addChemLine" class="btn">Add chemical</button>
-        <span class="muted small">Each line: chemical + qty + unit (KG or L), optional rate/area.</span>
-      </div>
-      <table>
-        <thead><tr><th style="width:280px">Chemical</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Area (ha)</th><th></th></tr></thead>
-        <tbody id="sprayTbody"><tr><td colspan="6" class="muted">No chemicals added</td></tr></tbody>
-      </table>
-      <div id="sprayError" class="small" style="color:#b91c1c; margin-top:6px;"></div>
-    </div>
-
-    <!-- Trucking -->
-    <div id="truckBox" class="card hidden" style="margin-top:8px">
-      <div class="row"><strong>Trucking</strong> <span class="muted small">(Sale or Transfer)</span></div>
+    <!-- Mustering UI -->
+    <div id="musterBox" class="card hidden" style="margin-top:8px">
+      <div class="row"><strong>Mustering details</strong></div>
 
       <div class="row">
-        <div>
-          <label>From paddock</label>
-          <select id="truckFrom" class="w240"></select>
-        </div>
         <div>
           <label>Species</label>
-          <select id="truckSpecies">
-            <option value="Cattle">Cattle</option><option value="Sheep">Sheep</option><option value="Goats">Goats</option>
+          <select id="speciesSel">
+            <option value="Cattle">Cattle</option>
+            <option value="Sheep">Sheep</option>
+            <option value="Goats">Goats</option>
           </select>
         </div>
         <div>
-          <label>Destination</label>
-          <select id="truckDestType">
-            <option value="Sold">Sold</option>
-            <option value="Transferred">Transferred</option>
-          </select>
+          <label>Expected total (auto)</label>
+          <input id="mExp" class="w110" disabled/>
         </div>
-        <div id="truckDestWrap" class="hidden">
-          <label>Destination (property/paddock)</label>
-          <input id="truckDest" class="w240" placeholder="Mt Myrtle / North 2"/>
+        <div>
+          <label>Actual</label>
+          <input id="mAct" class="w110" type="number" min="0"/>
+        </div>
+        <div>
+          <label>Delta (auto)</label>
+          <input id="mDelta" class="w110" disabled/>
         </div>
       </div>
+
+      <div class="row small" id="musterContext" style="gap:6px; color:#334155;"></div>
 
       <div class="row">
-        <button id="addTruckLine" class="btn">Add class line</button>
-        <label class="pill"><input type="checkbox" id="backlineToggle" style="margin-right:6px">Backlined before transport</label>
+        <strong>Classes in paddock</strong>
+        <span class="muted small">(You can reuse class names via the picker below.)</span>
       </div>
 
-      <table>
-        <thead><tr><th>Class</th><th>Head</th><th></th></tr></thead>
-        <tbody id="truckTbody"><tr><td colspan="3" class="muted">No lines added</td></tr></tbody>
-      </table>
-
-      <div id="backlineBox" class="row hidden">
-        <div>
-          <label>Backline chemical</label>
-          <select id="backlineChem" class="w240"><option value="">(choose stock-use chemical)</option></select>
-        </div>
-        <div>
-          <label>Qty</label>
-          <input id="backlineQty" type="number" step="0.01" class="w110"/>
-        </div>
-        <div>
-          <label>Unit</label>
-          <select id="backlineUnit"><option value="L">L</option><option value="KG">KG</option></select>
-        </div>
-      </div>
-      <div id="truckError" class="small" style="color:#b91c1c; margin-top:6px;"></div>
-    </div>
-
-    <!-- Mustering / Move -->
-    <div id="moveBox" class="card hidden" style="margin-top:8px">
-      <div class="row"><strong>Mustering / Moving stock</strong></div>
-
-      <div class="row small" id="paddockContext" style="gap:6px; color:#334155;"></div>
-
-      <div class="row">
-        <div>
-          <label>From paddock</label>
-          <select id="moveFrom" class="w240"></select>
-        </div>
-        <div>
-          <label>To paddock</label>
-          <select id="moveTo" class="w240"></select>
-        </div>
-        <div>
-          <label>Species</label>
-          <select id="moveSpecies">
-            <option value="Cattle">Cattle</option><option value="Sheep">Sheep</option><option value="Goats">Goats</option>
-          </select>
-        </div>
-        <button id="addMoveLine" class="btn">Add class line</button>
+      <div class="row" style="overflow:auto">
+        <table id="mClassTable" style="min-width:720px">
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Current</th>
+              <th>New count (optional)</th>
+            </tr>
+          </thead>
+          <tbody id="mClassBody">
+            <tr><td colspan="3" class="muted">Pick property + paddock + species…</td></tr>
+          </tbody>
+        </table>
       </div>
 
-      <table>
-        <thead><tr><th>Class</th><th>Head</th><th></th></tr></thead>
-        <tbody id="moveTbody"><tr><td colspan="3" class="muted">No lines added</td></tr></tbody>
-      </table>
-
-      <div class="row">
+      <div class="row" style="align-items:flex-end">
         <div>
-          <label>Mustering actual (optional)</label>
-          <input id="mAct" type="number" class="w110"/>
+          <label>Quick pick class</label>
+          <input id="classQuick" list="classOptions" class="w200" placeholder="e.g. Weaners"/>
+          <datalist id="classOptions"></datalist>
         </div>
-        <div><label>Reason / notes</label><input id="mReason" class="w320" placeholder="e.g. counted late, moved to North 2…"/></div>
+        <button id="addClassRowBtn" class="btn">Add row</button>
       </div>
-      <div id="moveError" class="small" style="color:#b91c1c; margin-top:6px;"></div>
     </div>
 
     <div class="row">
       <button id="saveBtn" class="primary">Save entry</button>
-      <button id="cancelEditBtn" class="btn hidden">Cancel edit</button>
       <button id="resetBtn" class="btn" type="button">Reset</button>
       <span id="msg" class="muted" aria-live="polite"></span>
     </div>
   </div>
 
-  <!-- Listing / filters -->
   <div class="card">
     <div class="row">
       <strong>Recent entries</strong>
       <span class="spacer"></span>
-      <div><label>Property</label><select id="listProp" class="w240"></select></div>
-      <div><label>From</label><input id="fFrom" type="date"/></div>
-      <div><label>To</label><input id="fTo" type="date"/></div>
-      <div>
-        <label>Activity filter</label>
-        <select id="fAct" multiple size="3" class="w240">
-          <option>Spraying</option>
-          <option>Trucking (sales/transfer)</option>
-          <option>Mustering / Moving stock</option>
-          <option>Ploughing</option>
-          <option>Planting</option>
-          <option>General note</option>
-        </select>
-      </div>
-      <label class="pill"><input type="checkbox" id="fChemOnly" style="margin-right:6px">Chemicals only</label>
-      <button id="refreshBtn" class="btn" type="button">Refresh</button>
+      <label>Year</label>
+      <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
+      <button id="refreshBtn" class="btn">Refresh</button>
     </div>
-
     <table>
       <thead>
         <tr>
-          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Detail</th><th>Weather</th><th></th>
+          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
         </tr>
       </thead>
-      <tbody id="entriesTbody"><tr><td colspan="7">Loading…</td></tr></tbody>
+      <tbody id="entriesTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
     </table>
   </div>
 </div>
 
-<!-- Email/password sign-in -->
+<!-- Sign-in overlay -->
 <div id="authOverlay">
   <div id="authCard">
     <h2>Sign in to SkyFarm</h2>
-    <p class="small muted">Email &amp; password only.</p>
+    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
     <div class="row">
       <div style="flex:1; min-width:260px">
         <label>Email</label>
@@ -311,686 +223,331 @@
 </div>
 
 <script>
-/* ===================== Firebase (correct config) ===================== */
+/* ------------------------ Firebase init ------------------------ */
 const firebaseConfig = {
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70", // <-- NOTE: ...QJIGv...
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJlGvBwmW70",   // <-- corrected “…Jl…”
   authDomain: "consentes-pastoral.firebaseapp.com",
   projectId: "consentes-pastoral",
-  storageBucket: "consentes-pastoral.appspot.com",
   appId: "1:494858780013:web:d87497b370c82eeab06e64"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db   = firebase.firestore();
 const auth = firebase.auth();
 
-/* ===================== Helpers & constants ===================== */
+/* ------------------------ Helpers ------------------------ */
 const $ = s => document.querySelector(s);
-const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-const setMsg = (t, ms=2500)=>{ $('#msg').textContent=t||''; if(t&&ms) setTimeout(()=>$('#msg').textContent='', ms); };
-const errText = e => e?.message || e?.code || 'Unknown error';
 const todayISO = () => new Date().toISOString().slice(0,10);
+const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t&&ms) setTimeout(()=>$('#msg').textContent='', ms); };
+const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+function showOverlay(show){ $('#authOverlay').style.display = show ? 'flex' : 'none'; }
 
-const PROPS = [
-  { id:"s7PlDM9wrEpxuJ6DGIab", name:"Consentes",  lat:-20.263323, lon:141.609607 },
-  { id:"P0dQ0H2FWHeqqxejflZs", name:"Gerawin",     lat:-20.114428, lon:141.751857 },
-  { id:"TRuxtRBX2zJlwZnRGYKJ", name:"Mt Myrtle",  lat:-26.566565, lon:149.997202 }
-];
-const NAME_BY_ID = Object.fromEntries(PROPS.map(p=>[p.id,p.name]));
-const COORDS_BY_ID = Object.fromEntries(PROPS.map(p=>[p.id,{lat:p.lat,lon:p.lon}]));
-
-/* ===================== Auth ===================== */
-const overlay = $('#authOverlay');
+/* ------------------------ Elements ------------------------ */
 const authWho = $('#authWho');
 const signOutBtn = $('#signOutBtn');
-function showOverlay(show){ overlay.style.display = show ? 'flex' : 'none'; }
 
+const propSel = $('#propSel'), dateInp=$('#dateInp'), timeInp=$('#timeInp'), activitySel=$('#activitySel');
+const paddockSel = $('#paddockSel'), notesInp=$('#notesInp');
+const musterBox = $('#musterBox'), speciesSel=$('#speciesSel');
+const mExp=$('#mExp'), mAct=$('#mAct'), mDelta=$('#mDelta'), mClassBody=$('#mClassBody'), classOptions=$('#classOptions'), classQuick=$('#classQuick');
+const entriesTbody=$('#entriesTbody'), yearInp=$('#yearInp');
+
+/* ------------------------ Auth UI ------------------------ */
 $('#signInBtn').onclick = async ()=>{
-  const email = $('#siEmail').value.trim();
-  const pass  = $('#siPass').value;
   $('#authMsg').textContent = 'Signing in…';
   try{
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    await auth.signInWithEmailAndPassword(email, pass);
+    await auth.signInWithEmailAndPassword($('#siEmail').value.trim(), $('#siPass').value);
     $('#authMsg').textContent = 'Signed in.';
     showOverlay(false);
+    await loadProperties();
     await onPropertyChange();
     await refreshEntries();
-  }catch(e){ $('#authMsg').textContent = 'Sign-in failed: ' + errText(e); }
+  }catch(e){
+    $('#authMsg').textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown error');
+  }
 };
+$('#signOutBtn').onclick = async ()=>{ try { await auth.signOut(); location.reload(); } catch(e){} };
 $('#closeOverlayBtn').onclick = ()=> showOverlay(false);
-$('#signOutBtn').onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 
-function onAuth(){
+async function requireSignedIn(){
   return new Promise(resolve=>{
-    auth.onAuthStateChanged(u=>{
-      if(u){ authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in'; signOutBtn.classList.remove('hidden'); showOverlay(false); resolve(true); }
-      else { authWho.textContent = 'Not signed in'; signOutBtn.classList.add('hidden'); showOverlay(true); resolve(false); }
+    auth.onAuthStateChanged(async u=>{
+      if(u){
+        authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+        signOutBtn.classList.remove('hidden');
+        showOverlay(false);
+        resolve(true);
+      }else{
+        authWho.textContent = 'Not signed in';
+        signOutBtn.classList.add('hidden');
+        showOverlay(true);
+        resolve(false);
+      }
     });
   });
 }
 
-/* ===================== Elements ===================== */
-const propSel = $('#propSel'), dateInp=$('#dateInp'), timeInp=$('#timeInp'), activitySel=$('#activitySel'), paddockSel=$('#paddockSel');
-const notesInp=$('#notesInp'), userInp=$('#userInp');
+/* ------------------------ Data loads ------------------------ */
+let propertyNameById = {};
+let paddockCache = []; // last loaded paddocks (for quick lookups)
 
-const sprayBox=$('#sprayBox'), sprayTbody=$('#sprayTbody'), sprayError=$('#sprayError');
-const addChemLineBtn=$('#addChemLine');
-
-const truckBox=$('#truckBox'), truckFrom=$('#truckFrom'), truckSpecies=$('#truckSpecies');
-const truckDestType=$('#truckDestType'), truckDestWrap=$('#truckDestWrap'), truckDest=$('#truckDest');
-const truckTbody=$('#truckTbody'), addTruckLineBtn=$('#addTruckLine');
-const backlineToggle=$('#backlineToggle'), backlineBox=$('#backlineBox'), backlineChem=$('#backlineChem'), backlineQty=$('#backlineQty'), backlineUnit=$('#backlineUnit'), truckError=$('#truckError');
-
-const moveBox=$('#moveBox'), moveFrom=$('#moveFrom'), moveTo=$('#moveTo'), moveSpecies=$('#moveSpecies'), moveTbody=$('#moveTbody'), addMoveLineBtn=$('#addMoveLine'), mAct=$('#mAct'), mReason=$('#mReason'), paddockContext=$('#paddockContext'), moveError=$('#moveError');
-
-const listProp=$('#listProp'), fFrom=$('#fFrom'), fTo=$('#fTo'), fAct=$('#fAct'), fChemOnly=$('#fChemOnly'), entriesTbody=$('#entriesTbody');
-
-const weatherBtn=$('#weatherBtn'), wMin=$('#wMin'), wMax=$('#wMax'), wMm=$('#wMm'), wWind=$('#wWind');
-
-/* ===================== State ===================== */
-let currentChems = [];        // for property
-let stockChems = [];          // useOn=Use on stock
-let paddocks = [];            // [{id,name}]
-let editingId = null;         // when editing entry
-let originalEntry = null;
-
-/* ===================== UI wiring ===================== */
-function mountPropertySelects(){
-  propSel.innerHTML = PROPS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  listProp.innerHTML = `<option value="">(All)</option>` + PROPS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  propSel.value = "TRuxtRBX2zJlwZnRGYKJ"; // default Mt Myrtle
-  listProp.value = "";
-}
-
-function toggleSections(){
-  const act = activitySel.value;
-  const isSpray = act==='Spraying';
-  const isTruck = act==='Trucking (sales/transfer)';
-  const isMove  = act==='Mustering / Moving stock';
-
-  sprayBox.classList.toggle('hidden', !isSpray);
-  truckBox.classList.toggle('hidden', !isTruck);
-  moveBox.classList.toggle('hidden', !isMove);
-
-  if (isTruck) syncChipsForPaddock(truckFrom.value, truckSpecies.value, paddockContext);
-  if (isMove)  syncChipsForPaddock(moveFrom.value,  moveSpecies.value,  paddockContext);
-}
-
-activitySel.onchange = toggleSections;
-
-/* ===================== Data loads ===================== */
-async function onPropertyChange(){
-  const pid = propSel.value;
-  if (!auth.currentUser){ return; }
-
-  // paddocks
-  paddockSel.innerHTML = '<option>(loading…)</option>';
-  truckFrom.innerHTML  = '<option>(loading…)</option>';
-  moveFrom.innerHTML   = '<option>(loading…)</option>';
-  moveTo.innerHTML     = '<option>(loading…)</option>';
-
+async function loadProperties(){
+  propSel.innerHTML = '<option value="">(loading…)</option>';
+  propertyNameById = {};
   try{
-    const snap = await db.collection('paddocks').where('propertyId','==',pid).get();
-    paddocks=[]; snap.forEach(d=> paddocks.push({id:d.id, ...(d.data()||{})}));
-    paddocks.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
-    const opts = '<option value="">(choose)</option>' + paddocks.map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>`).join('');
-    paddockSel.innerHTML = opts;
-    truckFrom.innerHTML = opts;
-    moveFrom.innerHTML = opts;
-    moveTo.innerHTML   = opts;
+    const snap = await db.collection('properties').get();
+    const rows=[];
+    snap.forEach(d => rows.push({id:d.id, ...d.data()}));
+    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+    propertyNameById = Object.fromEntries(rows.map(r => [r.id, r.name || '(Unnamed)']));
+    propSel.innerHTML = rows.map(r => `<option value="${r.id}">${escapeHtml(r.name||'(Unnamed)')}</option>`).join('');
   }catch(e){
+    console.error('Properties load error:', e);
+    propSel.innerHTML = '<option value="">(no properties found)</option>';
+  }
+}
+
+async function loadPaddocks(propertyId){
+  if(!auth.currentUser || !propertyId) return;
+  paddockSel.innerHTML = '<option>(loading…)</option>';
+  try{
+    const snap = await db.collection('paddocks')
+      .where('propertyId','==',propertyId)
+      .get();
+
+    const rows=[];
+    snap.forEach(d => rows.push({id:d.id, ...d.data()}));
+    // yards first, then alpha
+    rows.sort((a,b)=>{
+      const ay=a.isYards?0:1, by=b.isYards?0:1;
+      return ay-by || String(a.name||'').localeCompare(String(b.name||''));
+    });
+    paddockCache = rows;
+
+    paddockSel.innerHTML = '<option value="">(choose)</option>' +
+      rows.map(p=>{
+        const label = `${p.name || '(unnamed)'}${p.isYards ? ' (Yards)' : ''}`;
+        return `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}" data-yards="${!!p.isYards}">${escapeHtml(label)}</option>`;
+      }).join('');
+  }catch(e){
+    console.error('Paddocks load error:', e);
     paddockSel.innerHTML = '<option value="">(load error)</option>';
   }
-
-  // chemicals
-  currentChems=[]; stockChems=[];
-  try{
-    const cs = await db.collection('chemicals').where('propertyId','==',pid).get();
-    cs.forEach(d=> currentChems.push({id:d.id, ...(d.data()||{})}));
-    stockChems = currentChems.filter(c => (c.useOn||'') === 'Use on stock');
-    // load into backline select
-    backlineChem.innerHTML = '<option value="">(choose stock-use chemical)</option>' + stockChems.map(c=>`<option value="${c.id}">${escapeHtml(c.name||'')} (${c.unit||''}) — ${Number(c.quantity||0)} left</option>`).join('');
-  }catch(e){}
-
-  // refresh context if needed
-  toggleSections();
 }
 
-/* ===================== Weather stub ===================== */
-weatherBtn.onclick = async ()=>{
-  const pid = propSel.value;
-  const {lat,lon} = COORDS_BY_ID[pid] || {};
-  const date = dateInp.value || todayISO();
-  try{
-    const url = `/weather?date=${encodeURIComponent(date)}&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
-    // stub: you wire this later; for now we'll just set blanks if fetch fails
-    const r = await fetch(url).catch(()=>null);
-    if (r && r.ok){
-      const j = await r.json();
-      wMin.value = j.minC ?? ''; wMax.value=j.maxC ?? ''; wMm.value=j.mm ?? ''; wWind.value=j.windKph ?? '';
-    } else {
-      wMin.value=''; wMax.value=''; wMm.value=''; wWind.value='';
-    }
-    setMsg('Weather filled (stub).');
-  }catch(e){ /* ignore */ }
+/* Load current livestock classes for the paddock/species */
+async function loadPaddockClasses(propertyId, paddockName, species){
+  const rows = [];
+  if(!propertyId || !paddockName) return rows;
+
+  // exact
+  let snap = await db.collection('livestock')
+    .where('propertyId','==',propertyId)
+    .where('location','==',paddockName)
+    .where('species','==',species)
+    .get();
+
+  if (snap.empty){
+    // fallback: any species casing
+    const s2 = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .where('location','==',paddockName)
+      .get();
+    s2.forEach(d => {
+      const data = d.data()||{};
+      if (String(data.species||'').toLowerCase() === String(species).toLowerCase()){
+        rows.push({id:d.id, ...data});
+      }
+    });
+  } else {
+    snap.forEach(d => rows.push({id:d.id, ...(d.data()||{})}));
+  }
+  return rows;
+}
+
+/* ------------------------ UI behaviors ------------------------ */
+activitySel.onchange = onActivityChange;
+propSel.onchange = onPropertyChange;
+paddockSel.onchange = onPaddockOrSpeciesChange;
+speciesSel.onchange = onPaddockOrSpeciesChange;
+mAct.oninput = ()=>{ mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0; };
+
+function onActivityChange(){
+  const act = activitySel.value;
+  musterBox.classList.toggle('hidden', act !== 'Mustering');
+  if (act === 'Mustering'){
+    onPaddockOrSpeciesChange();
+  }
+}
+
+async function onPropertyChange(){
+  await loadPaddocks(propSel.value);
+  await onPaddockOrSpeciesChange();
+}
+
+async function onPaddockOrSpeciesChange(){
+  const act = activitySel.value;
+  if (act !== 'Mustering'){ return; }
+
+  const propId = propSel.value;
+  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const species = speciesSel.value || 'Cattle';
+
+  if (!propId || !paddockName){
+    mClassBody.innerHTML = '<tr><td colspan="3" class="muted">Pick property + paddock + species…</td></tr>';
+    classOptions.innerHTML = '';
+    mExp.value = ''; mDelta.value = ''; return;
+  }
+
+  const rows = await loadPaddockClasses(propId, paddockName, species);
+  rows.sort((a,b)=> String(a.class||'').localeCompare(String(b.class||'')));
+
+  // datalist for quick pick
+  classOptions.innerHTML = rows.map(r => `<option value="${escapeHtml(r.class||'')}"></option>`).join('');
+
+  const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
+  mExp.value = total;
+  mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0;
+
+  const body = rows.length
+    ? rows.map(r => `
+        <tr>
+          <td><input class="mc-class w200" value="${escapeHtml(r.class||'')}" disabled/></td>
+          <td><input class="mc-current w110" value="${Number(r.count||0)}" disabled/></td>
+          <td><input class="mc-new w110" type="number" min="0" placeholder="leave blank to keep" /></td>
+        </tr>
+      `).join('')
+    : '<tr><td colspan="3" class="muted">No class rows for this paddock/species.</td></tr>';
+
+  mClassBody.innerHTML = body;
+}
+
+$('#addClassRowBtn').onclick = ()=>{
+  const val = classQuick.value.trim();
+  const cls = val || '';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input class="mc-class w200" value="${escapeHtml(cls)}" /></td>
+    <td><input class="mc-current w110" value="0" disabled/></td>
+    <td><input class="mc-new w110" type="number" min="0" /></td>`;
+  mClassBody.appendChild(tr);
+  classQuick.value = '';
 };
 
-/* ===================== Spraying UI ===================== */
-function addSprayRow(pref = null){
-  if (sprayTbody.children.length === 1 && sprayTbody.children[0].children[0]?.colSpan === 6){
-    sprayTbody.innerHTML = '';
-  }
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td>
-      <select class="s-chem w240"><option value="">(choose)</option></select>
-    </td>
-    <td><input class="s-qty w110" type="number" step="0.01"/></td>
-    <td>
-      <select class="s-unit"><option>KG</option><option>L</option></select>
-    </td>
-    <td><input class="s-rate w110" type="number" step="0.01" placeholder="per ha"/></td>
-    <td><input class="s-area w110" type="number" step="0.01"/></td>
-    <td class="nowrap"><button class="btn danger s-del">Del</button></td>
-  `;
-  sprayTbody.appendChild(tr);
+/* ------------------------ Save / list ------------------------ */
+$('#saveBtn').onclick = saveEntry;
+$('#resetBtn').onclick = resetForm;
+$('#refreshBtn').onclick = refreshEntries;
 
-  // chem dropdown populate (Use on paddock)
-  const list = currentChems.filter(c => (c.useOn||'')==='Use on paddock' && Number(c.quantity||0)>0)
-    .sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
-  const sel = tr.querySelector('.s-chem');
-  sel.innerHTML = '<option value="">(choose)</option>' + list.map(c=>`<option value="${c.id}" data-unit="${c.unit||''}">${escapeHtml(c.name||'')} (${c.unit||''}) — ${Number(c.quantity||0)} left</option>`).join('');
-
-  if (pref){
-    sel.value = pref.chemId || '';
-    tr.querySelector('.s-qty').value = pref.qty ?? '';
-    tr.querySelector('.s-unit').value = pref.unit || 'L';
-    tr.querySelector('.s-rate').value = pref.rate ?? '';
-    tr.querySelector('.s-area').value = pref.areaHa ?? '';
-  }
-
-  tr.querySelector('.s-del').onclick = ()=>{ tr.remove(); if (!sprayTbody.children.length){ sprayTbody.innerHTML='<tr><td colspan="6" class="muted">No chemicals added</td></tr>'; } };
-}
-addChemLineBtn.onclick = ()=> addSprayRow();
-
-/* ===================== Trucking UI ===================== */
-function addTruckRow(pref=null){
-  if (truckTbody.children.length === 1 && truckTbody.children[0].children[0]?.colSpan === 3){
-    truckTbody.innerHTML = '';
-  }
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input class="t-class w200" placeholder="e.g. Weaners"/></td>
-    <td><input class="t-head w110" type="number" min="0"/></td>
-    <td class="nowrap"><button class="btn danger t-del">Del</button></td>
-  `;
-  truckTbody.appendChild(tr);
-  if (pref){ tr.querySelector('.t-class').value = pref.class || ''; tr.querySelector('.t-head').value = pref.head || ''; }
-  tr.querySelector('.t-del').onclick = ()=>{ tr.remove(); if (!truckTbody.children.length){ truckTbody.innerHTML='<tr><td colspan="3" class="muted">No lines added</td></tr>'; } };
-}
-addTruckLineBtn.onclick = ()=> addTruckRow();
-
-backlineToggle.onchange = ()=> backlineBox.classList.toggle('hidden', !backlineToggle.checked);
-truckDestType.onchange = ()=> truckDestWrap.classList.toggle('hidden', truckDestType.value!=='Transferred');
-
-/* ===================== Move/ Muster UI ===================== */
-function addMoveRow(pref=null){
-  if (moveTbody.children.length === 1 && moveTbody.children[0].children[0]?.colSpan === 3){
-    moveTbody.innerHTML = '';
-  }
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input class="mv-class w200" placeholder="Class"/></td>
-    <td><input class="mv-head w110" type="number" min="0"/></td>
-    <td class="nowrap"><button class="btn danger mv-del">Del</button></td>
-  `;
-  moveTbody.appendChild(tr);
-  if (pref){ tr.querySelector('.mv-class').value = pref.class || ''; tr.querySelector('.mv-head').value = pref.head || ''; }
-  tr.querySelector('.mv-del').onclick = ()=>{ tr.remove(); if (!moveTbody.children.length){ moveTbody.innerHTML='<tr><td colspan="3" class="muted">No lines added</td></tr>'; } };
-}
-addMoveLineBtn.onclick = ()=> addMoveRow();
-
-async function syncChipsForPaddock(fromId, species, container){
-  container.innerHTML = '';
-  const p = paddocks.find(p=>p.id===fromId);
-  if (!p){ return; }
-  const rows = await fetchLivestockRows(propSel.value, p.name, species);
-  if (!rows.length){ container.innerHTML = `<span class="muted">No livestock rows for ${escapeHtml(p.name)} (${escapeHtml(species)}).</span>`; return; }
-  const total = rows.reduce((s,r)=> s + Number(r.count||0),0);
-  container.innerHTML = [`<span class="pill">In ${escapeHtml(p.name)}: ${total} head</span>`,
-    ...rows.map(r=>`<button class="pill" data-cls="${escapeHtml(r.class||'')}" data-head="${Number(r.count||0)}">${escapeHtml(r.class||'')}: ${Number(r.count||0)}</button>`)].join(' ');
-  container.querySelectorAll('.pill[data-cls]').forEach(el=>{
-    el.onclick = ()=>{
-      // prefer adding a line to whichever table is visible
-      if (!truckBox.classList.contains('hidden')){
-        addTruckRow({class:el.dataset.cls, head:el.dataset.head});
-      } else if (!moveBox.classList.contains('hidden')){
-        addMoveRow({class:el.dataset.cls, head:el.dataset.head});
-      }
-    };
-  });
+function resetForm(){
+  dateInp.value = todayISO();
+  timeInp.value = '';
+  activitySel.value = 'Ploughing'; onActivityChange();
+  paddockSel.value = '';
+  notesInp.value = '';
+  mAct.value = ''; mDelta.value = ''; mExp.value = '';
+  mClassBody.innerHTML = '<tr><td colspan="3" class="muted">Pick property + paddock + species…</td></tr>';
 }
 
-truckFrom.onchange = ()=> syncChipsForPaddock(truckFrom.value, truckSpecies.value, paddockContext);
-truckSpecies.onchange = ()=> syncChipsForPaddock(truckFrom.value, truckSpecies.value, paddockContext);
-moveFrom.onchange  = ()=> syncChipsForPaddock(moveFrom.value,  moveSpecies.value,  paddockContext);
-moveSpecies.onchange = ()=> syncChipsForPaddock(moveFrom.value, moveSpecies.value, paddockContext);
-
-/* ===================== Livestock helpers ===================== */
-async function fetchLivestockRows(pid, paddockName, speciesUI){
-  let snap = await db.collection('livestock')
-    .where('propertyId','==',pid).where('location','==',paddockName).where('species','==',speciesUI).get();
-
-  if (snap.empty){
-    const lc = (speciesUI||'').toLowerCase();
-    const title = lc.charAt(0).toUpperCase()+lc.slice(1);
-    const variants=[title, lc.toUpperCase()];
-    for (const v of variants){
-      const s2 = await db.collection('livestock').where('propertyId','==',pid).where('location','==',paddockName).where('species','==',v).get();
-      if (!s2.empty){ snap = s2; break; }
-    }
-  }
-
-  const out=[];
-  if (snap.empty){
-    const s3 = await db.collection('livestock').where('propertyId','==',pid).where('location','==',paddockName).get();
-    s3.forEach(d=> out.push({ id:d.id, ...(d.data()||{}) }));
-    const slc = (speciesUI||'').toLowerCase();
-    for (let i=out.length-1;i>=0;i--) if (String(out[i].species||'').toLowerCase()!==slc) out.splice(i,1);
-  } else {
-    snap.forEach(d=> out.push({ id:d.id, ...(d.data()||{}) }));
-  }
-  return out.sort((a,b)=> String(a.class||'').localeCompare(String(b.class||'')));
-}
-
-/* ===================== Save (with inventory/livestock updates) ===================== */
 async function saveEntry(){
-  if (!auth.currentUser) { alert('Sign in first.'); return; }
-  const pid = propSel.value;
-  const pname = NAME_BY_ID[pid] || '(Unknown)';
+  if (!auth.currentUser) return alert('Please sign in');
 
-  const date = dateInp.value || todayISO();
-  const time = timeInp.value || '';
-  const paddockOpt = paddockSel.selectedOptions[0];
-  const paddockName = paddockOpt?.dataset?.name || '';
-  const activity = activitySel.value;
-  const user = userInp.value || 'Nyssa/Paul';
-  const notes = notesInp.value || '';
+  const propId = propSel.value;
+  if (!propId) return alert('Select a property');
 
-  const weather = { minC: numOrNull(wMin.value), maxC:numOrNull(wMax.value), mm:numOrNull(wMm.value), windKph:numOrNull(wWind.value), source:'manual|stub' };
-
-  // Build activity payloads
-  let spraying=null, trucking=null, livestockMovements=null, planting=null, ploughing=null;
-
-  // Spraying
-  if (activity==='Spraying'){
-    const rows = [...sprayTbody.querySelectorAll('tr')].map(tr=>{
-      const chemId = tr.querySelector('.s-chem')?.value || '';
-      const qty = parseFloat(tr.querySelector('.s-qty')?.value||'0')||0;
-      const unit = tr.querySelector('.s-unit')?.value || '';
-      const rate = numOrNull(tr.querySelector('.s-rate')?.value);
-      const areaHa = numOrNull(tr.querySelector('.s-area')?.value);
-      return chemId ? {chemId, qty, unit, rate, areaHa} : null;
-    }).filter(Boolean);
-    if (!rows.length){ sprayError.textContent='Add at least one chemical line.'; return; }
-    sprayError.textContent='';
-    // decorate with names
-    spraying = rows.map(r => ({...r, chemName: currentChems.find(c=>c.id===r.chemId)?.name || ''}));
-  }
-
-  // Trucking
-  if (activity==='Trucking (sales/transfer)'){
-    const fromPad = paddocks.find(p=>p.id===truckFrom.value)?.name || '';
-    if (!fromPad){ truckError.textContent='Choose a From paddock.'; return; }
-    const lines = [...truckTbody.querySelectorAll('tr')].map(tr=>{
-      const klass = tr.querySelector('.t-class')?.value?.trim() || '';
-      const head  = parseInt(tr.querySelector('.t-head')?.value||'0',10)||0;
-      return klass && head>0 ? {species:truckSpecies.value, class:klass, head} : null;
-    }).filter(Boolean);
-    if (!lines.length){ truckError.textContent='Add at least one class line.'; return; }
-    truckError.textContent='';
-    trucking = {
-      fromPaddock: fromPad,
-      destinationType: truckDestType.value,
-      destinationRaw: truckDestType.value==='Transferred' ? (truckDest.value||'') : '',
-      lines,
-      backlined: backlineToggle.checked,
-      backlineChemId: backlineToggle.checked ? (backlineChem.value||'') : null,
-      backlineQty: backlineToggle.checked ? (parseFloat(backlineQty.value||'0')||0) : null,
-      backlineUnit: backlineToggle.checked ? (backlineUnit.value||'') : null
-    };
-    if (trucking.backlined && (!trucking.backlineChemId || !(trucking.backlineQty>0))){
-      truckError.textContent='Backline selected: choose chemical and qty.'; return;
-    }
-  }
-
-  // Move / Muster
-  if (activity==='Mustering / Moving stock'){
-    const fromPad = paddocks.find(p=>p.id===moveFrom.value)?.name || '';
-    const toPad   = paddocks.find(p=>p.id===moveTo.value)?.name   || '';
-    if (!fromPad || !toPad || fromPad===toPad){ moveError.textContent='Choose From and To paddocks (different).'; return; }
-    const lines = [...moveTbody.querySelectorAll('tr')].map(tr=>{
-      const klass = tr.querySelector('.mv-class')?.value?.trim() || '';
-      const head  = parseInt(tr.querySelector('.mv-head')?.value||'0',10)||0;
-      return klass && head>0 ? {species:moveSpecies.value, class:klass, head} : null;
-    }).filter(Boolean);
-    if (!lines.length){ moveError.textContent='Add at least one class line.'; return; }
-    moveError.textContent='';
-    livestockMovements = lines.map(l => ({species:l.species, class:l.class, fromPaddock:fromPad, toPaddock:toPad, head:l.head}));
-  }
-
-  // Minimal Planting/Ploughing (simple fields via notes for now)
-  if (activity==='Planting'){ planting = { crop:'', seedQty:null, unit:null, areaHa:null }; }
-  if (activity==='Ploughing'){ ploughing = { areaHa:null, implement:null }; }
-
-  const entry = {
-    propertyId: pid, propertyName: pname,
-    date, time, paddock: paddockName || null,
-    activity, user, notes,
-    weather,
-    livestockMovements,
-    trucking,
-    spraying,
-    planting,
-    ploughing,
+  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const paddockId   = paddockSel.value || '';
+  const act = activitySel.value;
+  const payload = {
+    propertyId: propId,
+    propertyName: propertyNameById[propId] || '(Unknown)',
+    date: dateInp.value || todayISO(),
+    time: timeInp.value || '',
+    activity: act,
+    paddockId: paddockId || null,
+    paddock: paddockName || null,
+    notes: notesInp.value || '',
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  try{
-    await db.runTransaction(async (tx)=>{
-      // For edits: reverse old
-      if (editingId){
-        const ref = db.collection('diaryEntries').doc(editingId);
-        const snap = await tx.get(ref);
-        if (snap.exists){ await reverseEffects(tx, snap.id, snap.data()); }
-      }
-
-      // Validate and apply new effects
-      await applyEffects(tx, entry);
-
-      // Write entry
-      const ref = editingId ? db.collection('diaryEntries').doc(editingId) : db.collection('diaryEntries').doc();
-      tx.set(ref, entry, {merge:true});
-      if (!editingId) editingId = ref.id;
+  // When mustering, include a lightweight summary of classes
+  if (act === 'Mustering'){
+    const rows = [];
+    document.querySelectorAll('#mClassBody tr').forEach(tr=>{
+      const cls  = tr.querySelector('.mc-class')?.value?.trim();
+      const cur  = Number(tr.querySelector('.mc-current')?.value||0);
+      const next = tr.querySelector('.mc-new')?.value ? Number(tr.querySelector('.mc-new')?.value) : null;
+      if (cls){ rows.push({class: cls, current: cur, newCount: next}); }
     });
+    payload.mustering = {
+      species: speciesSel.value || 'Cattle',
+      expected: Number(mExp.value||0),
+      actual: Number(mAct.value||0) || null,
+      delta: Number(mDelta.value||0) || null,
+      classes: rows
+    };
+  }
 
-    setMsg('Saved.');
-    editingId=null; originalEntry=null;
-    resetForm();
+  try{
+    await db.collection('diaryEntries').add(payload);
+    setMsg('Saved');
     await refreshEntries();
   }catch(e){
     console.error(e);
-    alert('Save failed: ' + errText(e));
+    alert('Save failed: ' + (e?.message || e));
   }
 }
 
-function numOrNull(v){ if (v==='' || v==null) return null; const n=Number(v); return isNaN(n)?null:n; }
-
-/* ===== Effects helpers (inventory/livestock) ===== */
-async function applyEffects(tx, entry){
-  const pid = entry.propertyId;
-
-  // Spraying → decrement chemicals
-  if (Array.isArray(entry.spraying) && entry.spraying.length){
-    for (const s of entry.spraying){
-      if (!(s.qty>0)) throw new Error('Spraying: qty must be > 0');
-      const cref = db.collection('chemicals').doc(s.chemId);
-      const cs = await tx.get(cref); if (!cs.exists) throw new Error('Spraying: chemical not found');
-      const next = Number(cs.data().quantity||0) - Number(s.qty||0);
-      if (next < -1e-6) throw new Error(`Not enough ${cs.data().name||'chemical'} in inventory`);
-      tx.update(cref, { quantity: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    }
-  }
-
-  // Trucking → decrement source; if Transferred: increment destination paddock (best-effort by parsing)
-  if (entry.trucking){
-    const from = entry.trucking.fromPaddock;
-    for (const line of entry.trucking.lines){
-      await classDelta(tx, pid, from, line.species, line.class, -Number(line.head||0));
-      if (entry.trucking.destinationType==='Transferred'){
-        const dest = (entry.trucking.destinationRaw||'').split('/').map(s=>s.trim());
-        const destPad = dest[1] || dest[0] || '(unknown)';
-        await classDelta(tx, pid, destPad, line.species, line.class, +Number(line.head||0));
-      }
-    }
-    if (entry.trucking.backlined){
-      const cref = db.collection('chemicals').doc(entry.trucking.backlineChemId);
-      const cs = await tx.get(cref); if (!cs.exists) throw new Error('Backline chemical not found');
-      const next = Number(cs.data().quantity||0) - Number(entry.trucking.backlineQty||0);
-      if (next < -1e-6) throw new Error('Not enough backline chemical');
-      tx.update(cref, { quantity: next, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    }
-  }
-
-  // Movements → decrement from / increment to
-  if (Array.isArray(entry.livestockMovements) && entry.livestockMovements.length){
-    for (const m of entry.livestockMovements){
-      await classDelta(tx, pid, m.fromPaddock, m.species, m.class, -Number(m.head||0));
-      await classDelta(tx, pid, m.toPaddock,   m.species, m.class, +Number(m.head||0));
-    }
-  }
-}
-
-async function reverseEffects(tx, id, old){
-  const pid = old.propertyId;
-
-  // reverse chemicals: add back
-  if (Array.isArray(old.spraying)){
-    for (const s of old.spraying){
-      const cref = db.collection('chemicals').doc(s.chemId);
-      const cs = await tx.get(cref); if (cs.exists){
-        tx.update(cref, { quantity: firebase.firestore.FieldValue.increment(Number(s.qty||0)) });
-      }
-    }
-  }
-  if (old.trucking?.backlined && old.trucking.backlineChemId && old.trucking.backlineQty){
-    const cref = db.collection('chemicals').doc(old.trucking.backlineChemId);
-    const cs = await tx.get(cref); if (cs.exists){
-      tx.update(cref, { quantity: firebase.firestore.FieldValue.increment(Number(old.trucking.backlineQty||0)) });
-    }
-  }
-
-  // reverse trucking moves
-  if (old.trucking){
-    const from = old.trucking.fromPaddock;
-    for (const line of (old.trucking.lines||[])){
-      await classDelta(tx, pid, from, line.species, line.class, +Number(line.head||0));
-      if (old.trucking.destinationType==='Transferred'){
-        const dest = (old.trucking.destinationRaw||'').split('/').map(s=>s.trim());
-        const destPad = dest[1] || dest[0] || '(unknown)';
-        await classDelta(tx, pid, destPad, line.species, line.class, -Number(line.head||0));
-      }
-    }
-  }
-
-  // reverse livestock movements
-  if (Array.isArray(old.livestockMovements)){
-    for (const m of old.livestockMovements){
-      await classDelta(tx, pid, m.fromPaddock, m.species, m.class, +Number(m.head||0));
-      await classDelta(tx, pid, m.toPaddock,   m.species, m.class, -Number(m.head||0));
-    }
-  }
-}
-
-async function classDelta(tx, pid, paddockName, species, klass, delta){
-  if (!paddockName || !klass) throw new Error('Missing paddock/class');
-  const q = db.collection('livestock')
-    .where('propertyId','==',pid).where('location','==',paddockName)
-    .where('species','==',species).where('class','==',klass);
-  const s = await tx.get(q);
-  if (s.empty){
-    if (delta < 0) throw new Error(`No ${klass} in ${paddockName} to decrement`);
-    const ref = db.collection('livestock').doc();
-    tx.set(ref, { propertyId:pid, location:paddockName, species, class:klass, count:Number(delta) }, { merge:true });
-  } else {
-    s.forEach(doc=>{
-      const cur = Number((doc.data()||{}).count||0);
-      const next = cur + Number(delta);
-      if (next < -1e-6) throw new Error(`${klass} in ${paddockName} would go negative`);
-      tx.update(doc.ref, { count: next });
-    });
-  }
-}
-
-/* ===================== List / filters ===================== */
 async function refreshEntries(){
-  entriesTbody.innerHTML = '<tr><td colspan="7">Loading…</td></tr>';
-
-  let q = db.collection('diaryEntries').orderBy('date','desc').limit(120);
-  // date filters
-  const from = fFrom.value || null, to = fTo.value || null, lp = listProp.value || '';
-  if (lp){ q = db.collection('diaryEntries').where('propertyId','==',lp).orderBy('date','desc').limit(120); }
-
-  const snap = await q.get();
-  let rows=[];
-  snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
-
-  // client filters: date range, activity, chem only
-  if (from){ rows = rows.filter(r => (r.date||'') >= from); }
-  if (to){ rows = rows.filter(r => (r.date||'') <= to); }
-  const acts = [...fAct.selectedOptions].map(o=>o.value);
-  if (acts.length){ rows = rows.filter(r => acts.includes(r.activity||'')); }
-  if (fChemOnly.checked){ rows = rows.filter(r => Array.isArray(r.spraying) && r.spraying.length); }
-
-  if (!rows.length){ entriesTbody.innerHTML = '<tr><td colspan="7">No entries.</td></tr>'; return; }
-
-  entriesTbody.innerHTML = rows.map(r=>{
-    const weather = r.weather ? `${n(r.weather.minC)}/${n(r.weather.maxC)}°C • ${n(r.weather.mm)}mm • ${n(r.weather.windKph)}kph` : '';
-    let detail = escapeHtml(r.notes||'');
-    if (r.spraying?.length){ detail += (detail?' | ':'') + 'Chem: ' + r.spraying.map(s=>`${escapeHtml(s.chemName||'')}:${Number(s.qty||0)}${s.unit||''}`).join(', '); }
-    if (r.trucking?.lines?.length){ detail += (detail?' | ':'') + 'Truck: ' + r.trucking.lines.map(l=>`${escapeHtml(l.class)}:${Number(l.head)}`).join(', '); }
-    if (r.livestockMovements?.length){ detail += (detail?' | ':'') + 'Move: ' + r.livestockMovements.map(m=>`${escapeHtml(m.class)} ${m.fromPaddock}→${m.toPaddock} (${m.head})`).join(', '); }
-    return `<tr>
-      <td>${escapeHtml(r.date||'')}</td>
-      <td>${escapeHtml(r.propertyName||'')}</td>
-      <td>${escapeHtml(r.activity||'')}</td>
-      <td>${escapeHtml(r.paddock||'')}</td>
-      <td>${detail}</td>
-      <td>${escapeHtml(weather)}</td>
-      <td class="nowrap">
-        <button class="btn" onclick="editEntry('${r.id}')">Edit</button>
-        <button class="btn danger" onclick="delEntry('${r.id}')">Delete</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function n(v){ return (v===null||v===undefined||v==='') ? '' : String(v); }
-
-window.editEntry = async function(id){
+  entriesTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
+  const y = Number(yearInp.value || new Date().getFullYear());
+  const start = `${y}-01-01`, end = `${y}-12-31`;
   try{
-    const doc = await db.collection('diaryEntries').doc(id).get();
-    if (!doc.exists) return;
-    const d = doc.data(); editingId=id; originalEntry=d;
-
-    propSel.value = d.propertyId; await onPropertyChange();
-    dateInp.value = d.date || todayISO();
-    timeInp.value = d.time || '';
-    userInp.value = d.user || 'Nyssa/Paul';
-    notesInp.value = d.notes || '';
-    activitySel.value = d.activity || 'General note';
-    // paddock
-    const opt = [...paddockSel.options].find(o => (o.dataset.name||'') === (d.paddock||''));
-    if (opt) paddockSel.value = opt.value;
-
-    // weather
-    if (d.weather){ wMin.value=d.weather.minC??''; wMax.value=d.weather.maxC??''; wMm.value=d.weather.mm??''; wWind.value=d.weather.windKph??''; }
-    else { wMin.value=''; wMax.value=''; wMm.value=''; wWind.value=''; }
-
-    toggleSections();
-
-    // spraying
-    sprayTbody.innerHTML = '<tr><td colspan="6" class="muted">No chemicals added</td></tr>';
-    if (Array.isArray(d.spraying) && d.spraying.length){
-      sprayTbody.innerHTML='';
-      d.spraying.forEach(s=> addSprayRow(s));
-    }
-    // trucking
-    truckFrom.value = paddocks.find(p=>p.name===(d.trucking?.fromPaddock||''))?.id || '';
-    truckDestType.value = d.trucking?.destinationType || 'Sold';
-    truckDest.value = d.trucking?.destinationRaw || '';
-    truckDestWrap.classList.toggle('hidden', truckDestType.value!=='Transferred');
-    truckSpecies.value = d.trucking?.lines?.[0]?.species || 'Cattle';
-    truckTbody.innerHTML = '<tr><td colspan="3" class="muted">No lines added</td></tr>';
-    if (d.trucking?.lines?.length){
-      truckTbody.innerHTML='';
-      d.trucking.lines.forEach(l => addTruckRow({class:l.class, head:l.head}));
-    }
-    backlineToggle.checked = !!d.trucking?.backlined;
-    backlineBox.classList.toggle('hidden', !backlineToggle.checked);
-    if (backlineToggle.checked){
-      backlineChem.value = d.trucking?.backlineChemId || '';
-      backlineQty.value  = d.trucking?.backlineQty ?? '';
-      backlineUnit.value = d.trucking?.backlineUnit || 'L';
-    }
-
-    // move/muster
-    moveFrom.value = paddocks.find(p=>p.name===(d.livestockMovements?.[0]?.fromPaddock||''))?.id || '';
-    moveTo.value   = paddocks.find(p=>p.name===(d.livestockMovements?.[0]?.toPaddock||''))?.id || '';
-    moveSpecies.value = d.livestockMovements?.[0]?.species || 'Cattle';
-    moveTbody.innerHTML = '<tr><td colspan="3" class="muted">No lines added</td></tr>';
-    if (d.livestockMovements?.length){
-      moveTbody.innerHTML='';
-      d.livestockMovements.forEach(l => addMoveRow({class:l.class, head:l.head}));
-    }
-    mAct.value = d.musterActual ?? '';
-    mReason.value = d.musterReason || '';
-
-    $('#cancelEditBtn').classList.remove('hidden');
-    setMsg('Editing…',1500);
-  }catch(e){ alert('Edit failed: ' + errText(e)); }
-};
+    const snap = await db.collection('diaryEntries')
+      .where('date','>=',start)
+      .where('date','<=',end)
+      .orderBy('date','desc')
+      .limit(100)
+      .get();
+    const rows=[];
+    snap.forEach(doc=>{
+      const d = { id:doc.id, ...doc.data() };
+      rows.push(`<tr>
+        <td>${escapeHtml(d.date||'')}</td>
+        <td>${escapeHtml(d.propertyName||'')}</td>
+        <td>${escapeHtml(d.activity||'')}</td>
+        <td>${escapeHtml(d.paddock||'')}</td>
+        <td>${escapeHtml(d.notes||'')}</td>
+        <td><button class="btn danger" onclick="delEntry('${d.id}')">Delete</button></td>
+      </tr>`);
+    });
+    entriesTbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="6">No entries.</td></tr>';
+  }catch(e){
+    console.error(e);
+    entriesTbody.innerHTML = '<tr><td colspan="6">Failed to load.</td></tr>';
+  }
+}
 
 window.delEntry = async function(id){
-  if (!confirm('Delete this entry? It will reverse its effects.')) return;
+  if(!confirm('Delete this entry?')) return;
   try{
-    await db.runTransaction(async (tx)=>{
-      const ref = db.collection('diaryEntries').doc(id);
-      const snap = await tx.get(ref);
-      if (!snap.exists) return;
-      await reverseEffects(tx, id, snap.data());
-      tx.delete(ref);
-    });
+    await db.collection('diaryEntries').doc(id).delete();
     await refreshEntries();
-    setMsg('Deleted.');
+    setMsg('Deleted');
   }catch(e){
     console.error(e);
-    alert('Delete failed: ' + errText(e));
+    alert('Delete failed');
   }
 };
 
-$('#cancelEditBtn').onclick = ()=>{ editingId=null; originalEntry=null; resetForm(); $('#cancelEditBtn').classList.add('hidden'); };
-
-/* ===================== Bootstrap ===================== */
-function resetForm(){
-  dateInp.value=todayISO(); timeInp.value='';
-  paddockSel.value=''; notesInp.value=''; userInp.value='Nyssa/Paul';
-  activitySel.value='General note';
-  sprayTbody.innerHTML='<tr><td colspan="6" class="muted">No chemicals added</td></tr>';
-  truckTbody.innerHTML='<tr><td colspan="3" class="muted">No lines added</td></tr>';
-  moveTbody.innerHTML ='<tr><td colspan="3" class="muted">No lines added</td></tr>';
-  truckDestType.value='Sold'; truckDestWrap.classList.add('hidden'); truckDest.value='';
-  backlineToggle.checked=false; backlineBox.classList.add('hidden'); backlineChem.value=''; backlineQty.value='';
-  wMin.value=''; wMax.value=''; wMm.value=''; wWind.value='';
-  paddockContext.innerHTML='';
-  toggleSections();
-}
-
+/* ------------------------ Boot ------------------------ */
 (async function init(){
-  try{ await firebase.firestore().enablePersistence({synchronizeTabs:true}); }catch(e){}
-  mountPropertySelects();
-
-  // listing defaults
-  const d = new Date(); const y=d.getFullYear();
-  fFrom.value = `${y}-01-01`; fTo.value = `${y}-12-31`;
-
-  $('#refreshBtn').onclick = refreshEntries;
-  $('#resetBtn').onclick   = resetForm;
-  $('#saveBtn').onclick    = saveEntry;
-
-  await onAuth();
+  dateInp.value = todayISO();
+  yearInp.value = new Date().getFullYear();
+  await requireSignedIn();
   if (auth.currentUser){
+    await loadProperties();
     await onPropertyChange();
     await refreshEntries();
   }
