@@ -1,921 +1,623 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SkyFarm — Diary</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SkyFarm — Diary</title>
 
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
 
-  <style>
-    :root { --brand:#0B7A6E; --br:#e5e7eb; --muted:#64748b; --ok:#0B7A6E; --warn:#9a3412; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#f6fbf8; margin:16px; color:#0f172a; }
-    h1 { margin:0 0 12px; font-size:1.6rem; }
-    .wrap { max-width:1100px; margin:0 auto; }
-    .card { background:#fff; border:1px solid var(--br); border-radius:12px; padding:12px; margin:12px 0; }
-    .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
-    label { display:block; font-size:.9rem; color:#475569; margin-bottom:4px; }
-    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
-    button { cursor:pointer; }
-    .primary { background:var(--brand); border-color:var(--brand); color:#fff; }
-    .danger { background:#ef4444; border-color:#ef4444; color:#fff; }
-    .muted { color:var(--muted); font-size:.9rem; }
-    .spacer { flex:1; }
-    .hidden { display:none; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; vertical-align:top; }
-    th { background:#f1f5f9; position:sticky; top:0; }
-    .nowrap { white-space:nowrap; }
-    .pill { padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; border:1px solid #cbd5e1; }
-    .w80 { width:80px; } .w110 { width:110px; } .w140 { width:140px; } .w200 { width:200px; } .w240 { width:240px; }
-    .status-ok { color:var(--ok); } .status-warn { color:var(--warn); }
-    .small { font-size:.9rem; }
-    .pill[role="button"] { cursor:pointer; }
-    /* Sign-in overlay styles */
-    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
-    #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--br); border-radius:16px; padding:20px}
-    #authCard h2{margin:0 0 8px}
-    .status-bad{color:#b45309}
-  </style>
+  <style>
+    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:#f6fbf8; margin:0; color:var(--ink); }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    h1 { margin: 12px 0; font-size: 1.6rem; }
+
+    /* Header (match chemical page look) */
+    #skyfarm-header { position:sticky; top:0; z-index:10; }
+    #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
+    #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
+    #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+    #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
+    .spacer { flex:1; }
+    .muted { color:var(--muted); font-size:.9rem; }
+    .hidden { display:none; }
+
+    /* Cards / Controls */
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
+    label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
+    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
+    button { cursor:pointer; }
+    .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+    .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
+    .disabled { opacity:.55; pointer-events:none; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; border:1px solid #cbd5e1; }
+    .small { font-size:.9rem; }
+    .nowrap { white-space:nowrap; }
+    .w80 { width:80px; } .w110 { width:110px; } .w140 { width:140px; } .w200 { width:200px; } .w240 { width:240px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: .95rem; }
+    th { background:#f1f5f9; }
+
+    /* Sign-in overlay */
+    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+    #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
+    #authCard h2{margin:0 0 8px}
+    #authMsg{min-height:1.4em}
+  </style>
+
+  <!-- optional shared header/css (safe to keep; will no-op if not present) -->
+  <link rel="stylesheet" href="skyfarm-shared.css">
 </head>
 <body>
+
+<!-- Header -->
+<div id="skyfarm-header">
+  <div class="bar">
+    <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+    <nav>
+      <a href="skyfarm-diary.html" aria-current="page">Diary</a>
+      <a href="skyfarm-map.html">Map</a>
+      <a href="skyfarm-chemical.html">Chemicals</a>
+    </nav>
+    <span class="spacer"></span>
+    <span id="authWho" class="muted">Checking sign-in…</span>
+    <button id="signOutBtn" class="danger hidden">Sign out</button>
+  </div>
+</div>
+
 <div class="wrap">
-  <h1>SkyFarm — Diary</h1>
+  <h1>Diary</h1>
 
-  <div class="card">
-    <div class="row">
-      <div>
-        <label>Property</label>
-        <select id="propSel" class="w240"></select>
-      </div>
-      <div>
-        <label>Date</label>
-        <input id="dateInp" type="date"/>
-      </div>
-      <div>
-        <label>Time</label>
-        <input id="timeInp" type="time"/>
-      </div>
-      <div>
-        <label>Activity</label>
-        <select id="activitySel" class="w240">
-          <option value="Ploughing">Ploughing</option>
-          <option value="Planting">Planting</option>
-          <option value="Spraying paddocks">Spraying paddocks</option>
-          <option value="Chemical (stock)">Chemical (stock)</option>
-          <option value="Trucking (sale)">Trucking (sale)</option>
-          <option value="Cattle Received (Purchase)">Cattle Received (Purchase)</option>
-          <option value="Move stock">Move stock (Paddock to Paddock)</option>
-          <option value="Transfer stock (In)">Transfer stock (Property In)</option>
-          <option value="Transfer stock (Out)">Transfer stock (Property Out)</option>
-          <option value="Mustering">Mustering</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <span class="spacer"></span>
-      <div>
-        <label>&nbsp;</label>
-        <span id="status" class="muted">Checking sign-in…</span>
-      </div>
-    </div>
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Property</label>
+        <select id="propSel" class="w240"></select>
+      </div>
+      <div>
+        <label>Date</label>
+        <input id="dateInp" type="date"/>
+      </div>
+      <div>
+        <label>Time</label>
+        <input id="timeInp" type="time"/>
+      </div>
+      <div>
+        <label>Activity</label>
+        <select id="activitySel" class="w240">
+          <option value="Ploughing">Ploughing</option>
+          <option value="Planting">Planting</option>
+          <option value="Spraying paddocks">Spraying</option>
+          <option value="Chemical (stock)">Chemical (stock)</option>
+          <option value="Trucking (sale)">Trucking (sale)</option>
+          <option value="Move stock">Move stock (paddock→paddock)</option>
+          <option value="Mustering">Mustering</option>
+          <option value="Other">General note</option>
+        </select>
+      </div>
+      <span class="spacer"></span>
+      <div>
+        <label>&nbsp;</label>
+        <span id="status" class="muted">—</span>
+      </div>
+    </div>
 
-    <div class="row">
-      <div style="min-width:260px">
-        <label>Paddock</label>
-        <select id="paddockSel" class="w240"><option value="">(choose)</option></select>
-        <div id="paddockContext" class="muted small"></div>
-      </div>
+    <div class="row">
+      <div style="min-width:260px">
+        <label>Paddock</label>
+        <select id="paddockSel" class="w240"><option value="">(choose)</option></select>
+      </div>
+      <div style="flex:1; min-width:260px">
+        <label>Notes</label>
+        <input id="notesInp" placeholder="optional"/>
+      </div>
+    </div>
 
-      <div id="transferPropRow" class="hidden" style="min-width:260px">
-        <label>To/From Property</label>
-        <select id="transferPropSel" class="w240"><option value="">(choose)</option></select>
-      </div>
+    <div id="chemRow" class="row hidden">
+      <div>
+        <label>Chemical</label>
+        <select id="chemSel" class="w240"><option value="">(choose)</option></select>
+      </div>
+      <div>
+        <label>Qty used</label>
+        <input id="chemQty" type="number" min="0" step="0.01" class="w110"/>
+      </div>
+      <div>
+        <label>Unit</label>
+        <input id="chemUnit" placeholder="KG/L" class="w80" disabled/>
+      </div>
+      <div><label>&nbsp;</label><span id="chemHint" class="pill">context</span></div>
+    </div>
 
-      <div style="min-width:260px; flex:1">
-        <label>Notes</label>
-        <input id="notesInp" placeholder="optional"/>
-      </div>
-    </div>
+    <div id="stockRow" class="row hidden">
+      <div>
+        <label>Species</label>
+        <select id="speciesSel">
+          <option value="Cattle">Cattle</option>
+          <option value="Sheep">Sheep</option>
+          <option value="Goats">Goats</option>
+        </select>
+      </div>
+      <div>
+        <label>Class</label>
+        <input id="classInp" placeholder="e.g. Weaners" class="w200" list="classOptions"/>
+        <datalist id="classOptions"></datalist>
+      </div>
+      <div>
+        <label>Head</label>
+        <input id="headInp" type="number" min="0" step="1" class="w110"/>
+      </div>
+    </div>
 
-    <div class="row">
-      <div>
-        <label>Rain gauge</label>
-        <select id="gaugeSel" class="w240"><option value="">(choose)</option></select>
-      </div>
-        <div>
-        <label>Rainfall (mm)</label>
-        <input id="rainMm" type="number" min="0" step="0.1" class="w110"/>
-      </div>
-      <div class="muted">Adds to gauge total and per-day totals; auto-reverts on edit/delete.</div>
-    </div>
+    <!-- Live “what’s in paddock” context for Trucking/Move -->
+    <div id="stockContext" class="row small" style="gap:6px; color:#334155;"></div>
 
-    <div id="chemRow" class="row hidden">
-      <div>
-        <label>Chemical</label>
-        <select id="chemSel" class="w240"><option value="">(choose)</option></select>
-      </div>
-      <div>
-        <label>Qty used</label>
-        <input id="chemQty" type="number" min="0" step="0.01" class="w110"/>
-      </div>
-      <div>
-        <label>Unit</label>
-        <input id="chemUnit" placeholder="KG/L" class="w80" disabled/>
-      </div>
-      <div><label>&nbsp;</label><span id="chemHint" class="pill">context</span></div>
-    </div>
+    <div class="row">
+      <button id="saveBtn" class="primary">Save entry</button>
+      <button id="resetBtn" class="btn" type="button">Reset</button>
+      <span id="msg" class="muted" aria-live="polite"></span>
+    </div>
+  </div>
 
-    <div id="stockRow" class="row hidden">
-      <div>
-        <label>Species</label>
-        <select id="speciesSel">
-          <option value="Cattle">Cattle</option>
-          <option value="Sheep">Sheep</option>
-          <option value="Goats">Goats</option>
-        </select>
-      </div>
-      <div>
-        <label>Class</label>
-        <input id="classInp" placeholder="e.g. Weaners" class="w200" list="classOptions"/>
-        <datalist id="classOptions"></datalist>
-      </div>
-      <div>
-        <label>Head</label>
-        <input id="headInp" type="number" min="0" step="1" class="w110"/>
-      </div>
-      <div id="stockDetail1">
-        <label>Buyer / Dest (Trucking)</label>
-        <input id="truckBuyer" placeholder="e.g. Roma" class="w200"/>
-      </div>
-      <div id="stockDetail2">
-        <label>Docket / Ref</label>
-        <input id="truckRef" placeholder="NVD / docket" class="w200"/>
-      </div>
-    </div>
-
-        <div id="stockContext" class="row small" style="gap:6px; color:#334155;"></div>
-
-        <div id="musterBox" class="card hidden" style="margin-top:8px">
-      <div class="row"><strong>Mustering details</strong></div>
-      <div class="row small" id="musterContext" style="gap:6px; color:#334155;"></div>
-
-      <div class="row">
-        <div>
-          <label>Expected (auto)</label>
-          <input id="mExp" type="number" class="w110" disabled/>
-        </div>
-        <div>
-          <label>Actual</label>
-          <input id="mAct" type="number" class="w110"/>
-        </div>
-        <div>
-          <label>Delta (auto)</label>
-          <input id="mDelta" type="number" class="w110" disabled/>
-        </div>
-        <div style="flex:1; min-width:260px">
-          <label>Reason / notes</label>
-          <input id="mReason" placeholder="e.g. counted late, moved to North 2…"/>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Add calves</label>
-          <input id="mAddCalves" type="number" class="w110"/>
-        </div>
-        <div>
-          <label>Add weaners</label>
-          <input id="mAddWeaners" type="number" class="w110"/>
-        </div>
-        <div class="spacer"></div>
-        <button id="addClassRowBtn">Add class row</button>
-      </div>
-
-      <div class="row">
-        <strong>Reclass / counts by class</strong>
-      </div>
-      <div class="row" style="overflow:auto">
-        <table id="mClassTable" style="min-width:760px">
-          <thead>
-            <tr>
-              <th>Class</th>
-              <th>Expected</th>
-              <th>New count</th>
-              <th>Reclass to</th>
-              <th>Qty</th>
-              <th>Missing</th>
-            </tr>
-          </thead>
-          <tbody id="mClassBody"><tr><td colspan="6">Pick property + paddock + species to load current classes…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="muted">Set a <em>New count</em> to overwrite a class total, or use <em>Reclass to + Qty</em> to move headcounts between classes. Use <em>Missing</em> to hold animals that didn’t turn up — they’re tracked against the current financial year.</div>
-    </div>
-
-    <div class="row">
-      <button id="saveBtn" class="primary">Save entry</button>
-      <button id="cancelEditBtn" class="hidden">Cancel edit</button>
-      <button id="resetBtn">Reset</button>
-      <span id="msg" class="muted" aria-live="polite"></span>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="row">
-      <strong>Recent entries</strong>
-      <span class="spacer"></span>
-      <label>Year</label>
-      <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
-      <button id="exportCsvBtn">Export CSV</button>
-      <button id="printBtn">Print year</button>
-      <button id="refreshBtn">Refresh</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Rain (mm)</th><th>Chemical</th><th>Head</th><th></th>
-        </tr>
-      </thead>
-      <tbody id="entriesTbody"><tr><td colspan="8">Loading…</td></tr></tbody>
-    </table>
-  </div>
+  <div class="card">
+    <div class="row">
+      <strong>Recent entries</strong>
+      <span class="spacer"></span>
+      <div>
+        <label>Year</label>
+        <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
+      </div>
+      <button id="refreshBtn" class="btn" type="button">Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="entriesTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
+    </table>
+  </div>
 </div>
 
+<!-- Email/password sign-in (no anonymous) -->
 <div id="authOverlay">
-  <div id="authCard">
-    <h2>Sign in to SkyFarm</h2>
-    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div class="row">
-      <div style="flex:1; min-width:260px">
-        <label>Email</label>
-        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
-      </div>
-      <div style="flex:1; min-width:220px">
-        <label>Password</label>
-        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
-      </div>
-    </div>
-    <div class="row">
-      <button id="signInBtn" class="primary" style="width: auto;">Sign in</button>
-      <span id="authMsg" class="muted"></span>
-      <span class="spacer"></span>
-      <button id="closeOverlayBtn" class="btn" type="button" style="width: auto;">Close</button>
-    </div>
-  </div>
+  <div id="authCard">
+    <h2>Sign in to SkyFarm</h2>
+    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
+    <div class="row">
+      <div style="flex:1; min-width:260px">
+        <label>Email</label>
+        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
+      </div>
+      <div style="flex:1; min-width:220px">
+        <label>Password</label>
+        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+    </div>
+    <div class="row">
+      <button id="signInBtn" class="primary">Sign in</button>
+      <span id="authMsg" class="muted"></span>
+      <span class="spacer"></span>
+      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+    </div>
+  </div>
 </div>
+
 <script>
-/*** Firebase ***/
-/* If you want to avoid committing keys, create a config.local.js that sets window.SF_PUBLIC.
-   Otherwise we fall back to the inline Firebase web config (web keys are public by design). */
-const firebaseConfig = window.SF_PUBLIC ?? {
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJlGvBwmW70",  // <-- Corrected key confirmed
-  authDomain: "consentes-pastoral.firebaseapp.com",
-  projectId: "consentes-pastoral",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+/* -------------------------------------------------------
+   Firebase init (compat) — CORRECT CONFIG
+------------------------------------------------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJlGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  storageBucket: "consentes-pastoral.appspot.com",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
 const auth = firebase.auth();
+const db   = firebase.firestore();
 
-/*** Helpers ***/
+/* -------------------------------------------------------
+   Helpers / constants (match Chemical page patterns)
+------------------------------------------------------- */
 const $ = s => document.querySelector(s);
-// Set status message, using status-ok for signed-in state
-const setStatus = t => { const el=$('#status'); el.textContent = t||''; el.className = t?.toLowerCase().includes('signed in') ? 'status-ok' : 'status-warn'; };
-const setMsg = (t, ms=3000) => { $('#msg').textContent = t||''; if(t&&ms) setTimeout(()=>$('#msg').textContent='', ms); };
-const todayISO = () => new Date().toISOString().slice(0,10);
-const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-
-// Template literals now use backticks
-const yBounds = (y)=>({ start:`${y}-01-01`, end:`${y}-12-31` });
-function fyLabel(dateStr){ const [y,m]=dateStr.split('-').map(Number); return (m>=7)?`${y}-${String(y+1).slice(2)}`:`${y-1}-${String(y).slice(2)}`; }
-
-function missingDocId({propertyId, paddock, species, cls, fy}){ const safe=s=>String(s||'').replace(/[^\w.-]/g,'_'); return `${safe(propertyId)}__${safe(paddock)}__${safe(species)}__${safe(cls)}__${safe(fy)}`; }
+const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t&&ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
 const errText = e => e?.message || e?.code || 'Unknown error';
 
-/*** URL params (optional deep-links) ***/
-const url = new URL(location.href);
-const urlPropId    = url.searchParams.get('propertyId') || '';
-const urlPropName  = url.searchParams.get('propertyName') || '';
-const urlPaddock   = url.searchParams.get('paddock') || '';
-const urlChemOnly  = url.searchParams.get('chemOnly') === 'true';
+const PROPS = [
+  { id:"s7PlDM9wrEpxuJ6DGIab", name:"Consentes",  lat:-20.263323, lon:141.609607 },
+  { id:"P0dQ0H2FWHeqqxejflZs", name:"Gerawin",     lat:-20.114428, lon:141.751857 },
+  { id:"TRuxtRBX2zJlwZnRGYKJ", name:"Mt Myrtle",  lat:-26.566565, lon:149.997202 }
+];
+const NAME_BY_ID = Object.fromEntries(PROPS.map(p=>[p.id,p.name]));
+const DEFAULT_PROP_ID = "TRuxtRBX2zJlwZnRGYKJ";
 
-/*** Suggested classes ***/
-const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
+/* -------------------------------------------------------
+   Auth (email/password only)
+------------------------------------------------------- */
+const overlay = $('#authOverlay');
+const authWho = $('#authWho');
+const signOutBtn = $('#signOutBtn');
 
-/*** Properties (fixed Mt Myrtle ID) ***/
-const propertyIds = {
-  "Consentes":"s7PlDM9wrEpxuJ6DGIab",
-  "Mt Myrtle":"TRuxtRBX2zJlwZnRGYKJ",
-  "Gerawin":"P0dQ0H2FWHeqqxejflZs"
+function showOverlay(show){ overlay.style.display = show ? 'flex' : 'none'; }
+
+$('#signInBtn').onclick = async ()=>{
+  const email = $('#siEmail').value.trim();
+  const pass  = $('#siPass').value;
+  $('#authMsg').textContent = 'Signing in…';
+  try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.signInWithEmailAndPassword(email, pass);
+    $('#authMsg').textContent = 'Signed in.';
+    showOverlay(false);
+    // after sign-in, (re)load data
+    await onPropertyChange();
+    await refreshEntries();
+  }catch(e){
+    $('#authMsg').textContent = 'Sign-in failed: ' + errText(e);
+  }
 };
-const propertyNameById = Object.fromEntries(Object.entries(propertyIds).map(([n,i])=>[i,n]));
+$('#closeOverlayBtn').onclick = ()=> showOverlay(false);
+$('#signOutBtn').onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 
-/*** Elements ***/
+function onAuth(){
+  return new Promise(resolve=>{
+    auth.onAuthStateChanged(async u=>{
+      if(u){
+        authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+        signOutBtn.classList.remove('hidden');
+        showOverlay(false);
+        resolve(true);
+      }else{
+        authWho.textContent = 'Not signed in';
+        signOutBtn.classList.add('hidden');
+        showOverlay(true);
+        resolve(false);
+      }
+    });
+  });
+}
+
+/* -------------------------------------------------------
+   Elements & state
+------------------------------------------------------- */
 const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'), activitySel = $('#activitySel');
 const paddockSel = $('#paddockSel'), notesInp = $('#notesInp');
-const transferPropRow = $('#transferPropRow'), transferPropSel = $('#transferPropSel');
-const gaugeSel = $('#gaugeSel'), rainMm = $('#rainMm');
 const chemRow = $('#chemRow'), chemSel = $('#chemSel'), chemQty = $('#chemQty'), chemUnit = $('#chemUnit'), chemHint = $('#chemHint');
-const stockRow = $('#stockRow'), speciesSel = $('#speciesSel'), classInp = $('#classInp'), headInp = $('#headInp'), truckBuyer=$('#truckBuyer'), truckRef=$('#truckRef');
-const stockDetail1 = $('#stockDetail1'), stockDetail2 = $('#stockDetail2');
+const stockRow = $('#stockRow'), speciesSel = $('#speciesSel'), classInp = $('#classInp'), headInp = $('#headInp');
 const stockContext = $('#stockContext');
-const musterBox = $('#musterBox'), mExp=$('#mExp'), mAct=$('#mAct'), mDelta=$('#mDelta'), mReason=$('#mReason'), mAddCalves=$('#mAddCalves'), mAddWeaners=$('#mAddWeaners'), mClassBody=$('#mClassBody'), addClassRowBtn=$('#addClassRowBtn'), musterContext=$('#musterContext');
-const saveBtn = $('#saveBtn'), cancelEditBtn = $('#cancelEditBtn'), entriesTbody = $('#entriesTbody');
-const yearInp = $('#yearInp'), exportCsvBtn = $('#exportCsvBtn'), printBtn = $('#printBtn');
-const classOptions = $('#classOptions');
+const entriesTbody = $('#entriesTbody');
 
-// AUTH Elements
-const authOverlay = $('#authOverlay');
-const signInBtn = $('#signInBtn');
-const closeOverlayBtn = $('#closeOverlayBtn');
-const siEmail = $('#siEmail');
-const siPass = $('#siPass');
-const authMsg = $('#authMsg');
-
-// Adding sign-out button
-const signOutBtn = document.createElement('button');
-signOutBtn.textContent = 'Sign out';
-signOutBtn.className = 'danger hidden';
-signOutBtn.style.width = 'auto';
-signOutBtn.id = 'signOutBtn';
-$('#status').closest('div').appendChild(signOutBtn);
-
-
-/*** Caches / state ***/
-let paddocks=[], gauges=[], chems=[], entries=[];
-let editingId = null, originalEntry = null;
+let chems = []; // current property’s chemicals for dropdown
 
 /* -------------------------------------------------------
-   Auth Handlers
+   UI & data wiring
 ------------------------------------------------------- */
-function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+function initUI(){
+  // property selector
+  propSel.innerHTML = PROPS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  propSel.value = DEFAULT_PROP_ID;
 
-signInBtn.onclick = async ()=>{
-  const email = siEmail.value.trim();
-  const pass  = siPass.value;
-  authMsg.textContent = 'Signing in…';
-  try{
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    // Only perform the sign-in action
-    await auth.signInWithEmailAndPassword(email, pass);
-    authMsg.textContent = 'Success, loading data...';
-    // The overlay hide/data load is now handled solely by the onAuthStateChanged listener below
-  }catch(e){
-    authMsg.textContent = 'Sign-in failed: ' + errText(e);
-  }
-};
+  // defaults
+  dateInp.value = new Date().toISOString().slice(0,10);
 
-closeOverlayBtn.onclick = ()=>{ 
-    // This is for a soft close, but since auth is required, it will reappear if auth fails.
-    showOverlay(false); 
-};
+  // events
+  propSel.onchange = onPropertyChange;
+  activitySel.onchange = onActivityChange;
+  $('#refreshBtn').onclick = refreshEntries;
+  $('#resetBtn').onclick   = resetForm;
+  $('#saveBtn').onclick    = ()=> saveEntry().catch(e=>{ console.error(e); alert(errText(e)); });
 
-signOutBtn.onclick = async ()=>{ 
-    try{ 
-        await auth.signOut();
-        // Reloads the page, which triggers init() and the sign-in check
-        location.reload(); 
-    }catch(e){
-        console.error('Sign out failed:', e);
-    } 
-};
+  paddockSel.onchange = onPaddockOrSpeciesChange;
+  speciesSel.onchange = onPaddockOrSpeciesChange;
 
-async function requireSignedIn(){
-  return new Promise(resolve=>{
-    // Listener to check sign-in status immediately
-    auth.onAuthStateChanged(async u=>{
-      if(u){
-        setStatus(u.email ? `Signed in as ${u.email}` : 'Signed in');
-        signOutBtn.classList.remove('hidden');
-        showOverlay(false);
-        
-        // Now that we are signed in, load initial data
-        try {
-            await onPropertyChange(); // Loads paddocks, gauges, chems for the selected property
-            await refreshEntries();
-        } catch(dataLoadError) {
-            console.error('Initial data load failed:', dataLoadError);
-            setStatus(`Signed in, but data load failed: ${errText(dataLoadError)}`);
-        }
-        
-        resolve(true);
-      }else{
-        setStatus('Not signed in');
-        signOutBtn.classList.add('hidden');
-        showOverlay(true);
-        resolve(false);
-      }
-    });
-  });
-}
-/* -------------------------------------------------------
-   End Auth Handlers
-------------------------------------------------------- */
-
-/*** Data Loading ***/
-
-async function loadPaddocks(propertyId){
-  if(!auth.currentUser) return; 
-
-  paddocks=[]; paddockSel.innerHTML='<option>(loading…)</option>';
-  try{
-    const paddockSnap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
-    paddockSnap.forEach(d=>paddocks.push({id:d.id, ...d.data()}));
-    
-    // FIX: Template literals confirmed with backticks
-    paddockSel.innerHTML='<option value="">(choose)</option>'+paddocks.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-      .map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>`).join('');
-
-  }catch(e){
-    console.error('Paddock load error:', e);
-    paddockSel.innerHTML='<option value="">(Load error)</option>';
-  }
+  onActivityChange();
 }
 
-
-async function refreshEntries(){
-  if(!auth.currentUser) {
-      entriesTbody.innerHTML = '<tr><td colspan="8" class="muted">Sign in to load entries…</td></tr>';
-      return; 
-    } 
-
-  const propertyId = propSel.value;
-  entriesTbody.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
-  try{
-    const year = Number(yearInp.value);
-    const startDate = `${year}-01-01`;
-    const endDate = `${year}-12-31`;
-
-    let query = db.collection('diaryEntries').orderBy('date','desc').limit(50);
-    
-    if (propertyId!=='ALL') query = query.where('propertyId','==',propertyId);
-    query = query.where('date', '>=', startDate).where('date', '<=', endDate);
-
-    const snap = await query.get();
-    
-    entries=[];
-    snap.forEach(d=> entries.push({id:d.id, ...d.data()}));
-    
-    if(!entries.length){ entriesTbody.innerHTML = `<tr><td colspan="8" class="muted">No entries found for ${year}.</td></tr>`; return; }
-    // FIX: Template literals confirmed with backticks
-    entriesTbody.innerHTML = entries.map(r=>`<tr><td>${r.date||''}</td><td>${r.propertyName||''}</td><td>${r.activity||''}</td><td>${r.paddock||''}</td><td>${r.rainfallMm||''}</td><td>${r.chemicalName||''}</td><td>${r.headCount||''}</td><td><button data-id="${r.id}">Edit</button><button data-id="${r.id}" class="danger">Delete</button></td></tr>`).join('');
-  }catch(e){
-    entriesTbody.innerHTML = `<tr><td colspan="8" class="status-warn">Failed to read entries. Check console.</td></tr>`;
-    console.error('Entries load error:', e); 
-  }
-}
-
-/*** UI Toggles ***/
 function onActivityChange(){
-  const act = activitySel.value;
+  const act = activitySel.value;
 
-  const needsChem = (act==='Spraying paddocks' || act==='Chemical (stock)' || act==='Trucking (sale)');
-  chemRow.classList.toggle('hidden', !needsChem);
-  chemHint.textContent = (act==='Spraying paddocks') ? 'paddock spray'
-                     : (act==='Trucking (sale)' ? 'backline before transport' : 'stock treatment');
+  const needsChem = (act==='Spraying paddocks' || act==='Chemical (stock)' || act==='Trucking (sale)');
+  chemRow.classList.toggle('hidden', !needsChem);
+  chemHint.textContent =
+    act==='Spraying paddocks' ? 'paddock spray'
+    : act==='Trucking (sale)' ? 'backline before transport'
+    : 'stock treatment';
 
-  const needsStock = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering' || act==='Cattle Received (Purchase)' || act.startsWith('Transfer stock'));
-  stockRow.classList.toggle('hidden', !needsStock);
+  const needsStock = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering');
+  stockRow.classList.toggle('hidden', !needsStock);
 
-  const needsPaddock = !(act==='Transfer stock (In)' || act==='Transfer stock (Out)' || act==='Cattle Received (Purchase)');
-  paddockSel.closest('div').classList.toggle('hidden', !needsPaddock);
-  gaugeSel.closest('div').classList.toggle('hidden', act==='Transfer stock (Out)' || act==='Transfer stock (In)');
-
-  const needsTransferProp = (act==='Transfer stock (In)' || act==='Transfer stock (Out)');
-  transferPropRow.classList.toggle('hidden', !needsTransferProp);
-
-  const needsTruckDetails = (act==='Trucking (sale)' || act==='Cattle Received (Purchase)');
-  stockDetail1.classList.toggle('hidden', !needsTruckDetails);
-  stockDetail2.classList.toggle('hidden', !needsTruckDetails);
-
-  const label1 = (act==='Trucking (sale)') ? 'Buyer / Dest (Trucking)' : 'Seller / Source';
-  stockDetail1.querySelector('label').textContent = label1;
-  stockDetail1.querySelector('input').placeholder = (act==='Trucking (sale)') ? 'e.g. Roma' : 'e.g. Mt Myrtle';
-
-  musterBox.classList.toggle('hidden', act!=='Mustering');
-  saveBtn.disabled = (propSel.value==='ALL');
-
-  if (act==='Cattle Received (Purchase)') { speciesSel.value = 'Cattle'; }
-
-  buildChemDropdown();
-
-  // refresh paddock/species context when activity changes
-  onPaddockOrSpeciesChange();
+  onPaddockOrSpeciesChange();
 }
 
-function onTransferPropertyChange() {
-  const act = activitySel.value;
-  if (act === 'Transfer stock (In)') {
-    // Need to re-load the data (paddocks, etc.) for the target property in a transfer *in* scenario
-    // This is a subtle point, but onPropertyChange handles the load, and it's already bound to the main propertySel
-    // For a transfer in, we need the transferPropSel to govern the form, but it only changes the transferPropName in the payload
-    // If we rely on the main propSel to be the destination for 'Transfer In', then this function isn't needed.
-    // Assuming the main propSel is the active property (where the entry is saved).
-    // onPropertyChange(); // Leaving commented, as onPropertyChange is bound to propSel, not transferPropSel
-  }
-}
-
-/*** Property change: load paddocks, gauges, chems ***/
+/* -------------------------------------------------------
+   Property change → load paddocks, chems
+------------------------------------------------------- */
 async function onPropertyChange(){
-  const pid = propSel.value;
+  const pid = propSel.value;
+  // paddocks
+  paddockSel.innerHTML = '<option>(loading…)</option>';
+  try{
+    if(!auth.currentUser){ paddockSel.innerHTML = '<option value="">(sign in first)</option>'; return; }
+    const snap = await db.collection('paddocks').where('propertyId','==',pid).get();
+    const pads=[]; snap.forEach(d=> pads.push({id:d.id, ...d.data()}));
+    pads.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+    paddockSel.innerHTML = '<option value="">(choose)</option>' +
+      pads.map(p => `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>`).join('');
+  }catch(e){
+    paddockSel.innerHTML = '<option value="">(load error)</option>';
+    console.error('Paddocks load error:', e);
+  }
 
-  // FIX: Template literals confirmed with backticks
-  transferPropSel.innerHTML = '<option value="">(choose property)</option>' +
-    Object.entries(propertyIds).filter(([n,id]) => id !== pid)
-      .map(([n,id])=>`<option value="${id}">${n}</option>`).join('');
-
-  if (pid==='ALL'){
-    paddockSel.innerHTML = '<option value="">(choose a property to select paddock)</option>';
-    gaugeSel.innerHTML = '<option value="">(choose a property to select gauge)</option>';
-    chemSel.innerHTML = '<option value="">(choose a property to select chemical)</option>';
-    classOptions.innerHTML = '';
-    saveBtn.disabled = true;
-    mClassBody.innerHTML = '<tr><td colspan="6">Pick property + paddock + species to load current classes…</td></tr>';
-    musterContext.innerHTML = '';
-    stockContext.innerHTML = '';
-    return;
-  }
-
-  saveBtn.disabled = false;
-
-  // Check if signed in before fetching
-  if (auth.currentUser) {
-    // paddocks
-    await loadPaddocks(pid);
-    
-    // gauges
-    gauges=[]; gaugeSel.innerHTML='<option>(loading…)</option>';
-    const gaugeSnap = await db.collection('gauges').where('propertyId','==',pid).get();
-    gaugeSnap.forEach(d=>gauges.push({id:d.id, ...d.data()}));
-    
-    // FIX: Template literals confirmed with backticks
-    gaugeSel.innerHTML='<option value="">(choose)</option>'+gauges.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-      .map(g=>`<option value="${g.id}" data-name="${escapeHtml(g.name||'')}">${escapeHtml(g.name||'(unnamed)')}</option>`).join('');
-
-    // chems
-    chems=[]; chemSel.innerHTML='<option>(loading…)</option>';
-    const chemSnap = await db.collection('chemicals').where('propertyId','==',pid).get();
-    chemSnap.forEach(d=>chems.push({id:d.id, ...d.data()}));
-    buildChemDropdown();
-
-    await onPaddockOrSpeciesChange();
-  } else {
-    paddockSel.innerHTML = '<option value="">(sign in to load)</option>';
-    gaugeSel.innerHTML = '<option value="">(sign in to load)</option>';
-    chemSel.innerHTML = '<option value="">(sign in to load)</option>';
-  }
+  // chems
+  chems = [];
+  chemSel.innerHTML = '<option>(loading…)</option>';
+  try{
+    if(auth.currentUser){
+      const cs = await db.collection('chemicals').where('propertyId','==',pid).get();
+      cs.forEach(d=> chems.push({id:d.id, ...d.data()}));
+    }
+  }catch(e){ console.warn('Chem load error', e); }
+  buildChemDropdown();
+  onPaddockOrSpeciesChange();
 }
 
-/*** Fuzzy paddock select for deep-links ***/
-const norm = s => String(s||'').toLowerCase().trim();
-const strip = s => norm(s).replace(/[^a-z0-9]+/g,'');
-function trySelectPaddockByName(name){
-  const target = strip(name);
-  if (!target) return;
-  for (const opt of paddockSel.options){
-    if (norm(opt.dataset?.name||'') === norm(name)) { paddockSel.value = opt.value; return; }
-  }
-  let bestOpt=null, bestScore=0;
-  for (const opt of paddockSel.options){
-    const s = strip(opt.dataset?.name||'');
-    if (!s) continue;
-    if (s.includes(target) || target.includes(s)) { paddockSel.value = opt.value; return; }
-    const score = commonPrefix(s,target).length;
-    if (score>bestScore){ bestScore=score; bestOpt=opt; }
-  }
-  if (bestOpt) paddockSel.value = bestOpt.value;
-}
-function commonPrefix(a,b){ let i=0; for(; i<Math.min(a.length,b.length); i++){ if(a[i]!==b[i]) break; } return a.slice(0,i); }
-
-/*** Chemical dropdown (filtered by use) ***/
+/* -------------------------------------------------------
+   Chemical dropdown filter by activity
+------------------------------------------------------- */
 function buildChemDropdown(){
-  const pid = propSel.value;
-  if(pid==='ALL'){ chemSel.innerHTML='<option value="">(choose property)</option>'; chemUnit.value=''; return; }
-  const act = activitySel.value;
-  const target = act==='Spraying paddocks' ? 'paddock' : (act==='Chemical (stock)' || act==='Trucking (sale)' ? 'stock' : null);
-  if(!target){ chemSel.innerHTML='<option value="">(not required)</option>'; chemUnit.value=''; return; }
-  const list = chems.filter(c => String(c.useOn||'').toLowerCase()===target && Number(c.quantity||0)>0);
-  if(!list.length){ chemSel.innerHTML='<option value="">(no chemicals available)</option>'; chemUnit.value=''; return; }
-
-  // FIX: Template literals confirmed with backticks
-  chemSel.innerHTML = '<option value="">(choose chemical)</option>' +
-    list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-      .map(c=>`<option value="${c.id}" data-unit="${c.unit||''}">${escapeHtml(c.name||'Unnamed')} (${c.unit||''}) — ${Number(c.quantity||0)} left</option>`).join('');
-      
-  chemSel.onchange = ()=> chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
-  chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
+  const act = activitySel.value;
+  const target = act==='Spraying paddocks' ? 'Use on paddock'
+               : (act==='Chemical (stock)' || act==='Trucking (sale)') ? 'Use on stock'
+               : null;
+  if(!target){
+    chemSel.innerHTML = '<option value="">(not required)</option>';
+    chemUnit.value = '';
+    return;
+  }
+  const list = chems.filter(c => String(c.useOn||'')===target && Number(c.quantity||0)>0);
+  if(!list.length){
+    chemSel.innerHTML = '<option value="">(no chemicals available)</option>';
+    chemUnit.value = '';
+    return;
+  }
+  chemSel.innerHTML = '<option value="">(choose)</option>' + list
+    .sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')))
+    .map(c => `<option value="${c.id}" data-unit="${c.unit||''}">${escapeHtml(c.name||'Unnamed')} (${c.unit||''}) — ${Number(c.quantity||0)} left</option>`)
+    .join('');
+  chemSel.onchange = ()=> { chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || ''; };
+  chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
 }
 
-/*** Case/field tolerant fetch of livestock rows for a paddock ***/
+/* -------------------------------------------------------
+   Livestock “what’s in paddock” (chips you can click)
+------------------------------------------------------- */
+const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
+function escapeHtml(s){ return String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
 async function fetchLivestockRows(pid, paddockName, speciesUI){
-  // Must be authenticated
-  if(!auth.currentUser) return [];
+  // try exact species match, then title/upper variants, then filter
+  let snap = await db.collection('livestock')
+    .where('propertyId','==',pid)
+    .where('location','==',paddockName)
+    .where('species','==',speciesUI)
+    .get();
 
-  const speciesLC = String(speciesUI||'').toLowerCase();
+  if (snap.empty){
+    const lc = (speciesUI||'').toLowerCase();
+    const title = lc.charAt(0).toUpperCase()+lc.slice(1);
+    const variants = [title, lc.toUpperCase()];
+    for (const v of variants){
+      const s2 = await db.collection('livestock')
+        .where('propertyId','==',pid)
+        .where('location','==',paddockName)
+        .where('species','==',v).get();
+      if(!s2.empty){ snap = s2; break; }
+    }
+  }
 
-  // exact match first
-  let snap = await db.collection('livestock')
-    .where('propertyId','==',pid)
-    .where('location','==',paddockName)
-    .where('species','==',speciesUI)
-    .get();
-
-  // try title/upper variants
-  if (snap.empty){
-    const title = speciesLC.charAt(0).toUpperCase() + speciesLC.slice(1);
-    const variants = [title, speciesLC.toUpperCase()];
-    for (const v of variants){
-      const s2 = await db.collection('livestock')
-        .where('propertyId','==',pid)
-        .where('location','==',paddockName)
-        .where('species','==',v)
-        .get();
-      if (!s2.empty){ snap = s2; break; }
-    }
-  }
-
-  let rows = [];
-  if (snap.empty){
-    const s3 = await db.collection('livestock')
-      .where('propertyId','==',pid)
-      .where('location','==',paddockName)
-      .get();
-    s3.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
-    rows = rows.filter(r => String(r.species||'').toLowerCase() === speciesLC);
-  } else {
-    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
-  }
-  return rows;
+  const rows=[];
+  if (snap.empty){
+    const s3 = await db.collection('livestock').where('propertyId','==',pid).where('location','==',paddockName).get();
+    s3.forEach(d=> rows.push({ id:d.id, ...(d.data()||{}) }));
+    rows.splice(0, rows.length, ...rows.filter(r => String(r.species||'').toLowerCase()===(speciesUI||'').toLowerCase()));
+  } else {
+    snap.forEach(d=> rows.push({ id:d.id, ...(d.data()||{}) }));
+  }
+  return rows;
 }
 
-/*** Expected totals & mustering table build + stock context for Trucking/Move ***/
 async function onPaddockOrSpeciesChange(){
-  const pid = propSel.value;
-  if (pid==='ALL'){ classOptions.innerHTML=''; stockContext.innerHTML=''; return; }
+  const pid = propSel.value;
+  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const act = activitySel.value;
+  const speciesUI = speciesSel.value || 'Cattle';
 
-  const act = activitySel.value;
-  const isStockMove = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering' || act==='Transfer stock (Out)');
-  const isStockIn   = (act==='Cattle Received (Purchase)' || act==='Transfer stock (In)');
+  // build datalist for classes & also chips for Trucking/Move
+  if (!pid || !paddockName){
+    $('#classOptions').innerHTML = SUGGESTED_CLASSES.map(c=>`<option value="${escapeHtml(c)}"></option>`).join('');
+    stockContext.innerHTML = '';
+    return;
+  }
 
-  let paddockName = (paddockSel.selectedOptions[0]?.dataset?.name || '').trim();
-  const speciesUI = speciesSel.value || 'Cattle';
+  // only show context when selling/moving/stock activity
+  const isStockMove = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)');
+  const rows = await fetchLivestockRows(pid, paddockName, speciesUI);
+  rows.sort((a,b)=> String(a.class||'').localeCompare(String(b.class||'')));
 
-  if (!paddockName && !isStockIn){
-    classOptions.innerHTML = SUGGESTED_CLASSES.map(r=>`<option value="${escapeHtml(r)}"></option>`).join('');
-    musterContext.innerHTML=''; stockContext.innerHTML='';
-    mClassBody.innerHTML='<tr><td colspan="6">Pick property + paddock + species…</td></tr>';
-    mExp.value='';
-    return;
-  }
+  $('#classOptions').innerHTML = rows.map(r=>`<option value="${escapeHtml(r.class||'')}"></option>`).join('');
 
-  let rows = [];
-  if (isStockMove && paddockName) {
-    rows = await fetchLivestockRows(pid, paddockName, speciesUI);
-  } else if (isStockIn) {
-    rows = SUGGESTED_CLASSES.map(cls => ({ id: null, class: cls, count: 0 }));
-  }
-
-  rows.sort((a,b)=>String(a.class||'').localeCompare(String(b.class||'')));
-  // FIX: Template literals confirmed with backticks
-  classOptions.innerHTML = rows.map(r=>`<option value="${escapeHtml(r.class||'')}"></option>`).join('');
-
-  // show current stock for Trucking/Move and add quick-pick chips
-  if (isStockMove && paddockName){
-    const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
-    if (rows.length){
-      stockContext.innerHTML = [
-        `<span class="pill">In ${escapeHtml(paddockName)}: ${total} head</span>`,
-        // FIX: Template literals confirmed with backticks
-        ...rows.map(r =>
-          `<button type="button" class="pill" role="button" data-cls="${escapeHtml(r.class||'')}" data-head="${Number(r.count||0)}" title="Click to fill class & head">+
-          ${escapeHtml(r.class||'')}: ${Number(r.count||0)}</button>`
-        )
-      ].join(' ');
-      stockContext.querySelectorAll('.pill[data-cls]').forEach(btn=>{
-        btn.onclick = () => {
-          classInp.value = btn.dataset.cls || '';
-          headInp.value  = btn.dataset.head || '';
-          headInp.focus();
-        };
-      });
-    } else {
-      stockContext.innerHTML = `<span class="muted">No livestock lines found for ${escapeHtml(paddockName)} (${escapeHtml(speciesUI)}).</span>`;
-    }
-  } else {
-    stockContext.innerHTML = '';
-  }
-
-  // auto-fill when there’s a single class
-  if (rows.length===1 && (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Transfer stock (Out)')){
-    classInp.value = rows[0].class || '';
-    headInp.value  = Number(rows[0].count||0);
-  }
-
-  // Mustering UI
-  if (activitySel.value==='Mustering'){
-    const total = rows.reduce((s,r)=>s+Number(r.count||0),0);
-    mExp.value = total;
-    mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0;
-
-    const parts = rows.map(r=>`${escapeHtml(r.class||'')}: ${Number(r.count||0)}`);
-    // FIX: Template literals confirmed with backticks
-    musterContext.innerHTML = `<span class="pill">Expected total: ${total}</span> ${parts.length? ' | ' + parts.join(', ') : ''}`;
-
-    const existingClasses = new Set(rows.map(r=>String(r.class||'')));
-    for (const cls of SUGGESTED_CLASSES){
-      if (!existingClasses.has(cls)) rows.push({ id:null, class:cls, count:0, _new:true });
-    }
-
-    // FIX: Template literals confirmed with backticks
-    mClassBody.innerHTML = rows.map(r=>
-      `<tr data-id="${r.id||''}" data-class="${escapeHtml(r.class||'')}">
-        <td><input class="mc-class w200" value="${escapeHtml(r.class||'')}" ${r.id ? 'disabled' : ''} /></td>
-        <td><input class="mc-current w110" value="${Number(r.count||0)}" disabled /></td>
-        <td><input class="mc-new w110" type="number" min="0" /></td>
-        <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" /></td>
-        <td><input class="mc-qty w110" type="number" min="0" /></td>
-        <td><input class="mc-miss w110" type="number" min="0" /></td>
-      </tr>`).join('');
-  } else {
-    mClassBody.innerHTML = '<tr><td colspan="6" class="muted">Mustering not selected.</td></tr>';
-  }
-}
-
-function addMusterClassRow(){
-  const tr = document.createElement('tr');
-  // FIX: Template literals confirmed with backticks
-  tr.innerHTML = 
-    `<td><input class="mc-class w200" placeholder="New class name" /></td>
-    <td><input class="mc-current w110" value="0" disabled /></td>
-    <td><input class="mc-new w110" type="number" min="0" /></td>
-    <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" /></td>
-    <td><input class="mc-qty w110" type="number" min="0" /></td>
-    <td><input class="mc-miss w110" type="number" min="0" /></td>`;
-  mClassBody.appendChild(tr);
-}
-
-/*** Save / Update (revert old -> apply new) ***/
-async function saveEntry(){
-  if (!auth.currentUser) return alert('You must be signed in to save an entry.');
-  if (propSel.value==='ALL') return alert('Select a specific property to save.');
-  const propId = propSel.value, propName = propertyNameById[propId] || '(unknown)';
-  const date = dateInp.value || todayISO(), time = timeInp.value || '';
-  const activity = activitySel.value;
-  const paddockId = paddockSel.value || '', paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const notes = notesInp.value || '';
-  const gaugeId = gaugeSel.value || null, gaugeName = gaugeSel.selectedOptions[0]?.dataset?.name || null, rainfallVal = gaugeId ? Number(rainMm.value || 0) : null;
-  const species = speciesSel.value || '', klass = classInp.value || '', head = parseInt(headInp.value||0,10);
-  const chemId = chemSel.value || null, chemQ = parseFloat(chemQty.value||0), chemU = chemUnit.value || '', chemName = chemId ? (chems.find(c=>c.id===chemId)?.name || null) : null;
-
-  const isTruckingSale = activity === 'Trucking (sale)';
-  const isPurchase     = activity === 'Cattle Received (Purchase)';
-  const isMoveStock    = activity === 'Move stock';
-  const isTransferOut  = activity === 'Transfer stock (Out)';
-  const isTransferIn   = activity === 'Transfer stock (In)';
-  const isStockActivity = (isTruckingSale || isMoveStock || activity==='Chemical (stock)' || activity==='Mustering' || isPurchase || isTransferIn || isTransferOut);
-
-  if ((activity==='Spraying paddocks' || activity==='Chemical (stock)' || isTruckingSale) && chemId && !(chemQ>0))
-    return alert('Enter a chemical quantity > 0');
-
-  if (isStockActivity && (isTruckingSale || isMoveStock || isPurchase || isTransferIn || isTransferOut) && !(head > 0 && klass))
-    return alert('Enter a Head count and a Class for this stock activity.');
-
-  if ((isTransferOut || isTransferIn) && !transferPropSel.value)
-      return alert('Select a To/From Property for the transfer.');
-
-  // muster rows
-  const musterOps = [];
-  if (activity==='Mustering'){
-    document.querySelectorAll('#mClassBody tr').forEach(tr=>{
-      const cls = tr.querySelector('.mc-class')?.value?.trim();
-      if (!cls) return;
-      const cur = Number(tr.querySelector('.mc-current')?.value||0);
-      const newCount = tr.querySelector('.mc-new')?.value ? Number(tr.querySelector('.mc-new').value) : null;
-      const to = tr.querySelector('.mc-to')?.value?.trim();
-      const qty = tr.querySelector('.mc-qty')?.value ? Number(tr.querySelector('.mc-qty').value) : 0;
-      const miss = tr.querySelector('.mc-miss')?.value ? Number(tr.querySelector('.mc-miss').value) : 0;
-      const id = tr.getAttribute('data-id') || null;
-      musterOps.push({id, cls, cur, newCount, to, qty, miss});
-    });
-  }
-
-  const fy = fyLabel(date);
-  const transferPropId = transferPropSel.value || null;
-  const transferPropName = transferPropId ? propertyNameById[transferPropId] : null;
-
-  const payload = {
-    propertyId: propId, propertyName: propName,
-    date, time, activity,
-    paddockId: paddockId || null, paddock: paddockName || null,
-    transferPropId, transferPropName,
-    notes,
-    rainfallGaugeId: gaugeId, rainfallGaugeName: gaugeName, rainfallMm: rainfallVal,
-    species: isStockActivity ? species : null,
-    livestockClass: isStockActivity ? klass : null,
-    headCount: (isTruckingSale || isMoveStock || isPurchase || isTransferIn || isTransferOut) ? head : null,
-    chemicalId: chemId || null, chemicalName: chemName, chemQty: chemId ? chemQ : null, chemUnit: chemId ? chemU : null,
-    truckBuyer: isTruckingSale || isPurchase ? (truckBuyer.value || '') : null,
-    truckRef:   isTruckingSale || isPurchase ? (truckRef.value || '')   : null,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    musterExpected: activity==='Mustering' ? Number(mExp.value||0) : null,
-    musterActual:  activity==='Mustering' ? Number(mAct.value||0) : null,
-    musterDelta:   activity==='Mustering' ? (Number(mAct.value||0) - Number(mExp.value||0)) : null,
-    musterReason:  activity==='Mustering' ? (mReason.value || '') : null,
-    musterAdds:    activity==='Mustering' ? { calves:Number(mAddCalves.value||0), weaners:Number(mAddWeaners.value||0) } : null,
-    musterMissing: activity==='Mustering' ? musterOps.filter(r=>r.miss>0).map(r=>({cls:r.cls, qty: Number(r.miss||0), fy})) : null,
-    createdAt: editingId ? undefined : firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  try{
-    // Placeholder for transaction/save logic
-    await db.runTransaction(async (tx) => {
-        const docRef = editingId ? db.collection('diaryEntries').doc(editingId) : db.collection('diaryEntries').doc();
-        tx.set(docRef, payload, { merge: true });
-
-        // Placeholder for the rest of the missing transaction logic (e.g. updating livestock/gauge counts)
-        setMsg(`Entry ${editingId ? 'updated' : 'saved'} successfully!`);
-        resetForm(false);
-        await refreshEntries();
-    });
-  } catch(e) {
-      console.error(e); 
-      setMsg('Save failed: '+(e?.message||e));
+  if (isStockMove){
+    const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
+    if (rows.length){
+      stockContext.innerHTML = [
+        `<span class="pill">In ${escapeHtml(paddockName)}: ${total} head</span>`,
+        ...rows.map(r =>
+          `<button type="button" class="pill" data-cls="${escapeHtml(r.class||'')}" data-head="${Number(r.count||0)}" title="Click to fill class & head">${escapeHtml(r.class||'')}: ${Number(r.count||0)}</button>`
+        )
+      ].join(' ');
+      stockContext.querySelectorAll('.pill[data-cls]').forEach(btn=>{
+        btn.onclick = ()=>{ $('#classInp').value = btn.dataset.cls||''; $('#headInp').value = btn.dataset.head||''; $('#headInp').focus(); };
+      });
+    } else {
+      stockContext.innerHTML = `<span class="muted">No livestock rows found for ${escapeHtml(paddockName)} (${escapeHtml(speciesUI)}).</span>`;
+    }
+  } else {
+    stockContext.innerHTML = '';
   }
 }
 
-// Placeholder functions for user's assumed code
-function resetForm(v) {
-    editingId = null; originalEntry = null;
-    cancelEditBtn.classList.add('hidden');
-    saveBtn.textContent = 'Save entry';
-    dateInp.value = todayISO(); timeInp.value = '';
-    notesInp.value = '';
-    rainMm.value = '';
-    chemQty.value = ''; chemUnit.value = '';
-    speciesSel.value = 'Cattle';
-    classInp.value = ''; headInp.value = '';
-    truckBuyer.value = ''; truckRef.value = '';
-    paddockSel.value = ''; gaugeSel.value = '';
-    mExp.value = ''; mAct.value = ''; mDelta.value = ''; mReason.value = ''; mAddCalves.value = ''; mAddWeaners.value = '';
-    // Re-run the change handlers to reset the UI context
-    onActivityChange();
-    onPropertyChange();
+/* -------------------------------------------------------
+   Save minimal diary entry (kept simple & reliable)
+------------------------------------------------------- */
+async function saveEntry(){
+  if (!auth.currentUser) { alert('Please sign in first.'); return; }
+  const pid = propSel.value;
+  const pname = NAME_BY_ID[pid] || '(Unknown)';
+  const date = $('#dateInp').value || new Date().toISOString().slice(0,10);
+  const time = $('#timeInp').value || '';
+  const activity = $('#activitySel').value;
+  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const notes = $('#notesInp').value || '';
+
+  const isStock = (activity==='Trucking (sale)' || activity==='Move stock' || activity==='Chemical (stock)');
+  const isChem  = (activity==='Spraying paddocks' || activity==='Chemical (stock)' || activity==='Trucking (sale)');
+
+  const species = isStock ? ($('#speciesSel').value||'') : null;
+  const livestockClass = isStock ? ($('#classInp').value||'') : null;
+  const headCount = isStock ? (parseInt($('#headInp').value||'0',10)||0) : null;
+
+  const chemId   = isChem ? ($('#chemSel').value||null) : null;
+  const chemQtyV = isChem ? (parseFloat($('#chemQty').value||'0')||0) : null;
+  const chemUnitV= isChem ? ($('#chemUnit').value||'') : null;
+  const chemName = isChem && chemId ? (chems.find(c=>c.id===chemId)?.name || null) : null;
+
+  if (!pid) return alert('Choose a property.');
+  if (!date) return alert('Choose a date.');
+  if ((activity==='Trucking (sale)' || activity==='Move stock') && (!paddockName || !livestockClass || !headCount)) {
+    return alert('For Trucking/Move: select paddock, class, and head.');
+  }
+  if ((activity==='Spraying paddocks' || activity==='Chemical (stock)') && chemId && !(chemQtyV>0)) {
+    return alert('Enter a chemical quantity > 0');
+  }
+
+  const payload = {
+    propertyId: pid, propertyName: pname,
+    date, time, activity,
+    paddock: paddockName || null,
+    notes,
+    species: species || null,
+    livestockClass: livestockClass || null,
+    headCount: headCount || null,
+    spraying: (isChem && activity==='Spraying paddocks' && chemId) ? [{ chemId, chemName, qty:chemQtyV, unit:chemUnitV }] : null,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try{
+    await db.collection('diaryEntries').add(payload);
+    setMsg('Saved.');
+    resetForm();
+    await refreshEntries();
+  }catch(e){
+    console.error(e);
+    alert('Save failed: ' + errText(e));
+  }
 }
-function exportYearCsv() { alert('Export not implemented in this snippet.'); }
-function printYear() { alert('Print not implemented in this snippet.'); }
-// End placeholders
 
+function resetForm(){
+  $('#dateInp').value = new Date().toISOString().slice(0,10);
+  $('#timeInp').value = '';
+  $('#activitySel').value = 'Ploughing';
+  $('#paddockSel').value = '';
+  $('#notesInp').value = '';
+  $('#chemSel').value = '';
+  $('#chemQty').value = '';
+  $('#chemUnit').value = '';
+  $('#speciesSel').value = 'Cattle';
+  $('#classInp').value = '';
+  $('#headInp').value = '';
+  stockContext.innerHTML = '';
+  onActivityChange();
+}
 
-/*** Bootstrap ***/
+/* -------------------------------------------------------
+   Recent entries (lightweight view)
+------------------------------------------------------- */
+async function refreshEntries(){
+  if (!auth.currentUser){ entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">Sign in to load entries…</td></tr>'; return; }
+  entriesTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
+
+  const y = Number($('#yearInp').value || new Date().getFullYear());
+  const start = `${y}-01-01`, end = `${y}-12-31`;
+
+  try{
+    const snap = await db.collection('diaryEntries')
+      .where('date','>=',start).where('date','<=',end)
+      .orderBy('date','desc')
+      .limit(100).get();
+
+    const rows=[];
+    snap.forEach(d=>{
+      const r = { id:d.id, ...d.data() };
+      rows.push(`<tr>
+        <td>${escapeHtml(r.date||'')}</td>
+        <td>${escapeHtml(r.propertyName||'')}</td>
+        <td>${escapeHtml(r.activity||'')}</td>
+        <td>${escapeHtml(r.paddock||'')}</td>
+        <td>${escapeHtml(r.notes||'')}</td>
+        <td class="nowrap">
+          <button class="btn danger" onclick="delEntry('${r.id}')">Delete</button>
+        </td>
+      </tr>`);
+    });
+    entriesTbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="6">No entries.</td></tr>';
+  }catch(e){
+    console.error(e);
+    entriesTbody.innerHTML = '<tr><td colspan="6">Failed to load entries.</td></tr>';
+  }
+}
+
+window.delEntry = async function(id){
+  if(!confirm('Delete this entry?')) return;
+  try{
+    await db.collection('diaryEntries').doc(id).delete();
+    await refreshEntries();
+    setMsg('Deleted.');
+  }catch(e){
+    console.error(e);
+    alert('Delete failed: ' + errText(e));
+  }
+};
+
+/* -------------------------------------------------------
+   Bootstrap
+------------------------------------------------------- */
 (async function init(){
-  try {
-    // Try to enable persistence, ignore if not available (e.g., in a private browsing window)
-    try { await firebase.firestore().enablePersistence({synchronizeTabs:true}); } catch(e) { console.warn('Persistence not available:', e && e.code); }
-  } catch(e){ console.error(e); }
+  // optional header JS if present
+  try {
+    if (window.SkyFarmHeader?.mount) { SkyFarmHeader.mount(); }
+    if (window.SkyFarmAuth?.requireAuth) { /* we handle auth here, so ignore */ }
+  } catch(e){}
 
-  // properties (+ All)
-  // FIX: Template literals confirmed with backticks
-  const propOptions = Object.keys(propertyIds).map(n=>`<option value="${propertyIds[n]}">${n}</option>`).join('');
-  propSel.innerHTML = '<option value="ALL">(All properties)</option>' + propOptions;
+  $('#yearInp').value = new Date().getFullYear();
 
-  // transfer list (all)
-  // FIX: Template literals confirmed with backticks
-  transferPropSel.innerHTML = '<option value="">(choose property)</option>' +
-    Object.keys(propertyIds).map(n=>`<option value="${propertyIds[n]}">${n}</option>`).join('');
-
-  dateInp.value = todayISO(); yearInp.value = new Date().getFullYear();
-
-  // events
-  activitySel.onchange = onActivityChange;
-  propSel.onchange = onPropertyChange;
-  $('#refreshBtn').onclick = refreshEntries;
-  $('#resetBtn').onclick = ()=>resetForm(false);
-  cancelEditBtn.onclick = ()=>{ resetForm(false); setMsg('Edit cancelled'); };
-  saveBtn.onclick = ()=> saveEntry().catch(e=>{console.error(e); setMsg('Save failed: '+(e?.message||e));}); // Re-enable save
-  exportCsvBtn.onclick = exportYearCsv;
-  printBtn.onclick = printYear;
-  addClassRowBtn.onclick = addMusterClassRow;
-  paddockSel.onchange = onPaddockOrSpeciesChange;
-  speciesSel.onchange = onPaddockOrSpeciesChange;
-  mAct.oninput = ()=>{ mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0; };
-  transferPropSel.onchange = onTransferPropertyChange;
-
-  onActivityChange();
-
-  // Preselect from URL
-  if (urlPropId || urlPropName){
-    const pid = urlPropId || propertyIds[urlPropName] || '';
-    if (pid && propSel.querySelector(`option[value="${pid}"]`)) propSel.value = pid;
-  }
-  
-  // Load data AFTER checking sign-in status
-  await requireSignedIn(); 
-  
-  if (urlPaddock) { trySelectPaddockByName(urlPaddock); }
-  if (urlChemOnly) { activitySel.value = 'Spraying paddocks'; onActivityChange(); }
+  initUI();
+  await onAuth();        // show sign-in if needed
+  if (auth.currentUser){ // if already signed in (persisted), load data
+    await onPropertyChange();
+    await refreshEntries();
+  }
 })();
 </script>
 </body>
