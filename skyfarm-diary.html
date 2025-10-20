@@ -19,15 +19,13 @@
     .brand{font-weight:700}
     .pill{padding:4px 10px; border-radius:999px; background:#e2e8f0; text-decoration:none; color:#0f172a; font-size:.9rem}
     .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0}
-    .row {
-    display: flex;       /* Use flexbox for layout */
-    flex-wrap: wrap;     /* Allow items to wrap to the next line */
-    gap: 10px;           /* Space between items */
-    margin: 8px 0;
-}
+    .row{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0}
     label{display:block; font-size:.9rem; color:#475569; margin-bottom:4px}
-    input,select,button{padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff}
-    button{cursor:pointer}
+    
+    /* CRITICAL STYLE FIXES: Input width and Overlay visibility */
+    input,select,button{padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; width: 100%; max-width: 100%;}
+    
+    button{cursor:pointer; width: auto;} /* Buttons shouldn't take full width */
     .primary{background:var(--brand); border-color:var(--brand); color:#fff}
     .danger{background:#ef4444; border-color:#ef4444; color:#fff}
     .muted{color:var(--muted); font-size:.9rem}
@@ -36,19 +34,9 @@
     table{width:100%; border-collapse:collapse}
     th,td{border-bottom:1px solid var(--line); padding:8px; text-align:left}
     th{background:#f1f5f9}
-    /* Sign-in overlay */
-   /* Sign-in overlay */
-#authOverlay{
-    position:fixed; 
-    inset:0; 
-    background:rgba(15,23,42,.06); 
-    /* The overlay should be hidden by default (via JS in your current code)
-       but if it's showing, we'll confirm the default CSS state: */
-    display: none; 
-    align-items:center; 
-    justify-content:center; 
-    z-index:50
-} #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+    
+    /* Sign-in overlay (set to hidden by default for visual cleanup) */
+    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 8px}
     .small{font-size:.9rem}
@@ -72,22 +60,18 @@
   <h1>SkyFarm — Diary</h1>
 
     <div class="card">
-    <div class="row">
-      <div>
-        <label>Property</label>
-        <select id="propSel" style="min-width:240px"></select>
+        <div class="row">
+      <div style="flex-basis: 220px;">         <label>Property</label>
+        <select id="propSel"></select>
       </div>
-      <div>
-        <label>Date</label>
+      <div style="flex-basis: 150px;">         <label>Date</label>
         <input id="dateInp" type="date"/>
       </div>
-      <div>
-        <label>Time</label>
+      <div style="flex-basis: 100px;">         <label>Time</label>
         <input id="timeInp" type="time"/>
       </div>
-      <div>
-        <label>Activity</label>
-        <select id="activitySel" style="min-width:220px">
+      <div style="flex-basis: 220px;">         <label>Activity</label>
+        <select id="activitySel">
           <option>Mustering / Moving stock</option>
           <option>Trucking (sales/transfer)</option>
           <option>Ploughing</option>
@@ -103,24 +87,19 @@
       </div>
     </div>
 
-    <div class="row">
-      <div style="min-width:260px">
-        <label>Paddock</label>
-        <select id="paddockSel" style="min-width:260px"><option value="">(choose)</option></select>
+        <div class="row">
+      <div style="flex-basis: 260px;">         <label>Paddock</label>
+        <select id="paddockSel"><option value="">(choose)</option></select>
         <div class="small"><a href="javascript:void(0)">Can’t see it? Type paddock name instead.</a></div>
       </div>
-      <div style="min-width:260px; flex:1">
-        <label>Notes</label>
+      <div style="flex:1;">         <label>Notes</label>
         <input id="notesInp" placeholder="optional"/>
       </div>
     </div>
-input, select, textarea {
-    width: 100%; /* Make all form controls fill their containers */
-    max-width: 100%;
-}
-    <div class="row">
-      <button id="saveBtn" class="primary">Save entry</button>
-      <button id="resetBtn">Reset</button>
+
+        <div class="row">
+      <button id="saveBtn" class="primary" style="width: auto;">Save entry</button>
+      <button id="resetBtn" style="width: auto;">Reset</button>
       <span id="msg" class="muted" aria-live="polite"></span>
     </div>
   </div>
@@ -131,7 +110,7 @@ input, select, textarea {
       <span class="spacer"></span>
       <label>Year</label>
       <input id="yearInp" type="number" min="2000" max="2100" style="width:110px"/>
-      <button id="refreshBtn">Refresh</button>
+      <button id="refreshBtn" style="width: auto;">Refresh</button>
     </div>
     <table>
       <thead>
@@ -139,7 +118,7 @@ input, select, textarea {
           <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
         </tr>
       </thead>
-      <tbody id="entriesTbody"><tr><td colspan="6">Sign in to load entries…</td></tr></tbody>
+      <tbody id="entriesTbody"><tr><td colspan="6">Loading entries…</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -159,10 +138,10 @@ input, select, textarea {
       </div>
     </div>
     <div class="row">
-      <button id="signInBtn" class="primary">Sign in</button>
+      <button id="signInBtn" class="primary" style="width: auto;">Sign in</button>
       <span id="authMsg" class="muted"></span>
       <span class="spacer"></span>
-      <button id="closeOverlayBtn">Close</button>
+      <button id="closeOverlayBtn" style="width: auto;">Close</button>
     </div>
   </div>
 </div>
@@ -183,7 +162,7 @@ const auth = firebase.auth();
 const db   = firebase.firestore();
 
 /* -------------------------------------------------------
-   Helpers & Properties
+   Helpers & Properties (Removed status setting for simplicity)
 ------------------------------------------------------- */
 const $ = s => document.querySelector(s);
 const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
@@ -207,7 +186,6 @@ const authWho = $('#authWho');
 function showOverlay(show){ overlay.style.display = show ? 'flex' : 'none'; }
 
 $('#signInBtn').onclick = async ()=>{
-  // ... (sign-in logic remains the same)
   const email = $('#siEmail').value.trim();
   const pass  = $('#siPass').value;
   $('#authMsg').textContent = 'Signing in…';
@@ -216,12 +194,18 @@ $('#signInBtn').onclick = async ()=>{
     await auth.signInWithEmailAndPassword(email, pass);
     $('#authMsg').textContent = 'Signed in.';
     showOverlay(false);
-    // Reload data after successful sign-in
     await loadPaddocks($('#propSel').value);
     await refreshEntries();
   }catch(e){
     $('#authMsg').textContent = 'Sign-in failed: ' + errText(e);
   }
+};
+
+$('#signOutBtn').onclick = async ()=>{ 
+    try{ 
+        await auth.signOut();
+        location.reload();
+    }catch(e){} 
 };
 
 // CRITICAL: Checks for a persisted session immediately on page load
@@ -231,8 +215,8 @@ async function requireSignedIn(){
       if(u){
         authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
         signOutBtn.classList.remove('hidden');
-        // Load data if signed in
-        await loadPaddocks($('#propSel').value); // <--- FAILS HERE IF RULES/INDEX ARE BAD
+        showOverlay(false); // <--- Explicitly hide overlay on successful persistence load
+        await loadPaddocks($('#propSel').value); 
         await refreshEntries();
         resolve(true);
       }else{
@@ -246,7 +230,7 @@ async function requireSignedIn(){
 }
 
 /* -------------------------------------------------------
-   Data Loading
+   Data Loading (Simplified for brevity)
 ------------------------------------------------------- */
 const paddockSel = $('#paddockSel');
 const entriesTbody = $('#entriesTbody');
@@ -255,7 +239,6 @@ async function loadPaddocks(propertyId){
   if(!auth.currentUser) return; 
   paddockSel.innerHTML = '<option>(loading…)</option>';
   try{
-    // This query requires a p.propertyId single-field index OR a p.propertyId + p.name composite index
     const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
     const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
     
@@ -267,8 +250,8 @@ async function loadPaddocks(propertyId){
       paddockSel.innerHTML = '<option value="">(choose)</option>' + rows.map(paddockOption).join('');
     }
   }catch(e){
-    paddockSel.innerHTML = '<option value="">(load error: check console)</option>';
-    console.error('Paddocks load error. CHECK FIREBASE SECURITY RULES:', e.message); 
+    paddockSel.innerHTML = '<option value="">(load error)</option>';
+    console.error('Paddocks load error:', e.message); 
   }
 }
 
@@ -278,8 +261,6 @@ async function refreshEntries(){
       return; 
     } 
     
-  // ... (Rest of refreshEntries logic)
-  // This query requires the diaryEntries.propertyId + diaryEntries.date composite index
   const propertyId = $('#propSel').value;
   entriesTbody.innerHTML = '<tr><td colspan="6">Loading entries…</td></tr>';
   try{
@@ -289,14 +270,13 @@ async function refreshEntries(){
       .limit(50)
       .get();
     
-    // (Render table rows)
     const rows=[];
     snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
-    // ... (rendering code)
+    
     if(!rows.length){ entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">No entries.</td></tr>'; return; }
-    entriesTbody.innerHTML = rows.map(r=>`<tr><td>${r.date||''}</td><td>${r.propertyName||''}</td><td>${r.activity||''}</td><td>${r.paddock||''}</td><td>${r.notes||''}</td><td><button data-id="${r.id}" class="danger btnDel">Delete</button></td></tr>`).join('');
+    entriesTbody.innerHTML = rows.map(r=>`<tr><td>${r.date||''}</td><td>${r.propertyName||''}</td><td>${r.activity||''}</td><td>${r.paddock||''}</td><td>${r.notes||''}</td><td><button data-id="${r.id}" class="danger btnDel" style="width: auto;">Delete</button></td></tr>`).join('');
   }catch(e){
-    entriesTbody.innerHTML = `<tr><td colspan="6" style="color:#b45309">Failed to read entries. Check console for Index/Permission error.</td></tr>`;
+    entriesTbody.innerHTML = `<tr><td colspan="6" style="color:#b45309">Failed to read entries. Check console.</td></tr>`;
     console.error('Entries load error:', e); 
   }
 }
@@ -306,7 +286,6 @@ async function refreshEntries(){
    Page bootstrap
 ------------------------------------------------------- */
 (async function init(){
-  // Nav setup
   const base = location.origin || '';
   $('#navDiary').href = base + '/skyfarm-diary.html';
   $('#navMap').href   = base + '/skyfarm-map.html';
@@ -314,13 +293,11 @@ async function refreshEntries(){
 
   $('#dateInp').value = new Date().toISOString().slice(0,10);
   
-  // Property setup
   const propSel = $('#propSel');
   propSel.innerHTML = PROPS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   propSel.value = DEFAULT_PROP_ID;
   propSel.onchange = ()=> { loadPaddocks(propSel.value); refreshEntries(); };
 
-  // Run auth check
   await requireSignedIn(); 
 })();
 </script>
