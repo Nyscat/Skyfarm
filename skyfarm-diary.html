@@ -339,10 +339,10 @@ const yBounds = (y)=>({ start:`${y}-01-01`, end:`${y}-12-31` });
 
 const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
 
-const PROPERTY_IDS = {
-  "Consentes":"s7PlDM9wrEpxuJ6DGIab",
-  "Mt Myrtle":"TRuxtRBX2zJlwZnRGYKJ",
-  "Gerawin":"P0dQ0H2FWHeqqxejflZs"
+const propertyIds = {
+  "Consentes": "s7PIDM9wrEpxuJ6DGlab",   // ✅ correct ID
+  "Mt Myrtle": "TRuxtRBx2zJIwZnRGYKJ",    // ✅ correct ID
+  "Gerawin": "P0dQ0H2FWHeqqxejfJzS"       // ✅ correct ID
 };
 const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
 
