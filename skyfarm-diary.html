@@ -1,382 +1,383 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SkyFarm — Diary</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SkyFarm — Diary</title>
 
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
 
-  <style>
-    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
-    *{box-sizing:border-box}
-    body{margin:16px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--ink)}
-    .wrap{max-width:1100px; margin:0 auto}
-    h1{margin:0 0 12px; font-size:1.6rem}
-    .topbar{display:flex; align-items:center; gap:12px; margin-bottom:8px}
-    .brand{font-weight:700}
-    .pill{padding:4px 10px; border-radius:999px; background:#e2e8f0; text-decoration:none; color:#0f172a; font-size:.9rem}
-    .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0}
-    .row{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0}
-    label{display:block; font-size:.9rem; color:#475569; margin-bottom:4px}
-    input,select,button{padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff}
-    button{cursor:pointer}
-    .primary{background:var(--brand); border-color:var(--brand); color:#fff}
-    .danger{background:#ef4444; border-color:#ef4444; color:#fff}
-    .muted{color:var(--muted); font-size:.9rem}
-    .spacer{flex:1}
-    .hidden{display:none}
-    table{width:100%; border-collapse:collapse}
-    th,td{border-bottom:1px solid var(--line); padding:8px; text-align:left}
-    th{background:#f1f5f9}
-    /* Sign-in overlay */
-    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
-    #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
-    #authCard h2{margin:0 0 8px}
-    .small{font-size:.9rem}
-    .status-ok{color:#0B7A6E}
-    .status-bad{color:#b45309}
-  </style>
+  <style>
+    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
+    *{box-sizing:border-box}
+    body{margin:16px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--ink)}
+    .wrap{max-width:1100px; margin:0 auto}
+    h1{margin:0 0 12px; font-size:1.6rem}
+    .topbar{display:flex; align-items:center; gap:12px; margin-bottom:8px}
+    .brand{font-weight:700}
+    .pill{padding:4px 10px; border-radius:999px; background:#e2e8f0; text-decoration:none; color:#0f172a; font-size:.9rem}
+    .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0}
+    .row{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0}
+    label{display:block; font-size:.9rem; color:#475569; margin-bottom:4px}
+    input,select,button{padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff}
+    button{cursor:pointer}
+    .primary{background:var(--brand); border-color:var(--brand); color:#fff}
+    .danger{background:#ef4444; border-color:#ef4444; color:#fff}
+    .muted{color:var(--muted); font-size:.9rem}
+    .spacer{flex:1}
+    .hidden{display:none}
+    table{width:100%; border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--line); padding:8px; text-align:left}
+    th{background:#f1f5f9}
+    /* Sign-in overlay */
+    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+    #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
+    #authCard h2{margin:0 0 8px}
+    .small{font-size:.9rem}
+    .status-ok{color:#0B7A6E}
+    .status-bad{color:#b45309}
+  </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- Header -->
-  <div class="topbar">
-    <div class="brand">🌱 SkyFarm</div>
-    <a id="navDiary" class="pill" href="#">Diary</a>
-    <a id="navMap" class="pill" href="#">Map</a>
-    <a id="navChem" class="pill" href="#">Chemicals</a>
-    <span class="spacer"></span>
-    <span id="authWho" class="muted">Checking sign-in…</span>
-    <button id="signOutBtn" class="danger hidden">Sign out</button>
-  </div>
+    <div class="topbar">
+    <div class="brand">🌱 SkyFarm</div>
+    <a id="navDiary" class="pill" href="#">Diary</a>
+    <a id="navMap" class="pill" href="#">Map</a>
+    <a id="navChem" class="pill" href="#">Chemicals</a>
+    <span class="spacer"></span>
+    <span id="authWho" class="muted">Checking sign-in…</span>
+    <button id="signOutBtn" class="danger hidden">Sign out</button>
+  </div>
 
-  <h1>SkyFarm — Diary</h1>
+  <h1>SkyFarm — Diary</h1>
 
-  <!-- FORM -->
-  <div class="card">
-    <div class="row">
-      <div>
-        <label>Property</label>
-        <select id="propSel" style="min-width:240px"></select>
-      </div>
-      <div>
-        <label>Date</label>
-        <input id="dateInp" type="date"/>
-      </div>
-      <div>
-        <label>Time</label>
-        <input id="timeInp" type="time"/>
-      </div>
-      <div>
-        <label>Activity</label>
-        <select id="activitySel" style="min-width:220px">
-          <option>Mustering / Moving stock</option>
-          <option>Trucking (sales/transfer)</option>
-          <option>Ploughing</option>
-          <option>Planting</option>
-          <option>Spraying</option>
-          <option>General note</option>
-        </select>
-      </div>
-      <span class="spacer"></span>
-      <div>
-        <label>&nbsp;</label>
-        <span id="status" class="muted">—</span>
-      </div>
-    </div>
+    <div class="card">
+    <div class="row">
+      <div>
+        <label>Property</label>
+        <select id="propSel" style="min-width:240px"></select>
+      </div>
+      <div>
+        <label>Date</label>
+        <input id="dateInp" type="date"/>
+      </div>
+      <div>
+        <label>Time</label>
+        <input id="timeInp" type="time"/>
+      </div>
+      <div>
+        <label>Activity</label>
+        <select id="activitySel" style="min-width:220px">
+          <option>Mustering / Moving stock</option>
+          <option>Trucking (sales/transfer)</option>
+          <option>Ploughing</option>
+          <option>Planting</option>
+          <option>Spraying</option>
+          <option>General note</option>
+        </select>
+      </div>
+      <span class="spacer"></span>
+      <div>
+        <label>&nbsp;</label>
+        <span id="status" class="muted">—</span>
+      </div>
+    </div>
 
-    <div class="row">
-      <div style="min-width:260px">
-        <label>Paddock</label>
-        <select id="paddockSel" style="min-width:260px"><option value="">(choose)</option></select>
-        <div class="small"><a href="javascript:void(0)">Can’t see it? Type paddock name instead.</a></div>
-      </div>
-      <div style="min-width:260px; flex:1">
-        <label>Notes</label>
-        <input id="notesInp" placeholder="optional"/>
-      </div>
-    </div>
+    <div class="row">
+      <div style="min-width:260px">
+        <label>Paddock</label>
+        <select id="paddockSel" style="min-width:260px"><option value="">(choose)</option></select>
+        <div class="small"><a href="javascript:void(0)">Can’t see it? Type paddock name instead.</a></div>
+      </div>
+      <div style="min-width:260px; flex:1">
+        <label>Notes</label>
+        <input id="notesInp" placeholder="optional"/>
+              </div>
+    </div>
 
-    <div class="row">
-      <button id="getWeatherBtn">Get weather</button>
-      <span id="weatherText" class="muted"></span>
-    </div>
+    <div class="row">
+      <button id="saveBtn" class="primary">Save entry</button>
+      <button id="resetBtn">Reset</button>
+      <span id="msg" class="muted" aria-live="polite"></span>
+    </div>
+  </div>
 
-    <div class="row">
-      <button id="saveBtn" class="primary">Save entry</button>
-      <button id="resetBtn">Reset</button>
-      <span id="msg" class="muted" aria-live="polite"></span>
-    </div>
-  </div>
-
-  <!-- LIST -->
-  <div class="card">
-    <div class="row">
-      <strong>Recent entries</strong>
-      <span class="spacer"></span>
-      <label>Year</label>
-      <input id="yearInp" type="number" min="2000" max="2100" style="width:110px"/>
-      <button id="refreshBtn">Refresh</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
-        </tr>
-      </thead>
-      <tbody id="entriesTbody"><tr><td colspan="6">Sign in to load entries…</td></tr></tbody>
-    </table>
-  </div>
+    <div class="card">
+    <div class="row">
+      <strong>Recent entries</strong>
+      <span class="spacer"></span>
+      <label>Year</label>
+      <input id="yearInp" type="number" min="2000" max="2100" style="width:110px"/>
+      <button id="refreshBtn">Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="entriesTbody"><tr><td colspan="6">Sign in to load entries…</td></tr></tbody>
+    </table>
+  </div>
 </div>
 
-<!-- Sign-in overlay (email/password) -->
 <div id="authOverlay">
-  <div id="authCard">
-    <h2>Sign in to SkyFarm</h2>
-    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div class="row">
-      <div style="flex:1; min-width:260px">
-        <label>Email</label>
-        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
-      </div>
-      <div style="flex:1; min-width:220px">
-        <label>Password</label>
-        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
-      </div>
-    </div>
-    <div class="row">
-      <button id="signInBtn" class="primary">Sign in</button>
-      <span id="authMsg" class="muted"></span>
-      <span class="spacer"></span>
-      <button id="closeOverlayBtn">Close</button>
-    </div>
-  </div>
+  <div id="authCard">
+    <h2>Sign in to SkyFarm</h2>
+    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
+    <div class="row">
+      <div style="flex:1; min-width:260px">
+        <label>Email</label>
+        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
+      </div>
+      <div style="flex:1; min-width:220px">
+        <label>Password</label>
+        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+    </div>
+    <div class="row">
+      <button id="signInBtn" class="primary">Sign in</button>
+      <span id="authMsg" class="muted"></span>
+      <span class="spacer"></span>
+      <button id="closeOverlayBtn">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
 /* -------------------------------------------------------
-   Firebase init (compat) — Email/Password ONLY
-   (Fixed apiKey & storageBucket)
+   Firebase init (compat) — Email/Password ONLY
+   (Must have ALL config details below)
 ------------------------------------------------------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-  authDomain: "consentes-pastoral.firebaseapp.com",
-  projectId: "consentes-pastoral",
-  storageBucket: "consentes-pastoral.appspot.com",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70", // <-- REPLACE THIS WITH YOUR VALID KEY
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  storageBucket: "consentes-pastoral.appspot.com", // Using .appspot.com for compat
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db   = firebase.firestore();
+const db   = firebase.firestore();
 
 /* -------------------------------------------------------
-   Helpers
+   Helpers
 ------------------------------------------------------- */
 const $ = s => document.querySelector(s);
 const setStatus = t => {
-  const el = $('#status');
-  el.textContent = t || '';
-  el.className = (/connected/i.test(t||'')) ? 'status-ok' : (/issue|error|denied|sign in/i.test(t||'') ? 'status-bad' : 'muted');
+  const el = $('#status');
+  el.textContent = t || '';
+  el.className = (/connected/i.test(t||'')) ? 'status-ok' : (/issue|error|denied|sign in/i.test(t||'') ? 'status-bad' : 'muted');
 };
 const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
 const todayISO = ()=> new Date().toISOString().slice(0,10);
 const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const errText = e => e?.message || e?.code || 'Unknown error';
 
 /* -------------------------------------------------------
-   Properties (IDs you gave)
+   Properties (IDs you gave)
 ------------------------------------------------------- */
 const PROPS = [
-  { id:"s7PlDM9wrEpxuJ6DGIab", name:"Consentes", lat:-20.263323, lon:141.609607 },
-  { id:"P0dQ0H2FWHeqqxejflZs", name:"Gerawin",   lat:-20.114428, lon:141.751857 },
-  { id:"TRuxtRBX2zJlwZnRGYKJ", name:"Mt Myrtle", lat:-26.566565, lon:149.997202 }
+  { id:"s7PlDM9wrEpxuJ6DGIab", name:"Consentes", lat:-20.263323, lon:141.609607 },
+  { id:"P0dQ0H2FWHeqqxejflZs", name:"Gerawin",   lat:-20.114428, lon:141.751857 },
+  { id:"TRuxtRBX2zJlwZnRGYKJ", name:"Mt Myrtle", lat:-26.566565, lon:149.997202 }
 ];
 const DEFAULT_PROP_ID = "TRuxtRBX2zJlwZnRGYKJ";
 
 /* -------------------------------------------------------
-   Auth (no anonymous)
+   Auth (Handles persistence check on load)
 ------------------------------------------------------- */
 const overlay = $('#authOverlay');
 const signOutBtn = $('#signOutBtn');
 const authWho = $('#authWho');
 
 function showOverlay(show){ overlay.style.display = show ? 'flex' : 'none'; }
-function errText(e){ return e?.message || e?.code || 'Unknown error'; }
 
 $('#signInBtn').onclick = async ()=>{
-  const email = $('#siEmail').value.trim();
-  const pass  = $('#siPass').value;
-  $('#authMsg').textContent = 'Signing in…';
-  try{
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    await auth.signInWithEmailAndPassword(email, pass);
-    $('#authMsg').textContent = 'Signed in.';
-    showOverlay(false);
-  }catch(e){
-    $('#authMsg').textContent = 'Sign-in failed: ' + errText(e);
-  }
+  const email = $('#siEmail').value.trim();
+  const pass  = $('#siPass').value;
+  $('#authMsg').textContent = 'Signing in…';
+  try{
+    // Key line for persistence across pages:
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.signInWithEmailAndPassword(email, pass);
+    $('#authMsg').textContent = 'Signed in.';
+    showOverlay(false);
+    // On successful sign-in, load data
+    await loadPaddocks(propSel.value);
+    await refreshEntries();
+  }catch(e){
+    $('#authMsg').textContent = 'Sign-in failed: ' + errText(e);
+  }
 };
 $('#closeOverlayBtn').onclick = ()=> showOverlay(false);
-signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); }catch(e){} };
+signOutBtn.onclick = async ()=>{ 
+    try{ 
+        await auth.signOut();
+        // Force a page reload to reset state after sign-out
+        location.reload();
+    }catch(e){} 
+};
 
+// This function checks for a persisted session immediately on page load
 async function requireSignedIn(){
-  setStatus('Checking sign-in…');
-  return new Promise(resolve=>{
-    auth.onAuthStateChanged(u=>{
-      if(u){
-        authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
-        signOutBtn.classList.remove('hidden');
-        setStatus('Connected');
-        resolve(true);
-      }else{
-        authWho.textContent = 'Not signed in';
-        signOutBtn.classList.add('hidden');
-        setStatus('Please sign in (Email/Password).');
-        showOverlay(true);
-        resolve(false);
-      }
-    });
-  });
+  setStatus('Checking sign-in…');
+  return new Promise(resolve=>{
+    auth.onAuthStateChanged(async u=>{
+      if(u){
+        authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+        signOutBtn.classList.remove('hidden');
+        setStatus('Connected');
+        // Load data if signed in
+        await loadPaddocks(propSel.value);
+        await refreshEntries();
+        resolve(true);
+      }else{
+        authWho.textContent = 'Not signed in';
+        signOutBtn.classList.add('hidden');
+        setStatus('Please sign in (Email/Password).');
+        showOverlay(true);
+        resolve(false);
+      }
+    });
+  });
 }
 
 /* -------------------------------------------------------
-   UI & Data
+   UI & Data
 ------------------------------------------------------- */
 const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'),
-      activitySel = $('#activitySel'), notesInp = $('#notesInp'),
-      paddockSel = $('#paddockSel'), entriesTbody = $('#entriesTbody');
+      activitySel = $('#activitySel'), notesInp = $('#notesInp'),
+      paddockSel = $('#paddockSel'), entriesTbody = $('#entriesTbody');
 
 $('#refreshBtn').onclick = refreshEntries;
 $('#resetBtn').onclick = ()=> resetForm();
 $('#saveBtn').onclick = ()=> saveEntry().catch(e=> setMsg('Save failed: ' + errText(e), 5000));
 
 function populateProperties(){
-  propSel.innerHTML = PROPS.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-  propSel.value = DEFAULT_PROP_ID;
+  propSel.innerHTML = PROPS.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  propSel.value = DEFAULT_PROP_ID;
 }
 function resetForm(){
-  dateInp.value = todayISO(); timeInp.value = '';
-  activitySel.value = 'Ploughing';
-  notesInp.value = '';
+  dateInp.value = todayISO(); timeInp.value = '';
+  activitySel.value = 'Ploughing';
+  notesInp.value = '';
 }
 function paddockOption(p){ return `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>`; }
 
 async function loadPaddocks(propertyId){
-  paddockSel.innerHTML = '<option>(loading…)</option>';
-  try{
-    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
-    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
-    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
-    paddockSel.innerHTML = '<option value="">(choose)</option>' + rows.map(paddockOption).join('');
-  }catch(e){
-    paddockSel.innerHTML = '<option value="">(failed to load)</option>';
-    console.warn('paddocks load error:', e);
-    setMsg('Failed to load paddocks: ' + errText(e), 5000);
-  }
+  // Check sign-in state before attempting Firestore read
+  if(!auth.currentUser) return; 
+
+  paddockSel.innerHTML = '<option>(loading…)</option>';
+  try{
+    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
+    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
+    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+    paddockSel.innerHTML = '<option value="">(choose)</option>' + rows.map(paddockOption).join('');
+  }catch(e){
+    paddockSel.innerHTML = '<option value="">(failed to load)</option>';
+    console.warn('Paddocks load error:', e.message); // Log error message for debugging
+    setMsg('Failed to load paddocks (Permissions/Index issue?): ' + errText(e), 5000);
+  }
 }
 
 async function saveEntry(){
-  const propertyId = propSel.value;
-  const propertyName = PROPS.find(p=>p.id===propertyId)?.name || '(unknown)';
-  const date = dateInp.value || todayISO();
-  const time = timeInp.value || '';
-  const activity = activitySel.value;
-  const paddock = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const notes = notesInp.value || '';
-  if(!propertyId){ throw new Error('Pick a property'); }
+  // Check sign-in state before attempting Firestore write
+  if(!auth.currentUser){ setMsg('Error: Must be signed in to save.', 5000); return; } 
 
-  const payload = {
-    propertyId, propertyName, date, time, activity,
-    paddock, user: (auth.currentUser?.email || 'User'),
-    notes,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  await db.collection('diaryEntries').add(payload);
-  setMsg('Saved.');
-  await refreshEntries();
+  const propertyId = propSel.value;
+  // ... (rest of saveEntry logic remains the same)
+  const propertyName = PROPS.find(p=>p.id===propertyId)?.name || '(unknown)';
+  const date = dateInp.value || todayISO();
+  const time = timeInp.value || '';
+  const activity = activitySel.value;
+  const paddock = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const notes = notesInp.value || '';
+  if(!propertyId){ throw new Error('Pick a property'); }
+
+  const payload = {
+    propertyId, propertyName, date, time, activity,
+    paddock, user: (auth.currentUser?.email || 'User'),
+    notes,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  await db.collection('diaryEntries').add(payload);
+  setMsg('Saved.');
+  await refreshEntries();
 }
 
 async function refreshEntries(){
-  const propertyId = propSel.value;
-  entriesTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
-  try{
-    const snap = await db.collection('diaryEntries')
-      .where('propertyId','==',propertyId)
-      .orderBy('date','desc')
-      .limit(50)
-      .get();
+  // Check sign-in state before attempting Firestore read
+  if(!auth.currentUser) { 
+      entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">Sign in to load entries…</td></tr>';
+      return; 
+    } 
+    
+  const propertyId = propSel.value;
+  entriesTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
+  try{
+    const snap = await db.collection('diaryEntries')
+      .where('propertyId','==',propertyId)
+      .orderBy('date','desc')
+      .limit(50)
+      .get();
 
-    const rows=[];
-    snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
+    const rows=[];
+    snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
 
-    if(!rows.length){
-      entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">No entries.</td></tr>';
-      return;
-    }
+    if(!rows.length){
+      entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">No entries.</td></tr>';
+      return;
+    }
+    // ... (rest of table rendering logic remains the same)
     entriesTbody.innerHTML = rows.map(r=>`
-      <tr>
-        <td>${escapeHtml(r.date||'')}</td>
-        <td>${escapeHtml(r.propertyName||'')}</td>
-        <td>${escapeHtml(r.activity||'')}</td>
-        <td>${escapeHtml(r.paddock||'')}</td>
-        <td>${escapeHtml(r.notes||'')}</td>
-        <td><button data-id="${r.id}" class="danger btnDel">Delete</button></td>
-      </tr>`).join('');
-    document.querySelectorAll('.btnDel').forEach(b=>{
-      b.onclick = async ()=>{
-        if(confirm('Delete this diary entry?')){
-          await db.collection('diaryEntries').doc(b.dataset.id).delete();
-          refreshEntries();
-        }
-      };
-    });
-  }catch(e){
-    entriesTbody.innerHTML = `<tr><td colspan="6" style="color:#b45309">No permission to read entries. ${escapeHtml(errText(e))}</td></tr>`;
-    console.warn('entries load error:', e);
-  }
+      <tr>
+        <td>${escapeHtml(r.date||'')}</td>
+        <td>${escapeHtml(r.propertyName||'')}</td>
+        <td>${escapeHtml(r.activity||'')}</td>
+        <td>${escapeHtml(r.paddock||'')}</td>
+        <td>${escapeHtml(r.notes||'')}</td>
+        <td><button data-id="${r.id}" class="danger btnDel">Delete</button></td>
+      </tr>`).join('');
+    document.querySelectorAll('.btnDel').forEach(b=>{
+      b.onclick = async ()=>{
+        if(confirm('Delete this diary entry?')){
+          await db.collection('diaryEntries').doc(b.dataset.id).delete();
+          refreshEntries();
+        }
+      };
+    });
+
+  }catch(e){
+    // Enhanced error message to help identify if it's a security rule or index issue
+    entriesTbody.innerHTML = `<tr><td colspan="6" style="color:#b45309">Failed to read entries. Check console for Index/Permission error.</td></tr>`;
+    console.error('Entries load error:', e); 
+  }
 }
 
-/* Weather stub (wire later) */
-$('#getWeatherBtn').onclick = async ()=>{
-  const propId = propSel.value;
-  const p = PROPS.find(x=>x.id===propId) || {};
-  const d = dateInp.value || todayISO();
-  $('#weatherText').textContent = 'Fetching…';
-  try{
-    // stub endpoint you can implement later
-    const res = await fetch(`/weather?date=${encodeURIComponent(d)}&lat=${p.lat}&lon=${p.lon}`);
-    if(!res.ok) throw new Error('weather fetch failed');
-    const w = await res.json();
-    $('#weatherText').textContent = `min ${w.minC}°C / max ${w.maxC}°C • ${w.mm}mm • wind ${w.windKph} kph`;
-  }catch(_){
-    $('#weatherText').textContent = 'Weather service not connected yet';
-  }
-};
 
 /* -------------------------------------------------------
-   Page bootstrap
+   Page bootstrap
 ------------------------------------------------------- */
 (async function init(){
-  // Simple nav (adjust if you have other files deployed)
-  const base = location.origin || '';
-  $('#navDiary').href = base + '/skyfarm-diary.html';
-  $('#navMap').href   = base + '/skyfarm-map.html';
-  $('#navChem').href  = base + '/skyfarm-chemical.html';
+  // Simple nav (adjust if you have other files deployed)
+  const base = location.origin || '';
+  $('#navDiary').href = base + '/skyfarm-diary.html';
+  $('#navMap').href   = base + '/skyfarm-map.html';
+  $('#navChem').href  = base + '/skyfarm-chemical.html';
 
-  dateInp.value = todayISO();
-  populateProperties();
-  propSel.onchange = ()=> loadPaddocks(propSel.value);
+  dateInp.value = todayISO();
+  populateProperties();
+  propSel.onchange = ()=> loadPaddocks(propSel.value);
 
-  const signed = await requireSignedIn();
-  if (signed){
-    await loadPaddocks(propSel.value);
-    await refreshEntries();
-  }
+  // This is the crucial step: checking for a saved session immediately on load
+  await requireSignedIn(); 
 })();
 </script>
 </body>
