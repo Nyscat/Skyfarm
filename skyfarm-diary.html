@@ -1,338 +1,419 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SkyFarm — Diary</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkyFarm — Diary</title>
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
 
-  <style>
-    /* FULL STYLES ADOPTED AND CORRECTED FOR DIARY PAGE */
-    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); margin:0; color:var(--ink); }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
-    h1 { margin: 12px 0; font-size: 1.6rem; }
+  <style>
+    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:#f6fbf8; margin:0; color:var(--ink); }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    h1 { margin: 12px 0; font-size: 1.6rem; }
 
-    /* Header */
-    #skyfarm-header { position:sticky; top:0; z-index:10; }
-    #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
-    #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
-    #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
-    #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
-    .spacer { flex:1; }
-    .muted { color:var(--muted); font-size:.9rem; }
-    .hidden { display:none; }
-    
-    /* Cards / Controls */
-    .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0; }
-    .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
-    label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
-    
-    /* *** FINAL CRITICAL FIX: Ensure form fields expand to 100% of their parent DIV *** */
-    input, select, textarea { 
-      width: 100%; 
-    } 
-    
-    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
-    button { cursor:pointer; width: auto; } /* Buttons should not take full width */
-    
-    .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
-    .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
-    .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
-    .disabled { opacity:.55; pointer-events:none; }
-    .small { font-size:.9rem; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; }
+    /* Header like chemical page */
+    #skyfarm-header { position:sticky; top:0; z-index:10; }
+    #skyfarm-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid #e5e7eb; }
+    #skyfarm-header .brand { display:flex; align-items:center; gap:10px; color:var(--brand); font-weight:700; text-decoration:none; }
+    #skyfarm-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+    #skyfarm-header nav a[aria-current="page"] { text-decoration:underline; }
+    .spacer { flex:1; }
+    .muted { color:var(--muted); font-size:.9rem; }
 
-    /* Table */
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; font-size: .95rem; }
-    th { background:#f1f5f9; }
-    .nowrap { white-space: nowrap; }
+    /* Cards / Controls */
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
+    label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
+    input, select, button, textarea { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    textarea { resize:vertical; min-height:38px; }
+    button { cursor:pointer; }
+    .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+    .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
+    .disabled { opacity:.55; pointer-events:none; }
 
-    /* Sign-in overlay (Hidden by default, shown by JS if not signed in) */
-    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
-    #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
-    #authCard h2{margin:0 0 8px}
-    .status-bad{color:#b45309}
-  </style>
+    table { width:100%; border-collapse:collapse; }
+    th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; font-size:.95rem; }
+    th { background:#f1f5f9; }
+    .nowrap { white-space:nowrap; }
+    .small { font-size:.9rem; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; }
+  </style>
+
+  <link rel="stylesheet" href="skyfarm-shared.css">
 </head>
 <body>
+  <!-- Shared header -->
+  <div id="sf-header-root"></div>
+  <script src="skyfarm-header.js"></script>
+  <script>SkyFarmHeader.mount();</script>
 
-<div id="skyfarm-header">
-  <div class="bar">
-    <a class="brand" href="#">🌱 SkyFarm</a>
-    <nav>
-      <a id="navDiary" href="skyfarm-diary.html" aria-current="page">Diary</a>
-      <a id="navMap" href="skyfarm-map.html">Map</a>
-      <a id="navChem" href="skyfarm-chemical.html">Chemicals</a>
-    </nav>
-    <span class="spacer"></span>
-    <span id="authWho" class="muted">Checking sign-in…</span>
-    <button id="signOutBtn" class="danger hidden" style="width: auto;">Sign out</button>
-  </div>
-</div>
-<div class="wrap">
-  <h1>SkyFarm — Diary</h1>
+  <!-- Require email/password auth (like Chemical page) -->
+  <script>SkyFarmAuth.requireAuth();</script>
 
-    <div class="card">
-        <div class="row">
-      <div style="flex-basis: 220px;">
-        <label>Property</label>
-        <select id="propSel"></select>
-      </div>
-      <div style="flex-basis: 150px;">
-        <label>Date</label>
-        <input id="dateInp" type="date"/>
-      </div>
-      <div style="flex-basis: 100px;">
-        <label>Time</label>
-        <input id="timeInp" type="time"/>
-      </div>
-      <div style="flex-basis: 220px;">
-        <label>Activity</label>
-        <select id="activitySel">
-          <option>Mustering / Moving stock</option>
-          <option>Trucking (sales/transfer)</option>
-          <option>Ploughing</option>
-          <option>Planting</option>
-          <option>Spraying</option>
-          <option>General note</option>
-        </select>
-      </div>
-      <span class="spacer"></span>
-      <div>
-        <label>&nbsp;</label>
-        <span id="status" class="muted">—</span>
-      </div>
-    </div>
+  <div class="wrap">
+    <h1>Diary</h1>
 
-        <div class="row">
-      <div style="flex-basis: 260px;">
-        <label>Paddock</label>
-        <select id="paddockSel"><option value="">(choose)</option></select>
-        <div class="small"><a href="javascript:void(0)">Can’t see it? Type paddock name instead.</a></div>
-      </div>
-      <div style="flex:1;">
-        <label>Notes</label>
-        <input id="notesInp" placeholder="optional"/>
-      </div>
-    </div>
+    <!-- Form card -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Property</label>
+          <select id="propSel" style="min-width:240px"></select>
+        </div>
+        <div>
+          <label>Date</label>
+          <input id="dateInp" type="date" />
+        </div>
+        <div>
+          <label>Time</label>
+          <input id="timeInp" type="time" />
+        </div>
+        <div>
+          <label>Activity</label>
+          <select id="activitySel" style="min-width:220px">
+            <option>Mustering / Moving stock</option>
+            <option>Trucking (sales/transfer)</option>
+            <option>Ploughing</option>
+            <option>Planting</option>
+            <option>Spraying</option>
+            <option>General note</option>
+          </select>
+        </div>
+        <div>
+          <label>User</label>
+          <input id="userInp" placeholder="Nyssa/Paul" />
+        </div>
+        <span class="spacer"></span>
+        <span id="status" class="muted">Connecting…</span>
+      </div>
 
-        <div class="row">
-      <button id="saveBtn" class="primary" style="width: auto;">Save entry</button>
-      <button id="resetBtn" class="btn" type="button" style="width: auto;">Reset</button>
-      <span id="msg" class="muted" aria-live="polite"></span>
-    </div>
-  </div>
+      <div class="row">
+        <div style="min-width:260px">
+          <label>Paddock</label>
+          <select id="paddockSel" style="min-width:260px"><option value="">(choose)</option></select>
+          <div class="small"><a id="paddockTextToggle" href="javascript:void(0)">Can’t see it? Type paddock name instead.</a></div>
+          <input id="paddockText" class="hidden" placeholder="Type paddock name" />
+        </div>
+        <div style="flex:1; min-width:260px">
+          <label>Notes</label>
+          <input id="notesInp" placeholder="optional" />
+        </div>
+      </div>
 
-    <div class="card">
-    <div class="row">
-      <strong>Recent entries</strong>
-      <span class="spacer"></span>
-      <div>
-        <label>Year</label>
-        <input id="yearInp" type="number" min="2000" max="2100" style="width:110px"/>
-      </div>
-      <button id="refreshBtn" class="btn" type="button" style="width: auto;">Refresh</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th></th>
-        </tr>
-      </thead>
-      <tbody id="entriesTbody"><tr><td colspan="6">Loading entries…</td></tr></tbody>
-    </table>
-  </div>
-</div>
+      <div class="row">
+        <button id="saveBtn" class="primary btn">Save entry</button>
+        <button id="resetBtn" class="btn" type="button">Reset</button>
+        <button id="weatherBtn" class="btn" type="button">Get weather</button>
+        <span id="msg" class="muted" aria-live="polite"></span>
+      </div>
 
-<div id="authOverlay">
-  <div id="authCard">
-    <h2>Sign in to SkyFarm</h2>
-    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div class="row">
-      <div style="flex:1; min-width:260px">
-        <label>Email</label>
-        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
-      </div>
-      <div style="flex:1; min-width:220px">
-        <label>Password</label>
-        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
-      </div>
-    </div>
-    <div class="row">
-      <button id="signInBtn" class="primary" style="width: auto;">Sign in</button>
-      <span id="authMsg" class="muted"></span>
-      <span class="spacer"></span>
-      <button id="closeOverlayBtn" class="btn" type="button" style="width: auto;">Close</button>
-    </div>
-  </div>
-</div>
+      <div id="weatherBox" class="small muted"></div>
+    </div>
 
-<script>
-/* -------------------------------------------------------
-   Firebase init (compat)
-------------------------------------------------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70", // <-- VERIFIED KEY
-  authDomain: "consentes-pastoral.firebaseapp.com",
-  projectId: "consentes-pastoral",
-  storageBucket: "consentes-pastoral.appspot.com",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
+    <!-- List card -->
+    <div class="card">
+      <div class="row">
+        <strong>Recent entries</strong>
+        <span class="spacer"></span>
+        <div>
+          <label>Year</label>
+          <input id="yearInp" type="number" min="2000" max="2100" style="width:110px" />
+        </div>
+        <button id="refreshBtn" class="btn" type="button">Refresh</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Notes</th><th class="nowrap">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="entriesTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
+      </table>
+    </div>
 
-/* -------------------------------------------------------
-   Helpers & Properties
-------------------------------------------------------- */
-const $ = s => document.querySelector(s);
-const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
-const errText = e => e?.message || e?.code || 'Unknown error';
+    <div class="card">
+      <strong>Info</strong>
+      <div class="small" style="margin-top:6px">
+        Saves to <span class="pill">diaryEntries</span>. Paddocks are loaded live from <span class="pill">paddocks</span> for the selected property.
+      </div>
+    </div>
+  </div>
 
-const PROPS = [
-  { id:"s7PlDM9wrEpxuJ6DGIab", name:"Consentes", lat:-20.263323, lon:141.609607 },
-  { id:"P0dQ0H2FWHeqqxejflZs", name:"Gerawin",   lat:-20.114428, lon:141.751857 },
-  { id:"TRuxtRBX2zJlwZnRGYKJ", name:"Mt Myrtle", lat:-26.566565, lon:149.997202 }
-];
-const DEFAULT_PROP_ID = "TRuxtRBX2zJlwZnRGYKJ";
+  <script>
+  /*** Firebase ***/
+  const firebaseConfig = {
+    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+    authDomain: "consentes-pastoral.firebaseapp.com",
+    projectId: "consentes-pastoral",
+    storageBucket: "consentes-pastoral.appspot.com",
+    appId: "1:494858780013:web:d87497b370c82eeab06e64"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
 
+  /*** Helpers ***/
+  const $ = sel => document.querySelector(sel);
+  const byId = id => document.getElementById(id);
+  const setMsg = (t, ms=2500) => { byId('msg').textContent = t||''; if (t && ms) setTimeout(()=>byId('msg').textContent='', ms); };
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const todayISO = () => new Date().toISOString().slice(0,10);
+  const addDays = (d, n) => { const dt = new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); };
 
-/* -------------------------------------------------------
-   Auth (Handles persistence check on load)
-------------------------------------------------------- */
-const overlay = $('#authOverlay');
-const signOutBtn = $('#signOutBtn');
-const authWho = $('#authWho');
+  /*** Properties (exact IDs) ***/
+  const PROPERTY_IDS = {
+    "Consentes":"s7PlDM9wrEpxuJ6DGIab",
+    "Gerawin":"P0dQ0H2FWHeqqxejflZs",
+    "Mt Myrtle":"TRuxtRBX2zJlwZnRGYKJ"
+  };
+  const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
+  const DEFAULT_PROP_ID = PROPERTY_IDS["Mt Myrtle"];
 
-function showOverlay(show){ overlay.style.display = show ? 'flex' : 'none'; }
+  /*** Weather coords (by property) ***/
+  const WEATHER_COORDS = {
+    [PROPERTY_IDS["Consentes"]]: {lat:-20.263323, lon:141.609607},
+    [PROPERTY_IDS["Gerawin"]]:   {lat:-20.114428, lon:141.751857},
+    [PROPERTY_IDS["Mt Myrtle"]]: {lat:-26.566565, lon:149.997202},
+  };
 
-$('#signInBtn').onclick = async ()=>{
-  const email = $('#siEmail').value.trim();
-  const pass  = $('#siPass').value;
-  $('#authMsg').textContent = 'Signing in…';
-  try{
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    await auth.signInWithEmailAndPassword(email, pass);
-    $('#authMsg').textContent = 'Signed in.';
-    showOverlay(false);
-    await loadPaddocks($('#propSel').value);
-    await refreshEntries();
-  }catch(e){
-    $('#authMsg').textContent = 'Sign-in failed: ' + errText(e);
-  }
-};
+  /*** State ***/
+  let editingId = null;
+  let editingOriginal = null;
 
-$('#signOutBtn').onclick = async ()=>{ 
-    try{ 
-        await auth.signOut();
-        location.reload();
-    }catch(e){} 
-};
+  /*** Elements ***/
+  const propSel      = byId('propSel');
+  const dateInp      = byId('dateInp');
+  const timeInp      = byId('timeInp');
+  const activitySel  = byId('activitySel');
+  const paddockSel   = byId('paddockSel');
+  const paddockText  = byId('paddockText');
+  const paddockTextToggle = byId('paddockTextToggle');
+  const notesInp     = byId('notesInp');
+  const userInp      = byId('userInp');
+  const yearInp      = byId('yearInp');
+  const statusEl     = byId('status');
+  const entriesTbody = byId('entriesTbody');
+  const weatherBox   = byId('weatherBox');
 
-$('#closeOverlayBtn').onclick = ()=>{ 
-    showOverlay(false); 
-};
+  /*** Bootstrap ***/
+  (async function init(){
+    dateInp.value = todayISO();
+    yearInp.value = new Date().getFullYear();
+    userInp.value = "Nyssa/Paul";
 
+    // Build property selector
+    propSel.innerHTML = Object.keys(PROPERTY_IDS)
+      .sort()
+      .map(name => `<option value="${PROPERTY_IDS[name]}">${name}</option>`)
+      .join('');
+    propSel.value = DEFAULT_PROP_ID;
 
-async function requireSignedIn(){
-  return new Promise(resolve=>{
-    auth.onAuthStateChanged(async u=>{
-      if(u){
-        authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
-        signOutBtn.classList.remove('hidden');
-        showOverlay(false);
-        await loadPaddocks($('#propSel').value); 
-        await refreshEntries();
-        resolve(true);
-      }else{
-        authWho.textContent = 'Not signed in';
-        signOutBtn.classList.add('hidden');
-        showOverlay(true);
-        resolve(false);
-      }
-    });
-  });
-}
+    // Toggle paddock text/manual entry
+    paddockTextToggle.onclick = () => {
+      const manual = paddockText.classList.toggle('hidden') === false;
+      paddockSel.classList.toggle('hidden', manual);
+    };
 
-/* -------------------------------------------------------
-   Data Loading
-------------------------------------------------------- */
-const paddockSel = $('#paddockSel');
-const entriesTbody = $('#entriesTbody');
+    // Load paddocks on property change
+    propSel.onchange = () => { loadPaddocks(); refreshEntries(); };
 
-async function loadPaddocks(propertyId){
-  if(!auth.currentUser) return; 
-  paddockSel.innerHTML = '<option>(loading…)</option>';
-  try{
-    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
-    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
-    
-    if (rows.length === 0) {
-      paddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
-    } else {
-      rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
-      const paddockOption = p => `<option value="${p.id}" data-name="${p.name||''}">${p.name||'(unnamed)'}</option>`;
-      paddockSel.innerHTML = '<option value="">(choose)</option>' + rows.map(paddockOption).join('');
-    }
-  }catch(e){
-    paddockSel.innerHTML = '<option value="">(load error)</option>';
-    console.error('Paddocks load error:', e.message); 
-  }
-}
+    // Buttons
+    byId('resetBtn').onclick = () => resetForm();
+    byId('saveBtn').onclick = () => saveEntry().catch(e => { console.error(e); setMsg('Save failed'); });
+    byId('refreshBtn').onclick = refreshEntries;
+    byId('weatherBtn').onclick = fetchWeather;
 
-async function refreshEntries(){
-  if(!auth.currentUser) { 
-      entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">Sign in to load entries…</td></tr>';
-      return; 
-    } 
-    
-  const propertyId = $('#propSel').value;
-  entriesTbody.innerHTML = '<tr><td colspan="6">Loading entries…</td></tr>';
-  try{
-    const snap = await db.collection('diaryEntries')
-      .where('propertyId','==',propertyId)
-      .orderBy('date','desc')
-      .limit(50)
-      .get();
-    
-    const rows=[];
-    snap.forEach(d=> rows.push({id:d.id, ...d.data()}));
-    
-    if(!rows.length){ entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">No entries.</td></tr>'; return; }
-    entriesTbody.innerHTML = rows.map(r=>`<tr><td>${r.date||''}</td><td>${r.propertyName||''}</td><td>${r.activity||''}</td><td>${r.paddock||''}</td><td>${r.notes||''}</td><td><button data-id="${r.id}" class="danger btn" style="width: auto;">Delete</button></td></tr>`).join('');
-  }catch(e){
-    entriesTbody.innerHTML = `<tr><td colspan="6" style="color:#b45309">Failed to read entries. Check console.</td></tr>`;
-    console.error('Entries load error:', e); 
-  }
-}
+    // Wait for signed-in user (SkyFarmAuth handles interactive sign-in)
+    auth.onAuthStateChanged(async (u)=>{
+      if (u) {
+        statusEl.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+        await loadPaddocks();
+        await refreshEntries();
+      } else {
+        statusEl.textContent = 'Not signed in';
+        entriesTbody.innerHTML = `<tr><td colspan="6" class="muted">Sign in to load entries…</td></tr>`;
+      }
+    });
+  })();
 
+  /*** Load paddocks for selected property ***/
+  async function loadPaddocks(){
+    paddockSel.innerHTML = '<option>(loading…)</option>';
+    const pid = propSel.value;
+    try{
+      const snap = await db.collection('paddocks').where('propertyId','==',pid).get();
+      const rows = [];
+      snap.forEach(d => rows.push({id:d.id, ...d.data()}));
+      rows.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+      paddockSel.innerHTML = '<option value="">(choose)</option>' +
+        rows.map(p => `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}</option>`).join('');
+    }catch(e){
+      console.error('Paddocks load error', e);
+      paddockSel.innerHTML = '<option value="">(load error)</option>';
+    }
+  }
 
-/* -------------------------------------------------------
-   Page bootstrap
-------------------------------------------------------- */
-(async function init(){
-  const base = location.origin || '';
-  // Ensure nav links use full relative paths for consistency
-  $('#navDiary').href = 'skyfarm-diary.html';
-  $('#navMap').href   = 'skyfarm-map.html';
-  $('#navChem').href  = 'skyfarm-chemical.html';
+  /*** Save entry ***/
+  async function saveEntry(){
+    if (!auth.currentUser) { alert('Please sign in.'); return; }
+    const pid = propSel.value;
+    const pname = PROPERTY_NAME_BY_ID[pid] || '(Unknown)';
+    const date = dateInp.value || todayISO();
+    const time = timeInp.value || '';
+    const activity = activitySel.value;
+    const manualPaddock = !paddockSel.classList.contains('hidden') ? '' : (paddockText.value || '').trim();
+    const paddockId = paddockSel.classList.contains('hidden') ? '' : (paddockSel.value || '');
+    const paddockName = paddockSel.classList.contains('hidden')
+      ? manualPaddock
+      : (paddockSel.selectedOptions[0]?.dataset?.name || '');
+    const notes = notesInp.value || '';
+    const user = userInp.value || '';
 
-  $('#dateInp').value = new Date().toISOString().slice(0,10);
-  
-  const propSel = $('#propSel');
-  propSel.innerHTML = PROPS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-  propSel.value = DEFAULT_PROP_ID;
-  propSel.onchange = ()=> { loadPaddocks(propSel.value); refreshEntries(); };
-  $('#refreshBtn').onclick = refreshEntries;
+    if (!pid) { alert('Choose a property'); return; }
+    if (!activity) { alert('Choose an activity'); return; }
 
-  await requireSignedIn(); 
-})();
-</script>
+    const payload = {
+      propertyId: pid,
+      propertyName: pname,
+      date, time, activity,
+      paddockId: paddockId || null,
+      paddock: paddockName || manualPaddock || null,
+      user: user || null,
+      notes: notes || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    const col = db.collection('diaryEntries');
+    if (editingId){
+      await col.doc(editingId).set(payload, { merge:true });
+      setMsg('Updated');
+    } else {
+      await col.add(payload);
+      setMsg('Saved');
+    }
+    resetForm();
+    await refreshEntries();
+  }
+
+  function resetForm(){
+    editingId = null;
+    editingOriginal = null;
+    byId('saveBtn').textContent = 'Save entry';
+    notesInp.value = '';
+    timeInp.value = '';
+    activitySel.value = 'Mustering / Moving stock';
+    paddockText.value = '';
+    if (!paddockSel.classList.contains('hidden')) paddockSel.value = '';
+  }
+
+  /*** List & edit/delete ***/
+  async function refreshEntries(){
+    if (!auth.currentUser) { return; }
+    const pid = propSel.value;
+    const end = todayISO();
+    const start = addDays(end, -30);
+
+    entriesTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
+    try {
+      const snap = await db.collection('diaryEntries')
+        .where('propertyId','==',pid)
+        .where('date','>=',start)
+        .where('date','<=',end)
+        .orderBy('date','desc')
+        .limit(200)
+        .get();
+
+      const rows = [];
+      snap.forEach(d => rows.push({id:d.id, ...d.data()}));
+      if (!rows.length){
+        entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">No entries in the last 30 days.</td></tr>';
+        return;
+      }
+
+      entriesTbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${escapeHtml(r.date||'')}</td>
+          <td>${escapeHtml(r.propertyName||'')}</td>
+          <td>${escapeHtml(r.activity||'')}</td>
+          <td>${escapeHtml(r.paddock||'')}</td>
+          <td>${escapeHtml(r.notes||'')}</td>
+          <td class="nowrap">
+            <button class="btn" data-edit="${r.id}">Edit</button>
+            <button class="btn danger" data-del="${r.id}">Del</button>
+          </td>
+        </tr>
+      `).join('');
+
+      // wire actions
+      entriesTbody.querySelectorAll('[data-edit]').forEach(btn=>{
+        btn.onclick = () => {
+          const id = btn.getAttribute('data-edit');
+          const row = rows.find(x=>x.id===id);
+          if (!row) return;
+          // populate form
+          editingId = id;
+          editingOriginal = row;
+          dateInp.value = row.date || todayISO();
+          timeInp.value = row.time || '';
+          activitySel.value = row.activity || 'General note';
+          userInp.value = row.user || 'Nyssa/Paul';
+          notesInp.value = row.notes || '';
+          // paddock: prefer select match, else switch to text
+          const opt = [...paddockSel.options].find(o => (o.dataset?.name||'') === (row.paddock||''));
+          if (opt) {
+            if (paddockSel.classList.contains('hidden')) paddockTextToggle.click();
+            paddockSel.value = opt.value;
+          } else {
+            if (paddockSel.classList.contains('hidden') === false) paddockTextToggle.click();
+            paddockText.value = row.paddock || '';
+          }
+          byId('saveBtn').textContent = 'Save changes';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+      });
+
+      entriesTbody.querySelectorAll('[data-del]').forEach(btn=>{
+        btn.onclick = async () => {
+          const id = btn.getAttribute('data-del');
+          if (!confirm('Delete this entry?')) return;
+          await db.collection('diaryEntries').doc(id).delete();
+          setMsg('Deleted');
+          await refreshEntries();
+        };
+      });
+
+    } catch(e){
+      console.error(e);
+      entriesTbody.innerHTML = '<tr><td colspan="6" class="muted">Failed to load entries.</td></tr>';
+    }
+  }
+
+  /*** Weather (stub) ***/
+  async function fetchWeather(){
+    const pid = propSel.value;
+    const coords = WEATHER_COORDS[pid];
+    const date = dateInp.value || todayISO();
+    weatherBox.textContent = 'Fetching weather…';
+    try{
+      // stub endpoint you can wire up later
+      const url = `/weather?date=${encodeURIComponent(date)}&lat=${coords.lat}&lon=${coords.lon}`;
+      // simulate call
+      // const res = await fetch(url);
+      // const w = await res.json();
+      // For now just show the URL we’d call:
+      weatherBox.textContent = `Weather URL: ${url}`;
+    }catch(e){
+      weatherBox.textContent = 'Weather fetch failed.';
+    }
+  }
+  </script>
 </body>
 </html>
