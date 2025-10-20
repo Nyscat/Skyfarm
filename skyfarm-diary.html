@@ -280,6 +280,53 @@ firebase.initializeApp(firebaseConfig);
 const db   = firebase.firestore();
 const auth = firebase.auth();
 
+  <script>
+// ------- Sign-in overlay helpers -------
+const overlay = document.getElementById('authOverlay');
+const showOverlay = (show) => { overlay.style.display = show ? 'flex' : 'none'; };
+
+async function requireSignedIn() {
+  return new Promise((resolve) => {
+    firebase.auth().onAuthStateChanged(async (u) => {
+      const who = document.getElementById('authState') || document.getElementById('status'); // optional label you may have
+      if (u) {
+        if (who) who.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+        showOverlay(false);
+        try {
+          // refresh paddocks/entries after successful login (you already have these functions)
+          if (typeof onPropertyChange === 'function') await onPropertyChange();
+          if (typeof refreshEntries === 'function') await refreshEntries();
+        } catch (e) { console.warn(e); }
+        resolve(true);
+      } else {
+        if (who) who.textContent = 'Not signed in';
+        showOverlay(true);
+        resolve(false);
+      }
+    });
+  });
+}
+
+// ------- Wire up the overlay buttons -------
+document.getElementById('signInBtn').onclick = async () => {
+  const email = (document.getElementById('siEmail').value || '').trim();
+  const pass  = document.getElementById('siPass').value || '';
+  const msgEl = document.getElementById('authMsg');
+  msgEl.textContent = 'Signing in…';
+  try {
+    await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await firebase.auth().signInWithEmailAndPassword(email, pass);
+    msgEl.textContent = 'Signed in.';
+    showOverlay(false);
+  } catch (e) {
+    msgEl.textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown error');
+  }
+};
+document.getElementById('closeOverlayBtn').onclick = () => showOverlay(false);
+
+// ------- Kick off auth check on load -------
+requireSignedIn();
+</script>
 /* -------------------------------------------------------
    Helpers & Constants
 ------------------------------------------------------- */
@@ -701,5 +748,28 @@ window.delEntry = async function(id){
   await requireSignedIn();
 })();
 </script>
+  <!-- Sign-in overlay -->
+<div id="authOverlay" style="position:fixed;inset:0;background:rgba(15,23,42,.08);display:none;align-items:center;justify-content:center;z-index:9999">
+  <div style="width:min(520px,92vw);background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px">
+    <h2 style="margin:0 0 8px">Sign in to SkyFarm</h2>
+    <p style="margin-top:0;color:#64748b">Email &amp; password only. Anonymous sign-in is disabled.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+      <div style="flex:1;min-width:260px">
+        <label>Email</label>
+        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px"/>
+      </div>
+      <div style="flex:1;min-width:220px">
+        <label>Password</label>
+        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button id="signInBtn" style="background:#0B7A6E;color:#fff;border:1px solid #0B7A6E;border-radius:10px;padding:8px 16px;cursor:pointer">Sign in</button>
+      <span id="authMsg" style="color:#64748b"></span>
+      <div style="flex:1"></div>
+      <button id="closeOverlayBtn" style="border:1px solid #cbd5e1;border-radius:10px;padding:8px 16px;cursor:pointer">Close</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
