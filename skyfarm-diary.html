@@ -19,7 +19,12 @@
     .brand{font-weight:700}
     .pill{padding:4px 10px; border-radius:999px; background:#e2e8f0; text-decoration:none; color:#0f172a; font-size:.9rem}
     .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0}
-    .row{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0}
+    .row {
+    display: flex;       /* Use flexbox for layout */
+    flex-wrap: wrap;     /* Allow items to wrap to the next line */
+    gap: 10px;           /* Space between items */
+    margin: 8px 0;
+}
     label{display:block; font-size:.9rem; color:#475569; margin-bottom:4px}
     input,select,button{padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff}
     button{cursor:pointer}
@@ -32,7 +37,18 @@
     th,td{border-bottom:1px solid var(--line); padding:8px; text-align:left}
     th{background:#f1f5f9}
     /* Sign-in overlay */
-    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+   /* Sign-in overlay */
+#authOverlay{
+    position:fixed; 
+    inset:0; 
+    background:rgba(15,23,42,.06); 
+    /* The overlay should be hidden by default (via JS in your current code)
+       but if it's showing, we'll confirm the default CSS state: */
+    display: none; 
+    align-items:center; 
+    justify-content:center; 
+    z-index:50
+} #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 8px}
     .small{font-size:.9rem}
@@ -98,7 +114,10 @@
         <input id="notesInp" placeholder="optional"/>
       </div>
     </div>
-
+input, select, textarea {
+    width: 100%; /* Make all form controls fill their containers */
+    max-width: 100%;
+}
     <div class="row">
       <button id="saveBtn" class="primary">Save entry</button>
       <button id="resetBtn">Reset</button>
