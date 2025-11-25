@@ -26,6 +26,29 @@
     .muted { color:var(--muted); font-size:.9rem; }
     .hidden { display:none; }
 
+    .nav-db { position:relative; }
+    .nav-db button { font-size:.9rem; }
+    .db-menu {
+      position:absolute;
+      top:100%;
+      left:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      min-width:160px;
+      padding:4px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.12);
+      z-index:20;
+    }
+    .db-menu a {
+      display:block;
+      padding:6px 12px;
+      color:var(--ink);
+      text-decoration:none;
+      font-size:.9rem;
+    }
+    .db-menu a:hover { background:#f1f5f9; }
+
     /* Cards / form */
     h1 { margin: 12px 0; font-size: 1.6rem; }
     .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0; }
@@ -63,8 +86,17 @@
       <nav>
         <a href="skyfarm-diary.html" aria-current="page">Diary</a>
         <a href="skyfarm-map.html">Map</a>
-        <a href="skyfarm-chemical.html">Chemicals</a>
       </nav>
+      <div class="nav-db">
+        <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
+        <div id="dbMenu" class="db-menu hidden">
+          <a href="skyfarm-livestock.html">Livestock</a>
+          <a href="skyfarm-chemical.html">Chemicals</a>
+          <a href="skyfarm-seeds.html">Seeds</a>
+          <a href="skyfarm-barcode.html">Barcode Scanner</a>
+          <a href="skyfarm-users.html">Users &amp; Roles</a>
+        </div>
+      </div>
       <span class="spacer"></span>
       <span id="authWho" class="muted">Checking sign-in…</span>
       <button id="signOutBtn" class="danger hidden">Sign out</button>
@@ -114,6 +146,11 @@
           <label>Paddock</label>
           <select id="paddockSel" class="w240"><option value="">(choose)</option></select>
           <div class="small muted">Yards appear at the top.</div>
+        </div>
+
+        <div id="toPaddockRow" class="hidden" style="min-width:260px">
+          <label>To paddock</label>
+          <select id="toPaddockSel" class="w240"><option value="">(choose)</option></select>
         </div>
 
         <div id="transferPropRow" class="hidden" style="min-width:260px">
@@ -345,7 +382,7 @@ const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined
    Elements
 ------------------------------------------------------- */
 const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'), activitySel = $('#activitySel');
-const paddockSel = $('#paddockSel'), notesInp = $('#notesInp');
+const paddockSel = $('#paddockSel'), toPaddockRow = $('#toPaddockRow'), toPaddockSel = $('#toPaddockSel'), notesInp = $('#notesInp');
 const rainMmInp = $('#rainMmInp'), gaugeSel = $('#gaugeSel');
 const transferPropRow = $('#transferPropRow'), transferPropSel = $('#transferPropSel');
 const speciesSel = $('#speciesSel'), classInp = $('#classInp'), headInp = $('#headInp'), truckBuyer=$('#truckBuyer'), truckRef=$('#truckRef');
@@ -359,6 +396,8 @@ const addActionBtn = $('#addActionBtn'), saveBatchBtn = $('#saveBatchBtn'), acti
 
 const authOverlay = $('#authOverlay'), authWho = $('#authWho'), signOutBtn = $('#signOutBtn');
 const signInBtn = $('#signInBtn'), closeOverlayBtn = $('#closeOverlayBtn');
+
+const dbMenuBtn = $('#dbMenuBtn'), dbMenu = $('#dbMenu');
 
 /* -------------------------------------------------------
    Auth overlay helpers
@@ -383,15 +422,30 @@ signInBtn.onclick = async ()=>{
 signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 closeOverlayBtn.onclick = ()=> showOverlay(false);
 
+/* Database menu */
+if (dbMenuBtn && dbMenu) {
+  dbMenuBtn.onclick = (e)=>{
+    e.stopPropagation();
+    dbMenu.classList.toggle('hidden');
+  };
+  document.addEventListener('click', (e)=>{
+    if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) {
+      dbMenu.classList.add('hidden');
+    }
+  });
+}
+
 /* -------------------------------------------------------
    Paddocks / Chemicals / Livestock / Gauges
 ------------------------------------------------------- */
 async function loadPaddocksForProperty(propertyId) {
   if (!propertyId || propertyId === 'ALL') {
     paddockSel.innerHTML = '<option value="">(choose a property)</option>';
+    toPaddockSel.innerHTML = '<option value="">(choose a property)</option>';
     return;
   }
   paddockSel.innerHTML = '<option value="">(loading…)</option>';
+  toPaddockSel.innerHTML = '<option value="">(loading…)</option>';
 
   try {
     const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
@@ -406,15 +460,20 @@ async function loadPaddocksForProperty(propertyId) {
 
     if (!rows.length) {
       paddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
+      toPaddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
       return;
     }
 
-    paddockSel.innerHTML =
+    const optionsHtml =
       '<option value="">(choose)</option>' +
       rows.map(p => `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}${p.isYards?' — Yards':''}</option>`).join('');
+
+    paddockSel.innerHTML = optionsHtml;
+    toPaddockSel.innerHTML = optionsHtml;
   } catch (e) {
     console.error('Paddock load error:', e);
     paddockSel.innerHTML = '<option value="">(load error)</option>';
+    toPaddockSel.innerHTML = '<option value="">(load error)</option>';
   }
 }
 
@@ -575,7 +634,7 @@ async function applyLivestockChange({
   } else if (activity === 'Cattle Received (Purchase)') {
     delta = Math.abs(head);
   } else {
-    return; // other activities not wired yet
+    return; // other activities not wired here
   }
 
   try {
@@ -619,6 +678,75 @@ async function applyLivestockChange({
   }
 }
 
+// Move stock within a property (paddock → paddock)
+async function moveLivestockWithinProperty({
+  propertyId,
+  fromPaddock,
+  toPaddock,
+  species,
+  livestockClass,
+  head
+}) {
+  if (!propertyId || !fromPaddock || !toPaddock || fromPaddock === toPaddock) return;
+  if (!species || !livestockClass || !head || head <= 0) return;
+
+  try {
+    // FROM paddock: subtract
+    const fromSnap = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .where('location','==',fromPaddock)
+      .where('species','==',species)
+      .where('class','==',livestockClass)
+      .limit(1)
+      .get();
+
+    if (!fromSnap.empty) {
+      const doc = fromSnap.docs[0];
+      const data = doc.data() || {};
+      const current = Number(data.count || 0);
+      const next = Math.max(0, current - head);
+      await doc.ref.update({
+        count: next,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      console.warn('Move stock: no FROM mob line', { propertyId, fromPaddock, species, livestockClass });
+    }
+
+    // TO paddock: add
+    const toSnap = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .where('location','==',toPaddock)
+      .where('species','==',species)
+      .where('class','==',livestockClass)
+      .limit(1)
+      .get();
+
+    if (!toSnap.empty) {
+      const doc = toSnap.docs[0];
+      const data = doc.data() || {};
+      const current = Number(data.count || 0);
+      const next = current + head;
+      await doc.ref.update({
+        count: next,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      await db.collection('livestock').add({
+        propertyId,
+        location: toPaddock,
+        species,
+        class: livestockClass,
+        count: head,
+        movedIn: todayISO(),
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  } catch (e) {
+    console.error('Move stock inventory update failed', e);
+  }
+}
+
 /* -------------------------------------------------------
    UI logic (activity toggles + mustering table)
 ------------------------------------------------------- */
@@ -635,6 +763,9 @@ function onActivityChange(){
 
   const needsTransferProp = (act==='Transfer stock (In)' || act==='Transfer stock (Out)');
   transferPropRow.classList.toggle('hidden', !needsTransferProp);
+
+  const needsToPaddock = (act === 'Move stock');
+  toPaddockRow.classList.toggle('hidden', !needsToPaddock);
 
   const needsTruckDetails = (act==='Trucking (sale)' || act==='Cattle Received (Purchase)');
   stockDetail1.classList.toggle('hidden', !needsTruckDetails);
@@ -746,6 +877,8 @@ function buildPayloadFromUI(){
   const activity = activitySel.value;
   const paddockId = paddockSel.value || '';
   const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const toPaddockId = toPaddockSel.value || '';
+  const toPaddockName = toPaddockSel.selectedOptions[0]?.dataset?.name || '';
   const notes = notesInp.value || '';
   const species = speciesSel.value || '';
   const klass = classInp.value || '';
@@ -767,6 +900,8 @@ function buildPayloadFromUI(){
     activity,
     paddockId: paddockId || null,
     paddock: paddockName || null,
+    toPaddockId: (activity === 'Move stock' && toPaddockId) ? toPaddockId : null,
+    toPaddock: (activity === 'Move stock' && toPaddockName) ? toPaddockName : null,
     notes,
     species: (activity==='Mustering' || activity==='Move stock' || activity==='Trucking (sale)' || activity==='Chemical (stock)' || activity.startsWith('Transfer') || activity==='Cattle Received (Purchase)') ? species : null,
     livestockClass: klass || null,
@@ -783,7 +918,7 @@ function buildPayloadFromUI(){
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
-  return { payload, propertyId, activity, paddockName, species, klass, head, chemId, chemQ };
+  return { payload, propertyId, activity, paddockName, paddockNameTo: toPaddockName, species, klass, head, chemId, chemQ };
 }
 
 /* -------------------------------------------------------
@@ -797,6 +932,7 @@ async function saveEntry(){
     propertyId,
     activity,
     paddockName,
+    paddockNameTo,
     species,
     klass,
     head,
@@ -807,7 +943,7 @@ async function saveEntry(){
   try {
     await db.collection('diaryEntries').add(payload);
 
-    await Promise.all([
+    const sideEffects = [
       applyChemicalUsage({
         activity,
         propertyId,
@@ -822,7 +958,22 @@ async function saveEntry(){
         livestockClass: klass,
         head
       })
-    ]);
+    ];
+
+    if (activity === 'Move stock') {
+      sideEffects.push(
+        moveLivestockWithinProperty({
+          propertyId,
+          fromPaddock: paddockName,
+          toPaddock: paddockNameTo,
+          species,
+          livestockClass: klass,
+          head
+        })
+      );
+    }
+
+    await Promise.all(sideEffects);
 
     setMsg('Saved');
     await refreshEntries();
@@ -852,6 +1003,8 @@ function currentActionFromUI(){
     propertyId,
     activity,
     paddock: payload.paddock,
+    toPaddockId: payload.toPaddockId,
+    toPaddock: payload.toPaddock,
     species,
     livestockClass: klass,
     headCount: payload.headCount,
@@ -881,8 +1034,8 @@ saveBatchBtn.onclick = async ()=>{
     await batch.commit();
 
     // side-effects after commit
-    await Promise.all(actions.map(a =>
-      Promise.all([
+    await Promise.all(actions.map(a => {
+      const sideEffects = [
         applyChemicalUsage({
           activity: a.activity,
           propertyId: a.propertyId,
@@ -897,8 +1050,21 @@ saveBatchBtn.onclick = async ()=>{
           livestockClass: a.livestockClass,
           head: a.headCount
         })
-      ])
-    ));
+      ];
+      if (a.activity === 'Move stock') {
+        sideEffects.push(
+          moveLivestockWithinProperty({
+            propertyId: a.propertyId,
+            fromPaddock: a.paddock,
+            toPaddock: a.toPaddock,
+            species: a.species,
+            livestockClass: a.livestockClass,
+            head: a.headCount
+          })
+        );
+      }
+      return Promise.all(sideEffects);
+    }));
 
     actions.length = 0; renderQueued();
     batchMsg.textContent = 'Saved.'; setTimeout(()=>batchMsg.textContent='', 1500);
@@ -966,7 +1132,7 @@ $('#saveBtn').onclick = saveEntry;
 $('#resetBtn').onclick = ()=>{
   dateInp.value = todayISO(); timeInp.value=''; notesInp.value='';
   activitySel.value='Ploughing'; onActivityChange();
-  paddockSel.value=''; chemSel.value=''; chemQty.value=''; chemUnit.value='';
+  paddockSel.value=''; toPaddockSel.value=''; chemSel.value=''; chemQty.value=''; chemUnit.value='';
   rainMmInp.value=''; gaugeSel.value='';
   speciesSel.value='Cattle'; classInp.value=''; headInp.value='';
   truckBuyer.value=''; truckRef.value='';
