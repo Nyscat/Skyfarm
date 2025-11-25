@@ -121,6 +121,17 @@
           <select id="transferPropSel" class="w240"><option value="">(choose)</option></select>
         </div>
 
+        <div>
+          <label>Rainfall (mm to 9am)</label>
+          <input id="rainMmInp" type="number" min="0" step="0.1" class="w110"/>
+        </div>
+        <div>
+          <label>Gauge</label>
+          <select id="gaugeSel" class="w200">
+            <option value="">(none)</option>
+          </select>
+        </div>
+
         <div style="flex:1; min-width:260px">
           <label>Notes</label>
           <input id="notesInp" placeholder="optional"/>
@@ -302,15 +313,14 @@
    Firebase init (compat)
 ------------------------------------------------------- */
 const firebaseConfig = {
-      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-      authDomain: "consentes-pastoral.firebaseapp.com",
-      projectId: "consentes-pastoral",
-      appId: "1:494858780013:web:d87497b370c82eeab06e64"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db   = firebase.firestore();
-    const auth = firebase.auth();
-
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+firebase.initializeApp(firebaseConfig);
+const db   = firebase.firestore();
+const auth = firebase.auth();
 
 /* -------------------------------------------------------
    Helpers & constants
@@ -329,12 +339,14 @@ const PROPERTY_IDS = {
 };
 const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
 const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
-<!-- bump: 2025-10-20 property IDs fixed -->
+// bump: 2025-10-20 property IDs fixed
+
 /* -------------------------------------------------------
    Elements
 ------------------------------------------------------- */
 const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'), activitySel = $('#activitySel');
 const paddockSel = $('#paddockSel'), notesInp = $('#notesInp');
+const rainMmInp = $('#rainMmInp'), gaugeSel = $('#gaugeSel');
 const transferPropRow = $('#transferPropRow'), transferPropSel = $('#transferPropSel');
 const speciesSel = $('#speciesSel'), classInp = $('#classInp'), headInp = $('#headInp'), truckBuyer=$('#truckBuyer'), truckRef=$('#truckRef');
 const chemRow = $('#chemRow'), chemSel = $('#chemSel'), chemQty = $('#chemQty'), chemUnit = $('#chemUnit'), chemHint = $('#chemHint');
@@ -372,7 +384,7 @@ signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }
 closeOverlayBtn.onclick = ()=> showOverlay(false);
 
 /* -------------------------------------------------------
-   Paddocks / Chemicals / Livestock
+   Paddocks / Chemicals / Livestock / Gauges
 ------------------------------------------------------- */
 async function loadPaddocksForProperty(propertyId) {
   if (!propertyId || propertyId === 'ALL') {
@@ -424,7 +436,25 @@ async function loadChemicalsForProperty(propertyId){
   }
 }
 
-// Case / field tolerant class fetch
+async function loadGaugesForProperty(propertyId){
+  gaugeSel.innerHTML = '<option value="">(none)</option>';
+  if (!propertyId || propertyId === 'ALL') {
+    gaugeSel.innerHTML = '<option value="">(choose property)</option>';
+    return;
+  }
+  try{
+    const snap = await db.collection('gauges').where('propertyId','==',propertyId).where('active','==',true).get();
+    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...(d.data()||{})}));
+    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+    gaugeSel.innerHTML = '<option value="">(none)</option>' +
+      rows.map(g=>`<option value="${g.id}">${escapeHtml(g.name||'(unnamed)')}</option>`).join('');
+  }catch(e){
+    console.error('Gauge load error:', e);
+    gaugeSel.innerHTML = '<option value="">(load error)</option>';
+  }
+}
+
+// Live livestock fetch for paddock/species
 async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
   if (!propertyId || !paddockName) return [];
   const speciesLC = String(speciesUI||'Cattle').toLowerCase();
@@ -460,10 +490,8 @@ async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
     return rows;
   }
 }
-<script>
+
 // Distinct classes you’ve actually used on this property/species.
-// 1) looks in `livestock` (current holdings), and
-// 2) also mines recent `diaryEntries` for any classes you’ve entered.
 async function fetchUsedClasses(propertyId, speciesUI){
   if (!propertyId) return [];
   const speciesLC = String(speciesUI||'Cattle').toLowerCase();
@@ -495,14 +523,102 @@ async function fetchUsedClasses(propertyId, speciesUI){
       if (cls) seen.add(String(cls));
     });
   } catch(e) {
-    // ok if this collection or index isn’t there; we still have livestock classes
     console.warn('class mining (diary) skipped:', e?.code||e?.message);
   }
 
   const list = Array.from(seen).filter(Boolean).sort((a,b)=>a.localeCompare(b));
   return list;
 }
-</script>
+
+/* -------------------------------------------------------
+   Inventory side-effects (chemicals + livestock)
+------------------------------------------------------- */
+async function applyChemicalUsage({ activity, propertyId, chemId, chemQty }) {
+  if (!chemId || !chemQty || chemQty <= 0) return;
+  const affectsChem =
+    activity === 'Spraying paddocks' ||
+    activity === 'Chemical (stock)' ||
+    activity === 'Trucking (sale)';
+  if (!affectsChem) return;
+
+  const ref = db.collection('chemicals').doc(chemId);
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return;
+      const data = snap.data() || {};
+      const current = Number(data.quantity || 0);
+      const next = Math.max(0, current - Number(chemQty));
+      tx.update(ref, {
+        quantity: next,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+  } catch (e) {
+    console.error('Chemical update failed', e);
+  }
+}
+
+async function applyLivestockChange({
+  activity,
+  propertyId,
+  paddockName,
+  species,
+  livestockClass,
+  head
+}) {
+  if (!propertyId || !species || !livestockClass || !head || head <= 0) return;
+
+  let delta = 0;
+  if (activity === 'Trucking (sale)') {
+    delta = -Math.abs(head);
+  } else if (activity === 'Cattle Received (Purchase)') {
+    delta = Math.abs(head);
+  } else {
+    return; // other activities not wired yet
+  }
+
+  try {
+    const q = await db.collection('livestock')
+      .where('propertyId', '==', propertyId)
+      .where('location', '==', paddockName || '')
+      .where('species', '==', species)
+      .where('class', '==', livestockClass)
+      .limit(1)
+      .get();
+
+    if (!q.empty) {
+      const doc = q.docs[0];
+      const data = doc.data() || {};
+      const current = Number(data.count || 0);
+      const next = Math.max(0, current + delta);
+      await doc.ref.update({
+        count: next,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else if (delta > 0) {
+      await db.collection('livestock').add({
+        propertyId,
+        location: paddockName || '',
+        species,
+        class: livestockClass,
+        count: delta,
+        movedIn: todayISO(),
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      console.warn('No livestock line found to subtract from', {
+        propertyId,
+        paddockName,
+        species,
+        livestockClass
+      });
+    }
+  } catch (e) {
+    console.error('Livestock update failed', e);
+  }
+}
+
 /* -------------------------------------------------------
    UI logic (activity toggles + mustering table)
 ------------------------------------------------------- */
@@ -529,7 +645,6 @@ function onActivityChange(){
   musterBox.classList.toggle('hidden', act!=='Mustering');
   if (act==='Cattle Received (Purchase)') speciesSel.value = 'Cattle';
 
-  // refresh paddock/species context when activity changes
   onPaddockOrSpeciesChange();
 }
 
@@ -539,7 +654,6 @@ async function onPaddockOrSpeciesChange(){
   const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
   const speciesUI = speciesSel.value || 'Cattle';
 
-  // Mustering / move / trucking context
   const isStockMove = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering' || act==='Transfer stock (Out)');
   const isStockIn   = (act==='Cattle Received (Purchase)' || act==='Transfer stock (In)');
 
@@ -555,15 +669,13 @@ async function onPaddockOrSpeciesChange(){
   if (isStockMove && paddockName){
     rows = await fetchLivestockClasses(pid, paddockName, speciesUI);
   } else if (isStockIn) {
-  // Suggest only classes you already use on this property/species.
-  const used = await fetchUsedClasses(pid, speciesUI);
-  rows = (used.length ? used : SUGGESTED_CLASSES).map(cls => ({ id: null, class: cls, count: 0 }));
-}
+    const used = await fetchUsedClasses(pid, speciesUI);
+    rows = (used.length ? used : SUGGESTED_CLASSES).map(cls => ({ id: null, class: cls, count: 0 }));
+  }
 
   rows.sort((a,b)=> String(a.class||'').localeCompare(String(b.class||'')));
   $('#classOptions').innerHTML = rows.map(r=>`<option value="${escapeHtml(r.class||'')}"></option>`).join('');
 
-  // Live stock chips
   if (isStockMove && paddockName){
     const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
     if (rows.length){
@@ -584,7 +696,6 @@ async function onPaddockOrSpeciesChange(){
     stockContext.innerHTML = '';
   }
 
-  // Mustering expected + table
   if (act==='Mustering'){
     const total = rows.reduce((s,r)=>s+Number(r.count||0),0);
     mExp.value = total;
@@ -625,36 +736,94 @@ addClassRowBtn.onclick = ()=>{
 };
 
 /* -------------------------------------------------------
-   Save single entry (simple write, no side-effects here)
-   You already have sophisticated revert/apply logic; keep it if needed.
+   Save helpers
 ------------------------------------------------------- */
-async function saveEntry(){
-  if (propSel.value==='ALL') return alert('Select a specific property to save.');
+function buildPayloadFromUI(){
   const propertyId   = propSel.value;
   const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '';
-  const date = dateInp.value || todayISO(), time = timeInp.value || '';
+  const date = dateInp.value || todayISO();
+  const time = timeInp.value || '';
   const activity = activitySel.value;
-  const paddockId = paddockSel.value || '', paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const paddockId = paddockSel.value || '';
+  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
   const notes = notesInp.value || '';
-  const species = speciesSel.value || '', klass = classInp.value || ''; const head = parseInt(headInp.value||0,10);
-  const chemId = chemSel.value || null, chemQ = parseFloat(chemQty.value||0), chemU = chemUnit.value || '', chemName = chemId ? (chemSel.selectedOptions[0]?.textContent.split('(')[0].trim() || null) : null;
+  const species = speciesSel.value || '';
+  const klass = classInp.value || '';
+  const head = parseInt(headInp.value||0,10);
+  const chemId = chemSel.value || null;
+  const chemQ = parseFloat(chemQty.value||0);
+  const chemU = chemUnit.value || '';
+  const chemName = chemId ? (chemSel.selectedOptions[0]?.textContent.split('(')[0].trim() || null) : null;
+
+  const rainMm = parseFloat(rainMmInp.value||0);
+  const gaugeId = gaugeSel.value || null;
+  const gaugeName = gaugeId ? (gaugeSel.selectedOptions[0]?.textContent || null) : null;
 
   const payload = {
-    propertyId, propertyName, date, time, activity,
-    paddockId: paddockId || null, paddock: paddockName || null,
+    propertyId,
+    propertyName,
+    date,
+    time,
+    activity,
+    paddockId: paddockId || null,
+    paddock: paddockName || null,
     notes,
     species: (activity==='Mustering' || activity==='Move stock' || activity==='Trucking (sale)' || activity==='Chemical (stock)' || activity.startsWith('Transfer') || activity==='Cattle Received (Purchase)') ? species : null,
-    livestockClass: (klass||null),
+    livestockClass: klass || null,
     headCount: (isFinite(head) && head>0) ? head : null,
-    chemicalId: chemId || null, chemicalName: chemName, chemQty: chemId ? chemQ : null, chemUnit: chemId ? chemU : null,
+    chemicalId: chemId || null,
+    chemicalName: chemName,
+    chemQty: chemId ? chemQ : null,
+    chemUnit: chemId ? chemU : null,
     truckBuyer: (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckBuyer.value || '') : null,
     truckRef:   (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckRef.value || '')   : null,
+    rainfallMm: (isFinite(rainMm) && rainMm>0) ? rainMm : null,
+    gaugeId: gaugeId || null,
+    gaugeName: gaugeName || null,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
+  return { payload, propertyId, activity, paddockName, species, klass, head, chemId, chemQ };
+}
+
+/* -------------------------------------------------------
+   Save single entry
+------------------------------------------------------- */
+async function saveEntry(){
+  if (propSel.value==='ALL') return alert('Select a specific property to save.');
+
+  const {
+    payload,
+    propertyId,
+    activity,
+    paddockName,
+    species,
+    klass,
+    head,
+    chemId,
+    chemQ
+  } = buildPayloadFromUI();
 
   try {
     await db.collection('diaryEntries').add(payload);
+
+    await Promise.all([
+      applyChemicalUsage({
+        activity,
+        propertyId,
+        chemId,
+        chemQty: chemQ
+      }),
+      applyLivestockChange({
+        activity,
+        propertyId,
+        paddockName,
+        species,
+        livestockClass: klass,
+        head
+      })
+    ]);
+
     setMsg('Saved');
     await refreshEntries();
   } catch(e){
@@ -677,16 +846,20 @@ function renderQueued(){
   });
 }
 function currentActionFromUI(){
-  const propertyId   = propSel.value;
-  const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '';
-  const date = dateInp.value || todayISO(), time = timeInp.value || '';
-  const activity = activitySel.value;
-  const paddockId = paddockSel.value || '', paddock = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const notes = notesInp.value || '';
-  const species = speciesSel.value || '', livestockClass = classInp.value || '';
-  const headCount = headInp.value ? Number(headInp.value) : null;
-  const chemicalId = chemSel.value || null, chemicalName = chemicalId ? (chemSel.selectedOptions[0]?.textContent.split('(')[0].trim()||null) : null, chemQty = chemicalId ? Number(chemQty.value||0) : null, chemUnit = chemicalId ? (chemUnit.value||'') : null;
-  return { propertyId, propertyName, date, time, activity, paddockId, paddock, notes, species, livestockClass, headCount, chemicalId, chemicalName, chemQty, chemUnit };
+  const { payload, propertyId, activity, paddockName, species, klass, head, chemId, chemQ } = buildPayloadFromUI();
+  return {
+    ...payload,
+    propertyId,
+    activity,
+    paddock: payload.paddock,
+    species,
+    livestockClass: klass,
+    headCount: payload.headCount,
+    chemicalId: chemId,
+    chemicalName: payload.chemicalName,
+    chemQty: chemQ,
+    chemUnit: payload.chemUnit
+  };
 }
 addActionBtn.onclick = ()=>{
   if (propSel.value==='ALL') { alert('Choose a specific property'); return; }
@@ -706,6 +879,27 @@ saveBatchBtn.onclick = async ()=>{
       batch.set(ref, { ...a, batchId, batchIndex: idx, createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
     });
     await batch.commit();
+
+    // side-effects after commit
+    await Promise.all(actions.map(a =>
+      Promise.all([
+        applyChemicalUsage({
+          activity: a.activity,
+          propertyId: a.propertyId,
+          chemId: a.chemicalId,
+          chemQty: a.chemQty
+        }),
+        applyLivestockChange({
+          activity: a.activity,
+          propertyId: a.propertyId,
+          paddockName: a.paddock,
+          species: a.species,
+          livestockClass: a.livestockClass,
+          head: a.headCount
+        })
+      ])
+    ));
+
     actions.length = 0; renderQueued();
     batchMsg.textContent = 'Saved.'; setTimeout(()=>batchMsg.textContent='', 1500);
     await refreshEntries();
@@ -753,6 +947,17 @@ window.delEntry = async function(id){
 /* -------------------------------------------------------
    Property change + bootstrap
 ------------------------------------------------------- */
+async function onPropertyChange(){
+  transferPropSel.innerHTML = '<option value="">(choose)</option>' +
+    Object.entries(PROPERTY_IDS).filter(([n,id])=> id!==propSel.value)
+      .map(([n,id])=>`<option value="${id}">${n}</option>`).join('');
+
+  await loadPaddocksForProperty(propSel.value);
+  await loadChemicalsForProperty(propSel.value);
+  await loadGaugesForProperty(propSel.value);
+  await onPaddockOrSpeciesChange();
+}
+
 activitySel.onchange = onActivityChange;
 paddockSel.onchange  = onPaddockOrSpeciesChange;
 speciesSel.onchange  = onPaddockOrSpeciesChange;
@@ -762,6 +967,7 @@ $('#resetBtn').onclick = ()=>{
   dateInp.value = todayISO(); timeInp.value=''; notesInp.value='';
   activitySel.value='Ploughing'; onActivityChange();
   paddockSel.value=''; chemSel.value=''; chemQty.value=''; chemUnit.value='';
+  rainMmInp.value=''; gaugeSel.value='';
   speciesSel.value='Cattle'; classInp.value=''; headInp.value='';
   truckBuyer.value=''; truckRef.value='';
   mExp.value=''; mAct.value=''; mDelta.value=''; mReason.value='';
@@ -770,22 +976,12 @@ $('#resetBtn').onclick = ()=>{
   stockContext.innerHTML='';
 };
 
-propSel.onchange = async ()=>{
-  // populate transfer list excluding current property
-  transferPropSel.innerHTML = '<option value="">(choose)</option>' +
-    Object.entries(PROPERTY_IDS).filter(([n,id])=> id!==propSel.value)
-      .map(([n,id])=>`<option value="${id}">${n}</option>`).join('');
-
-  await loadPaddocksForProperty(propSel.value);
-  await loadChemicalsForProperty(propSel.value);
-  await onPaddockOrSpeciesChange();
-};
+propSel.onchange = onPropertyChange;
 
 /* -------------------------------------------------------
    Init
 ------------------------------------------------------- */
 (async function init(){
-  // Property select
   propSel.innerHTML =
     '<option value="ALL">(All properties)</option>' +
     Object.entries(PROPERTY_IDS).map(([name,id])=>`<option value="${id}">${name}</option>`).join('');
@@ -802,8 +998,7 @@ propSel.onchange = async ()=>{
       signOutBtn.classList.remove('hidden');
       showOverlay(false);
 
-      await loadPaddocksForProperty(propSel.value);
-      await loadChemicalsForProperty(propSel.value);
+      await onPropertyChange();
       onActivityChange();
       await refreshEntries();
       setStatus('Connected');
