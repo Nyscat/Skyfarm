@@ -134,6 +134,7 @@
             <option value="Transfer stock (Out)">Transfer stock (Out)</option>
             <option value="Cattle Received (Purchase)">Cattle Received (Purchase)</option>
             <option value="Mustering">Mustering</option>
+            <option value="Rainfall">Rainfall (gauge only)</option>
             <option value="Other">Other</option>
           </select>
         </div>
@@ -376,7 +377,6 @@ const PROPERTY_IDS = {
 };
 const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
 const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
-// bump: 2025-10-20 property IDs fixed
 
 /* -------------------------------------------------------
    Elements
@@ -436,7 +436,7 @@ if (dbMenuBtn && dbMenu) {
 }
 
 /* -------------------------------------------------------
-   Paddocks / Chemicals / Livestock / Gauges
+   Paddocks / Chemicals / Gauges / Livestock helpers
 ------------------------------------------------------- */
 async function loadPaddocksForProperty(propertyId) {
   if (!propertyId || propertyId === 'ALL') {
@@ -513,7 +513,6 @@ async function loadGaugesForProperty(propertyId){
   }
 }
 
-// Live livestock fetch for paddock/species
 async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
   if (!propertyId || !paddockName) return [];
   const speciesLC = String(speciesUI||'Cattle').toLowerCase();
@@ -550,12 +549,10 @@ async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
   }
 }
 
-// Distinct classes you’ve actually used on this property/species.
 async function fetchUsedClasses(propertyId, speciesUI){
   if (!propertyId) return [];
   const speciesLC = String(speciesUI||'Cattle').toLowerCase();
   const variants = [speciesUI, speciesLC.toUpperCase(), speciesLC.charAt(0).toUpperCase()+speciesLC.slice(1)];
-
   const seen = new Set();
 
   for (const sp of variants){
@@ -588,7 +585,7 @@ async function fetchUsedClasses(propertyId, speciesUI){
 }
 
 /* -------------------------------------------------------
-   Inventory side-effects (chemicals + livestock)
+   Inventory side-effects
 ------------------------------------------------------- */
 async function applyChemicalUsage({ activity, propertyId, chemId, chemQty }) {
   if (!chemId || !chemQty || chemQty <= 0) return;
@@ -676,7 +673,6 @@ async function applyLivestockChange({
   }
 }
 
-// Move stock within a property (paddock → paddock)
 async function moveLivestockWithinProperty({
   propertyId,
   fromPaddock,
@@ -698,7 +694,6 @@ async function moveLivestockWithinProperty({
   ];
 
   try {
-    // FROM paddock: subtract
     let fromDoc = null;
     for (const sp of speciesVariants) {
       const snap = await db.collection('livestock')
@@ -727,7 +722,6 @@ async function moveLivestockWithinProperty({
       console.warn('Move stock: no FROM mob line', { propertyId, fromPaddock, species, livestockClass });
     }
 
-    // TO paddock: add
     let toDoc = null;
     for (const sp of speciesVariants) {
       const snap = await db.collection('livestock')
@@ -769,7 +763,7 @@ async function moveLivestockWithinProperty({
 }
 
 /* -------------------------------------------------------
-   UI logic (activity toggles + mustering table)
+   UI logic
 ------------------------------------------------------- */
 function onActivityChange(){
   const act = activitySel.value;
@@ -1020,7 +1014,7 @@ async function saveEntry(){
 }
 
 /* -------------------------------------------------------
-   Multi-action batch (queue + save with shared batchId)
+   Multi-action batch
 ------------------------------------------------------- */
 const actions = [];
 function renderQueued(){
@@ -1173,7 +1167,7 @@ $('#resetBtn').onclick = ()=>{
   truckBuyer.value=''; truckRef.value='';
   mExp.value=''; mAct.value=''; mDelta.value=''; mReason.value='';
   mAddCalves.value=''; mAddWeaners.value='';
-  mClassBody.innerHTML='<tr><td colspan="6">Pick property + paddock + species…</td></tr>';
+  mClassBody.innerHTML='<tr><td colspan="6" class="muted">Pick property + paddock + species…</td></tr>';
   stockContext.innerHTML='';
 };
 
