@@ -554,11 +554,10 @@ async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
 async function fetchUsedClasses(propertyId, speciesUI){
   if (!propertyId) return [];
   const speciesLC = String(speciesUI||'Cattle').toLowerCase();
-  const variants = [speciesUI, speciesLC.charAt(0).toUpperCase()+speciesLC.slice(1), speciesLC.toUpperCase()];
+  const variants = [speciesUI, speciesLC.toUpperCase(), speciesLC.charAt(0).toUpperCase()+speciesLC.slice(1)];
 
   const seen = new Set();
 
-  // From current livestock lines
   for (const sp of variants){
     const snap = await db.collection('livestock')
       .where('propertyId','==',propertyId)
@@ -570,7 +569,6 @@ async function fetchUsedClasses(propertyId, speciesUI){
     });
   }
 
-  // From diary entries (last ~500 rows for this property/species)
   try {
     const snap2 = await db.collection('diaryEntries')
       .where('propertyId','==',propertyId)
@@ -634,7 +632,7 @@ async function applyLivestockChange({
   } else if (activity === 'Cattle Received (Purchase)') {
     delta = Math.abs(head);
   } else {
-    return; // other activities not wired here
+    return;
   }
 
   try {
@@ -687,49 +685,72 @@ async function moveLivestockWithinProperty({
   livestockClass,
   head
 }) {
-  if (!propertyId || !fromPaddock || !toPaddock || fromPaddock === toPaddock) return;
+  if (!propertyId || !fromPaddock || !toPaddock) return;
+  if (fromPaddock === toPaddock) return;
   if (!species || !livestockClass || !head || head <= 0) return;
+
+  const headInt = Math.floor(Number(head));
+  const speciesVariants = [
+    species,
+    String(species).toLowerCase(),
+    String(species).toUpperCase(),
+    String(species).charAt(0).toUpperCase() + String(species).slice(1).toLowerCase()
+  ];
 
   try {
     // FROM paddock: subtract
-    const fromSnap = await db.collection('livestock')
-      .where('propertyId','==',propertyId)
-      .where('location','==',fromPaddock)
-      .where('species','==',species)
-      .where('class','==',livestockClass)
-      .limit(1)
-      .get();
+    let fromDoc = null;
+    for (const sp of speciesVariants) {
+      const snap = await db.collection('livestock')
+        .where('propertyId','==',propertyId)
+        .where('location','==',fromPaddock)
+        .where('species','==',sp)
+        .where('class','==',livestockClass)
+        .limit(1)
+        .get();
+      if (!snap.empty) { fromDoc = snap.docs[0]; break; }
+    }
 
-    if (!fromSnap.empty) {
-      const doc = fromSnap.docs[0];
-      const data = doc.data() || {};
-      const current = Number(data.count || 0);
-      const next = Math.max(0, current - head);
-      await doc.ref.update({
-        count: next,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    if (fromDoc) {
+      await db.runTransaction(async tx => {
+        const snap = await tx.get(fromDoc.ref);
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const current = Number(data.count || 0);
+        const next = Math.max(0, current - headInt);
+        tx.update(fromDoc.ref, {
+          count: next,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
       });
     } else {
       console.warn('Move stock: no FROM mob line', { propertyId, fromPaddock, species, livestockClass });
     }
 
     // TO paddock: add
-    const toSnap = await db.collection('livestock')
-      .where('propertyId','==',propertyId)
-      .where('location','==',toPaddock)
-      .where('species','==',species)
-      .where('class','==',livestockClass)
-      .limit(1)
-      .get();
+    let toDoc = null;
+    for (const sp of speciesVariants) {
+      const snap = await db.collection('livestock')
+        .where('propertyId','==',propertyId)
+        .where('location','==',toPaddock)
+        .where('species','==',sp)
+        .where('class','==',livestockClass)
+        .limit(1)
+        .get();
+      if (!snap.empty) { toDoc = snap.docs[0]; break; }
+    }
 
-    if (!toSnap.empty) {
-      const doc = toSnap.docs[0];
-      const data = doc.data() || {};
-      const current = Number(data.count || 0);
-      const next = current + head;
-      await doc.ref.update({
-        count: next,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    if (toDoc) {
+      await db.runTransaction(async tx => {
+        const snap = await tx.get(toDoc.ref);
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const current = Number(data.count || 0);
+        const next = current + headInt;
+        tx.update(toDoc.ref, {
+          count: next,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
       });
     } else {
       await db.collection('livestock').add({
@@ -737,7 +758,7 @@ async function moveLivestockWithinProperty({
         location: toPaddock,
         species,
         class: livestockClass,
-        count: head,
+        count: headInt,
         movedIn: todayISO(),
         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -940,6 +961,21 @@ async function saveEntry(){
     chemQ
   } = buildPayloadFromUI();
 
+  if (activity === 'Move stock') {
+    if (!paddockName) {
+      alert('Choose the paddock you are moving FROM.');
+      return;
+    }
+    if (!paddockNameTo) {
+      alert('Choose the paddock you are moving TO.');
+      return;
+    }
+    if (!klass || !head || head <= 0) {
+      alert('For Move stock you must set Class and Head.');
+      return;
+    }
+  }
+
   try {
     await db.collection('diaryEntries').add(payload);
 
@@ -1033,7 +1069,6 @@ saveBatchBtn.onclick = async ()=>{
     });
     await batch.commit();
 
-    // side-effects after commit
     await Promise.all(actions.map(a => {
       const sideEffects = [
         applyChemicalUsage({
@@ -1151,7 +1186,7 @@ propSel.onchange = onPropertyChange;
   propSel.innerHTML =
     '<option value="ALL">(All properties)</option>' +
     Object.entries(PROPERTY_IDS).map(([name,id])=>`<option value="${id}">${name}</option>`).join('');
-  propSel.value = 'TRuxtRBx2zJlwZnRGYKJ'; // default Mt Myrtle
+  propSel.value = 'TRuxtRBx2zJlwZnRGYKJ';
 
   yearInp.value = new Date().getFullYear();
   dateInp.value = todayISO();
