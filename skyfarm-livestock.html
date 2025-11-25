@@ -5,19 +5,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SkyFarm — Livestock</title>
 
-<!-- Firebase (compat) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+<!-- Firebase compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 
-<link rel="stylesheet" href="skyfarm-shared.css">
 <style>
-  :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; }
+  :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; --warn:#9a3412; }
   * { box-sizing:border-box; }
-  body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#f6fbf8; margin:0; color:var(--ink); }
+  body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:var(--ink); }
   .wrap { max-width:1200px; margin:0 auto; padding:16px; }
   h1 { margin:12px 0; font-size:1.6rem; }
 
+  /* Header (copied from diary) */
+  #sf-header { position:sticky; top:0; z-index:10; }
+  #sf-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--line); }
+  #sf-header .brand { display:flex; align-items:center; gap:8px; color:var(--brand); font-weight:700; text-decoration:none; }
+  #sf-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+  #sf-header nav a[aria-current="page"] { text-decoration:underline; }
+  .spacer { flex:1; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  .hidden { display:none; }
+
+  .nav-db { position:relative; }
+  .nav-db button { font-size:.9rem; }
+  .db-menu {
+    position:absolute;
+    top:100%;
+    left:0;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    min-width:160px;
+    padding:4px 0;
+    box-shadow:0 10px 25px rgba(15,23,42,.12);
+    z-index:20;
+  }
+  .db-menu a {
+    display:block;
+    padding:6px 12px;
+    color:var(--ink);
+    text-decoration:none;
+    font-size:.9rem;
+  }
+  .db-menu a:hover { background:#f1f5f9; }
+
+  /* Cards etc */
   .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
   .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   label { font-size:.9rem; color:#475569; }
@@ -27,25 +60,51 @@
   .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
   .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
   .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
-  .muted { color:var(--muted); font-size:.9rem; }
   .pill { display:inline-block; padding:2px 10px; border-radius:999px; background:#eef2f7; font-size:.85rem; margin:4px 6px 0 0; border:1px solid #e5e7eb; }
   .right { text-align:right; }
   .small { font-size:.9rem; color:#475569; }
   .w110 { width:110px; } .w140 { width:160px; } .w180 { width:180px; } .w220 { width:220px; }
+  .nowrap { white-space:nowrap; }
 
   table { width:100%; border-collapse:collapse; }
   th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; }
   th { background:#f1f5f9; }
-  .nowrap { white-space:nowrap; }
 
-  /* mini badges in summary */
   .sum-head { font-weight:600; margin:8px 0 4px; }
+
+  .status-warn{ color:var(--warn); }
+
+  /* Auth overlay */
+  #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+  #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
+  #authCard h2{margin:0 0 10px}
 </style>
 </head>
 <body>
-<div id="sf-header-root"></div>
-<script src="skyfarm-header.js"></script>
-<script>SkyFarmHeader.mount();</script>
+
+<!-- Inline header (no separate JS) -->
+<div id="sf-header">
+  <div class="bar">
+    <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+    <nav>
+      <a href="skyfarm-diary.html">Diary</a>
+      <a href="skyfarm-map.html">Map</a>
+    </nav>
+    <div class="nav-db">
+      <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
+      <div id="dbMenu" class="db-menu hidden">
+        <a href="skyfarm-livestock.html">Livestock</a>
+        <a href="skyfarm-chemical.html">Chemicals</a>
+        <a href="skyfarm-seeds.html">Seeds</a>
+        <a href="skyfarm-barcode.html">Barcode Scanner</a>
+        <a href="skyfarm-users.html">Users &amp; Roles</a>
+      </div>
+    </div>
+    <span class="spacer"></span>
+    <span id="authWho" class="muted">Connecting…</span>
+    <button id="signOutBtn" class="danger hidden">Sign out</button>
+  </div>
+</div>
 
 <div class="wrap">
   <h1>Livestock</h1>
@@ -152,8 +211,59 @@
   </div>
 </div>
 
+<!-- Auth overlay (same pattern as diary) -->
+<div id="authOverlay">
+  <div id="authCard">
+    <h2>Sign in to SkyFarm</h2>
+    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
+    <div class="row">
+      <div style="flex:1; min-width:260px">
+        <label>Email</label>
+        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
+      </div>
+      <div style="flex:1; min-width:220px">
+        <label>Password</label>
+        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+    </div>
+    <div class="row">
+      <button id="signInBtn" class="primary">Sign in</button>
+      <span id="authMsg" class="muted"></span>
+      <span class="spacer"></span>
+      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/*** 1) Class sets & order ***/
+/*** Firebase ***/
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+/*** Helpers ***/
+const $ = s => document.querySelector(s);
+const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const statusEl=$('#status'), countPill=$('#countPill'), totalPill=$('#totalPill');
+const setStatus = (t, warn=false)=>{ statusEl.textContent=t; statusEl.classList.toggle('status-warn', !!warn); };
+function showOverlay(show){ $('#authOverlay').style.display = show ? 'flex' : 'none'; }
+
+/*** Header DB menu ***/
+const dbMenuBtn = $('#dbMenuBtn'), dbMenu = $('#dbMenu');
+if (dbMenuBtn && dbMenu) {
+  dbMenuBtn.onclick = (e)=>{ e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
+  document.addEventListener('click', (e)=>{
+    if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
+  });
+}
+
+/*** Class sets & order (unchanged) ***/
 const CLASSES_BY_SPECIES = {
   "Cattle": [
     "PTE Cow","PTIC Cow","Joined Cow",
@@ -165,7 +275,6 @@ const CLASSES_BY_SPECIES = {
   "Sheep": [
     "Cull Ewes","Ewes","Weaner Ewes","Weaner Weathers","Mixed Sex Lambs","Rams","Missing"
   ],
-  // Goats: free text for now
 };
 function classIndex(species){
   const arr = CLASSES_BY_SPECIES[species] || [];
@@ -179,29 +288,19 @@ function compareByClass(a,b){
   return String(a.location||'').localeCompare(String(b.location||''));
 }
 
-/*** 2) Firebase ***/
-firebase.initializeApp({
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-  authDomain: "consentes-pastoral.firebaseapp.com",
-  projectId: "consentes-pastoral",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64"
-});
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-/*** 3) DOM refs ***/
-const $ = s => document.querySelector(s);
-const statusEl=$('#status'), countPill=$('#countPill'), totalPill=$('#totalPill');
+/*** DOM refs (rest) ***/
 const propSel=$('#propSel'), searchInp=$('#search'), searchWrap=$('#searchWrap');
 const refreshBtn=$('#refreshBtn'), exportBtn=$('#exportBtn');
-const tableCard=$('#tableCard'), rowsTbody=$('#rowsTbody');
-const summaryWrap=$('#summaryWrap'), summaryBody=$('#summaryBody');
+const rowsTbody=$('#rowsTbody'), summaryWrap=$('#summaryWrap'), summaryBody=$('#summaryBody');
+const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'),
+      newClassHidden=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg'), classPillsWrap=$('#classPills');
 
-const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'), newClassHidden=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg'), classPillsWrap=$('#classPills');
+const authWho = $('#authWho'), signOutBtn = $('#signOutBtn');
+const signInBtn = $('#signInBtn'), closeOverlayBtn = $('#closeOverlayBtn');
 
 let allRows=[];
 
-/*** 4) Add-form pills ***/
+/*** Add-form pills ***/
 function renderClassPills(species){
   classPillsWrap.innerHTML = '';
   const set = CLASSES_BY_SPECIES[species];
@@ -211,7 +310,7 @@ function renderClassPills(species){
     b.type='button'; b.className='btn pill'; b.textContent=cls;
     b.onclick=()=>{
       newClassHidden.value=cls;
-      classPillsWrap.querySelectorAll('.pill').forEach(x=>x.style.background='');
+      classPillsWrap.querySelectorAll('.pill').forEach(x=>{x.style.background='';x.style.color='';x.style.borderColor='#e5e7eb';});
       b.style.background='#0B7A6E'; b.style.color='#fff'; b.style.borderColor='#0B7A6E';
     };
     classPillsWrap.appendChild(b);
@@ -221,21 +320,54 @@ function renderClassPills(species){
 newSpecies.onchange = ()=> renderClassPills(newSpecies.value);
 renderClassPills(newSpecies.value);
 
-/*** 5) Init & events ***/
-(async()=>{
-  try{await db.enablePersistence({synchronizeTabs:true});}catch{}
-  await auth.signInAnonymously();
-  propSel.onchange=loadRows;
-  searchInp.oninput=renderTable;
-  refreshBtn.onclick=loadRows;
-  exportBtn.onclick=exportCsv;
-  addRowBtn.onclick=addLivestock;
-  await loadRows();
-})();
+/*** Auth overlay actions ***/
+signInBtn.onclick = async ()=>{
+  const email = $('#siEmail').value.trim();
+  const pass  = $('#siPass').value;
+  $('#authMsg').textContent = 'Signing in…';
+  try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.signInWithEmailAndPassword(email, pass);
+    $('#authMsg').textContent = 'Signed in.';
+    showOverlay(false);
+  }catch(e){
+    $('#authMsg').textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
+  }
+};
+signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+closeOverlayBtn.onclick = ()=> showOverlay(false);
 
-/*** 6) Add livestock ***/
+/*** Events that don't depend on auth ***/
+propSel.onchange = loadRows;
+searchInp.oninput = renderTable;
+refreshBtn.onclick = loadRows;
+exportBtn.onclick = exportCsv;
+addRowBtn.onclick = addLivestock;
+
+/*** Auth state handling ***/
+setStatus('Connecting…');
+auth.onAuthStateChanged(async (u)=>{
+  if (u) {
+    authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+    signOutBtn.classList.remove('hidden');
+    showOverlay(false);
+    setStatus('Loading…');
+    try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+    await loadRows();
+    setStatus('Loaded');
+  } else {
+    authWho.textContent = 'Not signed in';
+    signOutBtn.classList.add('hidden');
+    showOverlay(true);
+    setStatus('Please sign in', true);
+    rowsTbody.innerHTML = '<tr><td colspan="7">Sign in to see livestock.</td></tr>';
+  }
+});
+
+/*** Add livestock ***/
 async function addLivestock(){
-  const pid=newPropSel.value, location=newLocation.value.trim(), species=newSpecies.value, klass=newClassHidden.value.trim(), count=Number(newCount.value||0);
+  const pid=newPropSel.value, location=newLocation.value.trim(), species=newSpecies.value,
+        klass=newClassHidden.value.trim(), count=Number(newCount.value||0);
   if(!location) return alert('Please enter paddock.');
   if(CLASSES_BY_SPECIES[species] && !klass) return alert('Please choose a class.');
   if(count<0||!Number.isFinite(count)) return alert('Enter a valid count.');
@@ -251,20 +383,20 @@ async function addLivestock(){
   finally{ addRowBtn.disabled=false; setTimeout(()=>addMsg.textContent='',2500); }
 }
 
-/*** 7) Load rows or summary ***/
+/*** Load rows or summary ***/
 async function loadRows(){
-  statusEl.textContent='Loading…';
+  if (!auth.currentUser) return; // don’t run before sign-in
+  setStatus('Loading…');
   rowsTbody.innerHTML='<tr><td colspan="7">Loading…</td></tr>';
   summaryBody.innerHTML='';
   allRows=[];
   const mode = propSel.value;
 
-  // toggle UI for summary vs table
   const summaryMode = (mode === 'all');
   document.getElementById('addCard').style.display = summaryMode ? 'none' : '';
   document.getElementById('rowsTable').style.display = summaryMode ? 'none' : '';
   summaryWrap.style.display = summaryMode ? '' : 'none';
-  searchWrap.style.display = summaryMode ? 'none' : ''; // search only in per-property view
+  searchWrap.style.display = summaryMode ? 'none' : '';
 
   try{
     let snap;
@@ -280,18 +412,16 @@ async function loadRows(){
 
     if (summaryMode) {
       renderSummary(allRows);
-      statusEl.textContent='Loaded';
     } else {
       allRows.sort(compareByClass);
       renderTable();
-      statusEl.textContent='Loaded';
     }
-  }catch(e){ console.error(e); statusEl.textContent='Error loading'; }
+    setStatus('Loaded');
+  }catch(e){ console.error(e); setStatus('Error loading', true); }
 }
 
-/*** 8) SUMMARY RENDERER (All Properties) ***/
+/*** SUMMARY RENDERER ***/
 function renderSummary(rows){
-  // group by species -> class using your order
   const totals = {};
   for (const r of rows) {
     const species = r.species || '(Unknown)';
@@ -300,16 +430,13 @@ function renderSummary(rows){
     totals[species][cls] = (totals[species][cls] || 0) + Number(r.count || 0);
   }
 
-  // build sorted rows per species
   summaryBody.innerHTML = '';
-  let grand = 0;
-
-  const speciesList = Object.keys(totals).sort(); // species alphabetic
+  const speciesList = Object.keys(totals).sort();
   for (const sp of speciesList) {
     const order = CLASSES_BY_SPECIES[sp] || Object.keys(totals[sp]).sort();
     for (const cls of order) {
       if (!(cls in totals[sp])) continue;
-      const sum = totals[sp][cls]; grand += sum;
+      const sum = totals[sp][cls];
       const tr=document.createElement('tr');
       tr.innerHTML = `
         <td>${escapeHtml(sp)}</td>
@@ -317,10 +444,9 @@ function renderSummary(rows){
         <td class="right">${sum}</td>`;
       summaryBody.appendChild(tr);
     }
-    // include any custom classes not in fixed set
     for (const cls of Object.keys(totals[sp])) {
       if ((CLASSES_BY_SPECIES[sp]||[]).includes(cls)) continue;
-      const sum = totals[sp][cls]; grand += 0; // already counted above
+      const sum = totals[sp][cls];
       const tr=document.createElement('tr');
       tr.innerHTML = `
         <td>${escapeHtml(sp)}</td>
@@ -330,12 +456,12 @@ function renderSummary(rows){
     }
   }
 
-  // pills on top
   countPill.textContent = `${rows.length} rows`;
-  totalPill.textContent = `Grand total: ${speciesList.reduce((a,sp)=>a+Object.values(totals[sp]).reduce((x,y)=>x+y,0),0)}`;
+  const grand = speciesList.reduce((a,sp)=>a+Object.values(totals[sp]).reduce((x,y)=>x+y,0),0);
+  totalPill.textContent = `Grand total: ${grand}`;
 }
 
-/*** 9) TABLE (Per property) ***/
+/*** TABLE (per property) ***/
 function filtered(){
   const q=(searchInp.value||'').toLowerCase();
   if(!q) return allRows;
@@ -409,7 +535,7 @@ function renderTable(){
       btnSave.style.display = on ? '' : 'none';
       btnCancel.style.display = on ? '' : 'none';
     }
-    specEl.addEventListener('change', ()=> { if (!specEl.disabled) buildClassEditor(specEl.value, '', specEl.disabled); });
+    specEl.addEventListener('change', ()=> { if (!specEl.disabled) buildClassEditor(specEl.value, clsEl().value, specEl.disabled); });
 
     btnEdit.onclick = ()=> setEditable(true);
     btnCancel.onclick = ()=> loadRows();
@@ -429,7 +555,7 @@ function renderTable(){
   }
 }
 
-/*** 10) Export CSV ***/
+/*** Export CSV ***/
 function exportCsv(){
   const mode = propSel.value;
   if (mode === 'all') {
@@ -443,10 +569,6 @@ function exportCsv(){
   const blob=new Blob([head+'\n'+lines.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`livestock_${propName}.csv`;a.click();
 }
-
-/*** utils ***/
-const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-
 </script>
 </body>
 </html>
