@@ -17,7 +17,7 @@
   .wrap { max-width:1200px; margin:0 auto; padding:16px; }
   h1 { margin:12px 0; font-size:1.6rem; }
 
-  /* Header (copied from diary) */
+  /* Header */
   #sf-header { position:sticky; top:0; z-index:10; }
   #sf-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--line); }
   #sf-header .brand { display:flex; align-items:center; gap:8px; color:var(--brand); font-weight:700; text-decoration:none; }
@@ -75,14 +75,13 @@
   .status-warn{ color:var(--warn); }
 
   /* Auth overlay */
-  #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+  #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:flex; align-items:center; justify-content:center; z-index:50; display:none;}
   #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
   #authCard h2{margin:0 0 10px}
 </style>
 </head>
 <body>
 
-<!-- Inline header (no separate JS) -->
 <div id="sf-header">
   <div class="bar">
     <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
@@ -182,7 +181,6 @@
     <table id="rowsTable">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Paddock</th>
           <th>Species</th>
           <th>Class</th>
@@ -191,7 +189,7 @@
           <th class="nowrap">Actions</th>
         </tr>
       </thead>
-      <tbody id="rowsTbody"><tr><td colspan="7">Loading…</td></tr></tbody>
+      <tbody id="rowsTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
     </table>
 
     <!-- SUMMARY TABLE (shown when "all" selected) -->
@@ -211,7 +209,7 @@
   </div>
 </div>
 
-<!-- Auth overlay (same pattern as diary) -->
+<!-- Auth overlay -->
 <div id="authOverlay">
   <div id="authCard">
     <h2>Sign in to SkyFarm</h2>
@@ -263,7 +261,7 @@ if (dbMenuBtn && dbMenu) {
   });
 }
 
-/*** Class sets & order (unchanged) ***/
+/*** Class sets & order ***/
 const CLASSES_BY_SPECIES = {
   "Cattle": [
     "PTE Cow","PTIC Cow","Joined Cow",
@@ -288,7 +286,7 @@ function compareByClass(a,b){
   return String(a.location||'').localeCompare(String(b.location||''));
 }
 
-/*** DOM refs (rest) ***/
+/*** DOM refs ***/
 const propSel=$('#propSel'), searchInp=$('#search'), searchWrap=$('#searchWrap');
 const refreshBtn=$('#refreshBtn'), exportBtn=$('#exportBtn');
 const rowsTbody=$('#rowsTbody'), summaryWrap=$('#summaryWrap'), summaryBody=$('#summaryBody');
@@ -337,14 +335,14 @@ signInBtn.onclick = async ()=>{
 signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 closeOverlayBtn.onclick = ()=> showOverlay(false);
 
-/*** Events that don't depend on auth ***/
+/*** Events not depending on auth ***/
 propSel.onchange = loadRows;
 searchInp.oninput = renderTable;
 refreshBtn.onclick = loadRows;
 exportBtn.onclick = exportCsv;
 addRowBtn.onclick = addLivestock;
 
-/*** Auth state handling ***/
+/*** Auth state ***/
 setStatus('Connecting…');
 auth.onAuthStateChanged(async (u)=>{
   if (u) {
@@ -360,7 +358,7 @@ auth.onAuthStateChanged(async (u)=>{
     signOutBtn.classList.add('hidden');
     showOverlay(true);
     setStatus('Please sign in', true);
-    rowsTbody.innerHTML = '<tr><td colspan="7">Sign in to see livestock.</td></tr>';
+    rowsTbody.innerHTML = '<tr><td colspan="6">Sign in to see livestock.</td></tr>';
   }
 });
 
@@ -385,9 +383,9 @@ async function addLivestock(){
 
 /*** Load rows or summary ***/
 async function loadRows(){
-  if (!auth.currentUser) return; // don’t run before sign-in
+  if (!auth.currentUser) return;
   setStatus('Loading…');
-  rowsTbody.innerHTML='<tr><td colspan="7">Loading…</td></tr>';
+  rowsTbody.innerHTML='<tr><td colspan="6">Loading…</td></tr>';
   summaryBody.innerHTML='';
   allRows=[];
   const mode = propSel.value;
@@ -472,14 +470,13 @@ function renderTable(){
   countPill.textContent = `${rows.length} rows`;
   totalPill.textContent = `Total: ${rows.reduce((a,b)=>a+Number(b.count||0),0)}`;
 
-  if (!rows.length) { rowsTbody.innerHTML = '<tr><td colspan="7">No rows</td></tr>'; return; }
+  if (!rows.length) { rowsTbody.innerHTML = '<tr><td colspan="6">No rows</td></tr>'; return; }
   rowsTbody.innerHTML='';
 
   for (const r of rows) {
     const tr=document.createElement('tr');
     const updatedStr = r.updatedAt ? r.updatedAt.toLocaleString() : '';
     tr.innerHTML = `
-      <td class="small">${String(r.id).slice(0,6)}…</td>
       <td><input class="loc" value="${escapeHtml(r.location||'')}" disabled /></td>
       <td>
         <select class="spec w140" disabled>
