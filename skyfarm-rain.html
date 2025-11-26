@@ -28,7 +28,7 @@
       color:var(--ink);
     }
 
-    /* Header (matches other pages, + Rain link) */
+    /* Header */
     #sf-header{position:sticky;top:0;z-index:10;}
     #sf-header .bar{
       display:flex;
@@ -117,7 +117,6 @@
     .total-row td{font-weight:600;background:#ecfeff;}
     .note{font-size:.8rem;color:var(--muted);margin-top:8px;}
 
-    /* Print */
     @media print{
       body{background:#fff;}
       #sf-header,.controls{display:none !important;}
@@ -131,7 +130,6 @@
 </head>
 <body>
 
-<!-- Common header -->
 <div id="sf-header">
   <div class="bar">
     <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
@@ -216,7 +214,6 @@
 </div>
 
 <script>
-  /* Firebase init */
   const firebaseConfig = {
     apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
     authDomain: "consentes-pastoral.firebaseapp.com",
@@ -253,7 +250,6 @@
   }
   function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
 
-  /* Header DB menu */
   (function(){
     const btn = $('#dbMenuBtn');
     const menu = $('#dbMenu');
@@ -264,7 +260,6 @@
     });
   })();
 
-  /* Auth handlers */
   $('#signInBtn').onclick = async ()=>{
     const email = $('#siEmail').value.trim();
     const pass  = $('#siPass').value;
@@ -296,7 +291,6 @@
     }
   });
 
-  /* Init page after auth */
   async function initPage(){
     setStatus('Loading gauges…');
     await loadProperties();
@@ -304,7 +298,6 @@
     initYears();
     bindEvents();
     setStatus('Ready');
-    // initial render
     if (gaugeSel.value) await loadRain();
   }
 
@@ -324,14 +317,9 @@
     snap.forEach(doc=>{
       const d = doc.data() || {};
       if (d.active === false) return;
-      const g = {
-        id: doc.id,
-        name: d.name || '(Gauge)',
-        propertyId: d.propertyId || null
-      };
+      const g = { id:doc.id, name:d.name || '(Gauge)', propertyId:d.propertyId || null };
       gauges.push(g);
     });
-    // sort by property then gauge name
     gauges.sort((a,b)=>{
       const pa = propertiesById.get(a.propertyId) || '';
       const pb = propertiesById.get(b.propertyId) || '';
@@ -345,7 +333,6 @@
       currentGauge = null;
       return;
     }
-
     gauges.forEach(g=>{
       const opt = document.createElement('option');
       opt.value = g.id;
@@ -354,9 +341,7 @@
       gaugeSel.appendChild(opt);
     });
 
-    if (saved && gauges.some(g=>g.id === saved)){
-      gaugeSel.value = saved;
-    }
+    if (saved && gauges.some(g=>g.id === saved)) gaugeSel.value = saved;
     currentGauge = gauges.find(g=>g.id === gaugeSel.value) || gauges[0];
     gaugeSel.value = currentGauge.id;
     updateGaugeInfo();
@@ -424,8 +409,8 @@
     const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!m) return null;
     const year  = parseInt(m[1],10);
-    const month = parseInt(m[2],10); // 1-12
-    const day   = parseInt(m[3],10); // 1-31
+    const month = parseInt(m[2],10);
+    const day   = parseInt(m[3],10);
     if (!year || !month || !day) return null;
     return {year, month, day};
   }
@@ -453,7 +438,7 @@
 
     try{
       const baseRef = db.collection('gauges').doc(currentGauge.id).collection('daily');
-      const snap = await baseRef.get(); // filter client-side; structure may vary
+      const snap = await baseRef.get();
       const grid = makeEmptyYear();
 
       snap.forEach(doc=>{
@@ -468,7 +453,7 @@
         grid[dIdx][mIdx] = (grid[dIdx][mIdx] || 0) + mm;
       });
 
-      renderTable(grid, year);
+      renderTable(grid);
       setStatus('Loaded');
     }catch(e){
       console.error(e);
@@ -477,14 +462,11 @@
     }
   }
 
-  function renderTable(grid, year){
+  function renderTable(grid){
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    // Header
     let headHtml = '<tr><th>Day</th>';
-    for (const m of months){
-      headHtml += `<th>${m}</th>`;
-    }
+    for (const m of months) headHtml += `<th>${m}</th>`;
     headHtml += '</tr>';
     rainHead.innerHTML = headHtml;
 
@@ -511,22 +493,29 @@
       bodyHtml += '</tr>';
     }
 
-    // Totals
+    // total rain
     bodyHtml += '<tr class="total-row"><td>Total rain (mm)</td>';
-    for (let m=0; m<12; m++){
-      bodyHtml += `<td>${fmt(monthTotals[m])}</td>`;
-    }
+    for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(monthTotals[m])}</td>`;
     bodyHtml += '</tr>';
 
-    bodyHtml += '<tr class="total-row"><td>Total rain days</td>';
+    // NEW: cumulative total row
+    const cum = new Array(12).fill(0);
+    let running = 0;
     for (let m=0; m<12; m++){
-      bodyHtml += `<td>${monthRainDays[m] || ''}</td>`;
+      running += monthTotals[m];
+      cum[m] = running;
     }
+    bodyHtml += '<tr class="total-row"><td>Cumulative total (mm)</td>';
+    for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(cum[m])}</td>`;
+    bodyHtml += '</tr>';
+
+    // total rain days
+    bodyHtml += '<tr class="total-row"><td>Total rain days</td>';
+    for (let m=0; m<12; m++) bodyHtml += `<td>${monthRainDays[m] || ''}</td>`;
     bodyHtml += '</tr>';
 
     rainBody.innerHTML = bodyHtml;
   }
-
 </script>
 </body>
 </html>
