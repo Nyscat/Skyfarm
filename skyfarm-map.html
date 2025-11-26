@@ -2,11 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SkyFarm — Property Map</title>
-
-  <!-- Optional shared styles/header (safe if missing) -->
-  <link rel="stylesheet" href="skyfarm-shared.css" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
@@ -25,6 +22,7 @@
       --muted:#64748b;
       --brand:#0B7A6E;
       --line:#e5e7eb;
+      --warn:#9a3412;
     }
     *{box-sizing:border-box;}
     body{
@@ -33,10 +31,63 @@
       margin:0;
       color:var(--ink);
     }
+
+    /* Header (same pattern as other pages) */
+    #sf-header{position:sticky;top:0;z-index:10;}
+    #sf-header .bar{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:10px 14px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      flex-wrap:wrap;
+    }
+    #sf-header .brand{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--brand);
+      font-weight:700;
+      text-decoration:none;
+    }
+    #sf-header nav a{
+      color:var(--brand);
+      text-decoration:none;
+      font-weight:600;
+      margin-right:10px;
+    }
+    #sf-header nav a[aria-current="page"]{text-decoration:underline;}
+    .spacer{flex:1;}
+    .muted{color:var(--muted);font-size:.9rem;}
+    .hidden{display:none;}
+
+    .nav-db{position:relative;}
+    .nav-db button{font-size:.9rem;}
+    .db-menu{
+      position:absolute;
+      top:100%;
+      left:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      min-width:160px;
+      padding:4px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.12);
+      z-index:20;
+    }
+    .db-menu a{
+      display:block;
+      padding:6px 12px;
+      color:var(--ink);
+      text-decoration:none;
+      font-size:.9rem;
+    }
+    .db-menu a:hover{background:#f1f5f9;}
+
     .wrap{max-width:1200px;margin:0 auto;padding:16px;}
     h1{margin:12px 0;font-size:1.6rem;}
-    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;}
-    .muted{color:var(--muted);font-size:.9rem;}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;}
     .pill{
       display:inline-block;
       padding:2px 8px;
@@ -45,34 +96,109 @@
       font-size:.8rem;
       margin-right:4px;
     }
+
+    /* Auth overlay */
+    #authOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.06);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:50;
+    }
+    #authCard{
+      width:min(520px,92vw);
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:20px;
+    }
+    #authCard h2{margin:0 0 10px;}
+    label{font-size:.85rem;color:#475569;display:block;margin-bottom:4px;}
+    input,button{
+      padding:6px 10px;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      font:inherit;
+    }
+    button{cursor:pointer;}
+    .btn{border-radius:10px;}
+    .primary{background:var(--brand);color:#fff;border-color:var(--brand);}
+    .danger{background:#ef4444;color:#fff;border-color:#ef4444;}
   </style>
 </head>
 <body>
-  <!-- Optional site header (if you have skyfarm-header.js) -->
-  <div id="sf-header-root"></div>
-  <script src="skyfarm-header.js"></script>
-  <script>window.SkyFarmHeader?.mount?.();</script>
 
-  <div class="wrap">
-    <h1>SkyFarm — Property Map</h1>
-    <p id="status" class="muted">Loading paddock data…</p>
-
-    <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
-      <div class="panel" style="padding:0;">
-        <div id="map" style="height:560px;border-radius:12px;"></div>
+<!-- Header -->
+<div id="sf-header">
+  <div class="bar">
+    <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+    <nav>
+      <a href="skyfarm-diary.html">Diary</a>
+      <a href="skyfarm-map.html" aria-current="page">Map</a>
+      <a href="skyfarm-rain.html">Rain</a>
+    </nav>
+    <div class="nav-db">
+      <button id="dbMenuBtn" class="btn" type="button">Database ▾</button>
+      <div id="dbMenu" class="db-menu hidden">
+        <a href="skyfarm-livestock.html">Livestock</a>
+        <a href="skyfarm-chemical.html">Chemicals</a>
+        <a href="skyfarm-seeds.html">Seeds</a>
+        <a href="skyfarm-barcode.html">Barcode Scanner</a>
+        <a href="skyfarm-users.html">Users &amp; Roles</a>
       </div>
+    </div>
+    <span class="spacer"></span>
+    <span id="authWho" class="muted">Connecting…</span>
+    <button id="signOutBtn" class="danger hidden">Sign out</button>
+  </div>
+</div>
 
-      <aside class="panel">
-        <h3 style="margin-top:0;">Paddock details</h3>
-        <div id="paddockInfo" class="muted">
-          Click a paddock polygon to see livestock totals and recent diary entries (last 30 days).
-        </div>
-      </aside>
+<div class="wrap">
+  <h1>Property Map</h1>
+  <p id="status" class="muted">Loading paddock data…</p>
+
+  <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
+    <div class="panel" style="padding:0;">
+      <div id="map" style="height:560px;border-radius:12px;"></div>
+    </div>
+
+    <aside class="panel">
+      <h3 style="margin-top:0;">Paddock details</h3>
+      <div id="paddockInfo" class="muted">
+        Click a paddock to see livestock totals and recent diary entries (last 30 days).
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Auth overlay -->
+<div id="authOverlay">
+  <div id="authCard">
+    <h2>Sign in to SkyFarm</h2>
+    <p class="muted" style="font-size:.85rem;">Email &amp; password only. Anonymous sign-in is disabled.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+      <div style="flex:1;min-width:260px;">
+        <label>Email</label>
+        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username">
+      </div>
+      <div style="flex:1;min-width:220px;">
+        <label>Password</label>
+        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button id="signInBtn" class="primary btn">Sign in</button>
+      <span id="authMsg" class="muted" style="font-size:.85rem;"></span>
+      <span class="spacer"></span>
+      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
     </div>
   </div>
+</div>
 
 <script>
-/* --------- config --------- */
+/* ---------- Firebase init ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
   authDomain: "consentes-pastoral.firebaseapp.com",
@@ -83,8 +209,68 @@ firebase.initializeApp(firebaseConfig);
 const db   = firebase.firestore();
 const auth = firebase.auth();
 
-// order must match CLOUD_URLS
-const PROPERTY_IDS   = ["s7PlDM9wrEpxuJ6DGlab", "TRuxtRBx2zJlwZnRGYKJ"]; // Consentes, Mt Myrtle
+/* ---------- Header DB menu ---------- */
+const dbMenuBtn = document.getElementById('dbMenuBtn');
+const dbMenu    = document.getElementById('dbMenu');
+if (dbMenuBtn && dbMenu){
+  dbMenuBtn.onclick = (e)=>{ e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
+  document.addEventListener('click', e=>{
+    if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
+  });
+}
+
+/* ---------- Auth overlay ---------- */
+const authOverlay  = document.getElementById('authOverlay');
+const authWho      = document.getElementById('authWho');
+const signOutBtn   = document.getElementById('signOutBtn');
+const signInBtn    = document.getElementById('signInBtn');
+const closeOverlay = document.getElementById('closeOverlayBtn');
+
+function showOverlay(on){ authOverlay.style.display = on ? 'flex' : 'none'; }
+
+signInBtn.onclick = async ()=>{
+  const email = document.getElementById('siEmail').value.trim();
+  const pass  = document.getElementById('siPass').value;
+  const msgEl = document.getElementById('authMsg');
+  msgEl.textContent = 'Signing in…';
+  try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.signInWithEmailAndPassword(email, pass);
+    msgEl.textContent = 'Signed in.';
+    showOverlay(false);
+  }catch(e){
+    msgEl.textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
+  }
+};
+closeOverlay.onclick = ()=> showOverlay(false);
+signOutBtn.onclick   = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+/* ---------- UI helpers ---------- */
+const statusEl      = document.getElementById('status');
+const paddockInfoEl = document.getElementById('paddockInfo');
+function setStatus(t){ if (statusEl) statusEl.textContent = t; }
+function esc(s){
+  return String(s ?? '').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+}
+
+/* ---------- Map ---------- */
+const map = L.map('map').setView([-20.0, 142.5], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom:19,
+  attribution:'&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+function featureStyle(feature){
+  const t = feature?.geometry?.type;
+  if (t === 'Polygon' || t === 'MultiPolygon'){
+    return { color:'#00897B', weight:2, fillOpacity:0.25 };
+  }
+  return { color:'#64748b', weight:1, fillOpacity:0 };
+}
+
+/* ---------- IDs & data sources ---------- */
+// IMPORTANT: these IDs must match Firestore propertyId values exactly
+const PROPERTY_IDS   = ["s7PlDM9wrEpxuJ6DGIab", "TRuxtRBx2zJlwZnRGYKJ"]; // Consentes, Mt Myrtle
 const PROPERTY_NAMES = ["Consentes", "Mt Myrtle"];
 
 const CLOUD_URLS = [
@@ -96,31 +282,7 @@ const LOCAL_FALLBACKS = [
   "maps/mt_myrtle.json"
 ];
 
-/* --------- helpers --------- */
-const statusEl      = document.getElementById('status');
-const paddockInfoEl = document.getElementById('paddockInfo');
-
-function setStatus(msg){ if(statusEl) statusEl.textContent = msg; }
-function esc(s){
-  return String(s ?? '').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
-}
-
-/* --------- Leaflet map --------- */
-const map = L.map('map').setView([-20.0, 142.5], 7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19,
-  attribution:'&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-function featureStyle(feature){
-  const t = feature?.geometry?.type;
-  if (t === 'Polygon' || t === 'MultiPolygon') {
-    return { color:'#00897B', weight:2, fillOpacity:0.25 };
-  }
-  return { color:'#64748b', weight:1, fillOpacity:0 };
-}
-
-/* --------- Firestore indexes --------- */
+/* ---------- Firestore-backed indexes ---------- */
 // key: `${propertyId}|${paddockName}`
 const livestockIndex = new Map();
 const diaryCache     = new Map();
@@ -234,14 +396,12 @@ async function handlePaddockClick(propertyIndex, feature){
   let diaryList = [];
   try {
     diaryList = await getRecentDiary(propertyId, paddockName);
-  } catch (e) {
-    diaryList = [];
-  }
+  } catch(e) { diaryList = []; }
 
   renderPaddockInfo(propertyName, paddockName, stockRec, diaryList);
 }
 
-/* --------- fetch with fallback --------- */
+/* ---------- GeoJSON fetch with local fallback ---------- */
 async function fetchWithFallback(primaryUrl, fallbackUrl){
   try{
     const r = await fetch(primaryUrl, {cache:'no-store'});
@@ -254,30 +414,36 @@ async function fetchWithFallback(primaryUrl, fallbackUrl){
   }
 }
 
-/* --------- auth + Firestore bootstrap --------- */
+/* ---------- Auth + Firestore bootstrap ---------- */
 auth.onAuthStateChanged(async user=>{
-  if (!user){
+  if (user){
+    authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
+    signOutBtn.classList.remove('hidden');
+    showOverlay(false);
+    try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+    try{
+      setStatus('Loading livestock data…');
+      await loadLivestockIndex();
+      firestoreReady = true;
+      setStatus('Map ready. Click a paddock to see livestock and diary.');
+    }catch(e){
+      firestoreReady = false;
+      setStatus('Error loading livestock data.');
+    }
+  } else {
+    authWho.textContent = 'Not signed in';
+    signOutBtn.classList.add('hidden');
     firestoreReady = false;
-    setStatus('Signed out. Map will load but paddock details need you signed in (use Diary page).');
-    return;
-  }
-  try{
-    setStatus('Loading livestock index…');
-    await loadLivestockIndex();
-    firestoreReady = true;
-    setStatus('Map ready. Click a paddock to see livestock and recent diary entries.');
-  }catch(e){
-    firestoreReady = false;
-    setStatus('Error loading livestock data.');
+    showOverlay(true);
+    setStatus('Please sign in to see livestock & diary on paddocks.');
   }
 });
 
-/* --------- main map load --------- */
-(async () => {
+/* ---------- Main map load ---------- */
+(async ()=>{
   try{
     const bounds = [];
     let loaded = 0;
-
     for (let i=0;i<CLOUD_URLS.length;i++){
       try{
         const data = await fetchWithFallback(CLOUD_URLS[i], LOCAL_FALLBACKS[i]);
@@ -290,7 +456,7 @@ auth.onAuthStateChanged(async user=>{
             const isPaddock = t === 'Polygon' || t === 'MultiPolygon';
             if (isPaddock){
               lyr.on('click', ()=> handlePaddockClick(i, feature));
-            }else if (feature.properties && feature.properties.title){
+            } else if (feature.properties && feature.properties.title){
               lyr.bindTooltip(String(feature.properties.title), {direction:'top'});
             }
           }
