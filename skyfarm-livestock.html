@@ -75,7 +75,7 @@
   .status-warn{ color:var(--warn); }
 
   /* Auth overlay */
-  #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:flex; align-items:center; justify-content:center; z-index:50; display:none;}
+  #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50;}
   #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
   #authCard h2{margin:0 0 10px}
 </style>
@@ -176,8 +176,24 @@
     </div>
   </div>
 
-  <!-- TABLE AREA -->
+  <!-- TABLE + SUMMARY -->
   <div class="card" id="tableCard">
+
+    <!-- summary is used for ALL properties and single property -->
+    <div id="summaryWrap" style="margin-bottom:12px; display:none;">
+      <div class="sum-head" id="summaryHeading">Totals</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Species</th>
+            <th>Class</th>
+            <th class="right">Total head</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
+    </div>
+
     <table id="rowsTable">
       <thead>
         <tr>
@@ -191,21 +207,6 @@
       </thead>
       <tbody id="rowsTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
     </table>
-
-    <!-- SUMMARY TABLE (shown when "all" selected) -->
-    <div id="summaryWrap" style="display:none">
-      <div class="sum-head">Totals across all properties</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Species</th>
-            <th>Class</th>
-            <th class="right">Total head</th>
-          </tr>
-        </thead>
-        <tbody id="summaryBody"></tbody>
-      </table>
-    </div>
   </div>
 </div>
 
@@ -289,7 +290,8 @@ function compareByClass(a,b){
 /*** DOM refs ***/
 const propSel=$('#propSel'), searchInp=$('#search'), searchWrap=$('#searchWrap');
 const refreshBtn=$('#refreshBtn'), exportBtn=$('#exportBtn');
-const rowsTbody=$('#rowsTbody'), summaryWrap=$('#summaryWrap'), summaryBody=$('#summaryBody');
+const rowsTbody=$('#rowsTbody'), summaryWrap=$('#summaryWrap'), summaryBody=$('#summaryBody'), summaryHeading=$('#summaryHeading');
+const rowsTable=$('#rowsTable');
 const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'),
       newClassHidden=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg'), classPillsWrap=$('#classPills');
 
@@ -302,7 +304,11 @@ let allRows=[];
 function renderClassPills(species){
   classPillsWrap.innerHTML = '';
   const set = CLASSES_BY_SPECIES[species];
-  if (!set) { newClassHidden.value=''; classPillsWrap.innerHTML='<span class="muted">Free text for Goats (set after adding).</span>'; return; }
+  if (!set) {
+    newClassHidden.value='';
+    classPillsWrap.innerHTML='<span class="muted">Free text for Goats (set after adding).</span>';
+    return;
+  }
   set.forEach(cls=>{
     const b=document.createElement('button');
     b.type='button'; b.className='btn pill'; b.textContent=cls;
@@ -389,37 +395,50 @@ async function loadRows(){
   summaryBody.innerHTML='';
   allRows=[];
   const mode = propSel.value;
-
   const summaryMode = (mode === 'all');
+
   document.getElementById('addCard').style.display = summaryMode ? 'none' : '';
-  document.getElementById('rowsTable').style.display = summaryMode ? 'none' : '';
-  summaryWrap.style.display = summaryMode ? '' : 'none';
+  rowsTable.style.display = summaryMode ? 'none' : '';
+  summaryWrap.style.display = '';                      // always show some totals when we have data
   searchWrap.style.display = summaryMode ? 'none' : '';
 
   try{
     let snap;
     if (summaryMode) {
       snap = await db.collection('livestock').get();
+      summaryHeading.textContent = 'Totals across all properties';
     } else {
       snap = await db.collection('livestock').where('propertyId','==',mode).get();
+      const name = propSel.selectedOptions[0]?.textContent || 'Property';
+      summaryHeading.textContent = `Totals for ${name}`;
     }
     snap.forEach(d=>{
       const r=d.data();
       allRows.push({id:d.id,...r,updatedAt:r.updatedAt?.toDate?.()});
     });
 
-    if (summaryMode) {
-      renderSummary(allRows);
-    } else {
+    renderSummary(allRows);
+
+    if (!summaryMode) {
       allRows.sort(compareByClass);
       renderTable();
+    } else {
+      rowsTbody.innerHTML = '<tr><td colspan="6">Select a specific property for paddock detail.</td></tr>';
     }
+
     setStatus('Loaded');
   }catch(e){ console.error(e); setStatus('Error loading', true); }
 }
 
 /*** SUMMARY RENDERER ***/
 function renderSummary(rows){
+  if (!rows.length) {
+    summaryBody.innerHTML = '<tr><td colspan="3">No data.</td></tr>';
+    countPill.textContent = '0 rows';
+    totalPill.textContent = 'Total: 0';
+    return;
+  }
+
   const totals = {};
   for (const r of rows) {
     const species = r.species || '(Unknown)';
@@ -430,11 +449,14 @@ function renderSummary(rows){
 
   summaryBody.innerHTML = '';
   const speciesList = Object.keys(totals).sort();
+  let grand = 0;
+
   for (const sp of speciesList) {
     const order = CLASSES_BY_SPECIES[sp] || Object.keys(totals[sp]).sort();
     for (const cls of order) {
       if (!(cls in totals[sp])) continue;
       const sum = totals[sp][cls];
+      grand += sum;
       const tr=document.createElement('tr');
       tr.innerHTML = `
         <td>${escapeHtml(sp)}</td>
@@ -445,6 +467,7 @@ function renderSummary(rows){
     for (const cls of Object.keys(totals[sp])) {
       if ((CLASSES_BY_SPECIES[sp]||[]).includes(cls)) continue;
       const sum = totals[sp][cls];
+      grand += sum;
       const tr=document.createElement('tr');
       tr.innerHTML = `
         <td>${escapeHtml(sp)}</td>
@@ -454,9 +477,8 @@ function renderSummary(rows){
     }
   }
 
-  countPill.textContent = `${rows.length} rows`;
-  const grand = speciesList.reduce((a,sp)=>a+Object.values(totals[sp]).reduce((x,y)=>x+y,0),0);
-  totalPill.textContent = `Grand total: ${grand}`;
+  countPill.textContent = `${rows.length} lines`;
+  totalPill.textContent = `Total head: ${grand}`;
 }
 
 /*** TABLE (per property) ***/
@@ -467,8 +489,9 @@ function filtered(){
 }
 function renderTable(){
   const rows = filtered();
-  countPill.textContent = `${rows.length} rows`;
-  totalPill.textContent = `Total: ${rows.reduce((a,b)=>a+Number(b.count||0),0)}`;
+  countPill.textContent = `${rows.length} lines`;
+  const totalHead = rows.reduce((a,b)=>a+Number(b.count||0),0);
+  totalPill.textContent = `Total head: ${totalHead}`;
 
   if (!rows.length) { rowsTbody.innerHTML = '<tr><td colspan="6">No rows</td></tr>'; return; }
   rowsTbody.innerHTML='';
@@ -552,7 +575,7 @@ function renderTable(){
   }
 }
 
-/*** Export CSV ***/
+/*** Export CSV (keeps DocID only in file, not visible) ***/
 function exportCsv(){
   const mode = propSel.value;
   if (mode === 'all') {
