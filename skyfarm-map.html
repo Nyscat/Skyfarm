@@ -5,68 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SkyFarm — Property Map</title>
 
-  <!-- Shared styles/header -->
+  <!-- Optional shared styles/header (safe if missing) -->
   <link rel="stylesheet" href="skyfarm-shared.css" />
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
 
-  <!-- Firebase compat SDKs (same project as Diary) -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
   <style>
-    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; }
-    * { box-sizing:border-box; }
-    body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:var(--ink); }
-    .wrap { max-width:1200px; margin:0 auto; padding:16px; }
-    h1 { margin:12px 0; font-size:1.6rem; }
-    .panel { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
-    .muted { color:var(--muted); font-size:.9rem; }
+    :root{
+      --bg:#f6fbf8;
+      --card:#ffffff;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --brand:#0B7A6E;
+      --line:#e5e7eb;
+    }
+    *{box-sizing:border-box;}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:var(--bg);
+      margin:0;
+      color:var(--ink);
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:16px;}
+    h1{margin:12px 0;font-size:1.6rem;}
+    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;}
+    .muted{color:var(--muted);font-size:.9rem;}
+    .pill{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      background:#ecfeff;
+      font-size:.8rem;
+      margin-right:4px;
+    }
   </style>
 </head>
 <body>
-  <!-- SkyFarm header -->
+  <!-- Optional site header (if you have skyfarm-header.js) -->
   <div id="sf-header-root"></div>
   <script src="skyfarm-header.js"></script>
-  <script>SkyFarmHeader.mount();</script>
-  <script>SkyFarmAuth.requireAuth();</script>
-  <script>
-    (function(){
-      // Nav links in the header
-      function pageUrl(slug){
-        const base = location.origin;
-        if (slug === 'diary') return `${base}/skyfarm-diary.html`;
-        if (slug === 'map')   return `${base}/skyfarm-map.html`;
-        if (slug === 'chem')  return `${base}/skyfarm-chemical.html`;
-        if (slug === 'admin') return `${base}/skyfarm-admin-users.html`;
-        if (slug === 'db')    return `${base}/skyfarm-livestock.html`;
-        if (slug === 'seed')  return `${base}/skyfarm-seed.html`;
-        if (slug === 'rain')  return `${base}/skyfarm-rain.html`;
-        return base + '/';
-      }
-      document.querySelectorAll('#skyfarm-header [data-nav]').forEach(a=>{
-        a.onclick = e=>{
-          e.preventDefault();
-          location.href = pageUrl(a.getAttribute('data-nav'));
-        };
-      });
-
-      // Simple auth state text if the header exposes #sf-auth
-      try{
-        if (window.firebase?.auth) {
-          const el = document.getElementById('sf-auth');
-          if (el) {
-            firebase.auth().onAuthStateChanged(u=>{
-              el.textContent = u ? (u.isAnonymous ? 'Connected (guest)' : 'Signed in') : 'Connecting…';
-            });
-          }
-        }
-      }catch(e){}
-    })();
-  </script>
+  <script>window.SkyFarmHeader?.mount?.();</script>
 
   <div class="wrap">
     <h1>SkyFarm — Property Map</h1>
@@ -82,292 +67,254 @@
         <div id="paddockInfo" class="muted">
           Click a paddock polygon to see livestock totals and recent diary entries (last 30 days).
         </div>
-
-        <hr style="margin:12px 0;border:none;border-top:1px solid #e5e7eb;">
-
-        <h3>Data Sources</h3>
-        <ul style="padding-left:18px;margin-top:8px;">
-          <li><a href="https://storage.googleapis.com/consentes-maps/consentes_station.json" target="_blank" rel="noopener">consentes_station.json</a></li>
-          <li><a href="https://storage.googleapis.com/consentes-maps/mt_myrtle.json" target="_blank" rel="noopener">mt_myrtle.json</a></li>
-        </ul>
-
-        <details style="margin-top:10px;">
-          <summary>Log</summary>
-          <pre id="log" style="white-space:pre-wrap;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px;max-height:240px;overflow:auto;"></pre>
-        </details>
-
-        <div style="margin-top:10px;font-size:.9rem;color:#475569;">
-          Tip: keep a copy of your JSONs in <code>/maps/</code>:
-          <div class="panel" style="margin-top:6px">
-            <code>/maps/consentes_station.json</code><br>
-            <code>/maps/mt_myrtle.json</code>
-          </div>
-          The page will auto-fallback to those if cloud fetches are blocked.
-        </div>
       </aside>
     </div>
   </div>
 
-  <script>
-    /* ---------- Firebase init ---------- */
-    const firebaseConfig = {
-      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-      authDomain: "consentes-pastoral.firebaseapp.com",
-      projectId: "consentes-pastoral",
-      appId: "1:494858780013:web:d87497b370c82eeab06e64"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db   = firebase.firestore();
-    const auth = firebase.auth();
+<script>
+/* --------- config --------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+  authDomain: "consentes-pastoral.firebaseapp.com",
+  projectId: "consentes-pastoral",
+  appId: "1:494858780013:web:d87497b370c82eeab06e64"
+};
+firebase.initializeApp(firebaseConfig);
+const db   = firebase.firestore();
+const auth = firebase.auth();
 
-    /* ---------- constants ---------- */
-    // Order matches CLOUD_URLS below
-    const PROPERTY_IDS   = ["s7PlDM9wrEpxuJ6DGIab", "TRuxtRBx2zJlwZnRGYKJ"]; // Consentes, Mt Myrtle
-    const PROPERTY_NAMES = ["Consentes", "Mt Myrtle"];
+// order must match CLOUD_URLS
+const PROPERTY_IDS   = ["s7PlDM9wrEpxuJ6DGlab", "TRuxtRBx2zJlwZnRGYKJ"]; // Consentes, Mt Myrtle
+const PROPERTY_NAMES = ["Consentes", "Mt Myrtle"];
 
-    // JSON locations
-    const CLOUD_URLS = [
-      "https://storage.googleapis.com/consentes-maps/consentes_station.json",
-      "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
-    ];
-    const LOCAL_FALLBACKS = [
-      "maps/consentes_station.json",
-      "maps/mt_myrtle.json"
-    ];
+const CLOUD_URLS = [
+  "https://storage.googleapis.com/consentes-maps/consentes_station.json",
+  "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
+];
+const LOCAL_FALLBACKS = [
+  "maps/consentes_station.json",
+  "maps/mt_myrtle.json"
+];
 
-    /* ---------- helpers ---------- */
-    const statusEl = document.getElementById('status');
-    const logEl = document.getElementById('log');
-    const paddockInfoEl = document.getElementById('paddockInfo');
+/* --------- helpers --------- */
+const statusEl      = document.getElementById('status');
+const paddockInfoEl = document.getElementById('paddockInfo');
 
-    function setStatus(s){ if(statusEl) statusEl.textContent = s; }
-    function log(msg){
-      if (!logEl) return;
-      logEl.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
-      logEl.scrollTop = logEl.scrollHeight;
+function setStatus(msg){ if(statusEl) statusEl.textContent = msg; }
+function esc(s){
+  return String(s ?? '').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+}
+
+/* --------- Leaflet map --------- */
+const map = L.map('map').setView([-20.0, 142.5], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom:19,
+  attribution:'&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+function featureStyle(feature){
+  const t = feature?.geometry?.type;
+  if (t === 'Polygon' || t === 'MultiPolygon') {
+    return { color:'#00897B', weight:2, fillOpacity:0.25 };
+  }
+  return { color:'#64748b', weight:1, fillOpacity:0 };
+}
+
+/* --------- Firestore indexes --------- */
+// key: `${propertyId}|${paddockName}`
+const livestockIndex = new Map();
+const diaryCache     = new Map();
+let firestoreReady   = false;
+
+async function loadLivestockIndex(){
+  livestockIndex.clear();
+  const snap = await db.collection('livestock').get();
+  snap.forEach(doc=>{
+    const d = doc.data() || {};
+    const propId  = d.propertyId;
+    const paddock = (d.location || '').trim();
+    const count   = Number(d.count || 0);
+    if (!propId || !paddock || !count) return;
+
+    const key = propId + '|' + paddock;
+    let rec = livestockIndex.get(key);
+    if (!rec){
+      rec = { total:0, byClass:{} };
+      livestockIndex.set(key, rec);
     }
-    function esc(s){
-      return String(s ?? '').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
-    }
+    rec.total += count;
+    const cls = (d.class || d.species || 'Stock').trim() || 'Stock';
+    rec.byClass[cls] = (rec.byClass[cls] || 0) + count;
+  });
+}
 
-    /* ---------- map ---------- */
-    const map = L.map('map').setView([-20.0, 142.5], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+async function getRecentDiary(propertyId, paddockName){
+  const cacheKey = propertyId + '|' + paddockName;
+  if (diaryCache.has(cacheKey)) return diaryCache.get(cacheKey);
 
-    function featureStyle(feature){
-      const g = feature && feature.geometry && feature.geometry.type;
-      if (g === 'Polygon' || g === 'MultiPolygon') {
-        return { color:'#00897B', weight:2, fillOpacity:.25 };
-      }
-      // landmarks etc
-      return { color:'#64748b', weight:1, fillOpacity:0 };
-    }
+  const today = new Date();
+  const from  = new Date(today.getTime() - 30*24*60*60*1000);
+  const fromISO = from.toISOString().slice(0,10);
 
-    /* ---------- Firestore-backed indexes ---------- */
-    // key: `${propertyId}|${paddockName}`
-    const livestockIndex = new Map();
-    const diaryCache = new Map();
-    let firestoreReady = false;
+  const out = [];
+  const snap = await db.collection('diaryEntries')
+    .where('propertyId', '==', propertyId)
+    .orderBy('date', 'desc')
+    .limit(100)
+    .get();
 
-    async function loadLivestockIndex(){
-      livestockIndex.clear();
-      const snap = await db.collection('livestock').get();
-      snap.forEach(doc=>{
-        const d = doc.data() || {};
-        const propId = d.propertyId;
-        const paddock = (d.location || '').trim();
-        const count = Number(d.count || 0);
-        if (!propId || !paddock || !count) return;
-
-        const key = propId + '|' + paddock;
-        let rec = livestockIndex.get(key);
-        if (!rec){
-          rec = { total:0, byClass:{} };
-          livestockIndex.set(key, rec);
-        }
-        rec.total += count;
-        const cls = (d.class || d.species || 'Stock').trim() || 'Stock';
-        rec.byClass[cls] = (rec.byClass[cls] || 0) + count;
-      });
-      log('Livestock index loaded: ' + livestockIndex.size + ' paddock entries');
-    }
-
-    async function getRecentDiary(propertyId, paddockName){
-      const cacheKey = propertyId + '|' + paddockName;
-      if (diaryCache.has(cacheKey)) return diaryCache.get(cacheKey);
-
-      const today = new Date();
-      const from = new Date(today.getTime() - 30*24*60*60*1000);
-      const fromISO = from.toISOString().slice(0,10);
-
-      const out = [];
-      // Query by property, then filter paddock + date in JS (avoids custom composite index)
-      const snap = await db.collection('diaryEntries')
-        .where('propertyId', '==', propertyId)
-        .orderBy('date', 'desc')
-        .limit(100)
-        .get();
-
-      snap.forEach(doc=>{
-        const d = doc.data() || {};
-        if ((d.paddock || '').trim() !== paddockName) return;
-        const dateStr = d.date || '';
-        if (dateStr && dateStr < fromISO) return;
-        out.push({
-          date: dateStr,
-          activity: d.activity || '',
-          notes: d.notes || ''
-        });
-      });
-
-      diaryCache.set(cacheKey, out);
-      log(`Diary cache for ${cacheKey}: ${out.length} entries`);
-      return out;
-    }
-
-    function renderPaddockInfo(propertyName, paddockName, stockRec, diaryList){
-      let html = '';
-      html += `<div><strong>Paddock:</strong> ${esc(paddockName)}</div>`;
-      html += `<div><strong>Property:</strong> ${esc(propertyName)}</div>`;
-
-      if (stockRec) {
-        html += `<div style="margin-top:6px;"><strong>Livestock in paddock:</strong> ${stockRec.total}</div>`;
-        const classes = Object.keys(stockRec.byClass);
-        if (classes.length){
-          html += '<ul style="margin:4px 0 0 18px;padding:0;">';
-          classes.sort().forEach(c=>{
-            html += `<li>${esc(c)}: ${stockRec.byClass[c]}</li>`;
-          });
-          html += '</ul>';
-        }
-      } else {
-        html += `<div style="margin-top:6px;">No livestock records for this paddock.</div>`;
-      }
-
-      if (diaryList && diaryList.length){
-        html += `<div style="margin-top:10px;"><strong>Recent diary entries (last 30 days)</strong></div>`;
-        html += '<ul style="margin:4px 0 0 18px;padding:0;font-size:.9rem;">';
-        diaryList.forEach(e=>{
-          const label = [e.date, e.activity].filter(Boolean).join(' — ');
-          const notes = e.notes ? `: ${esc(e.notes)}` : '';
-          html += `<li>${esc(label)}${notes}</li>`;
-        });
-        html += '</ul>';
-      } else {
-        html += `<div style="margin-top:10px;">No diary entries for this paddock in the last 30 days.</div>`;
-      }
-
-      paddockInfoEl.innerHTML = html;
-    }
-
-    async function handlePaddockClick(propertyIndex, feature){
-      const propertyId = PROPERTY_IDS[propertyIndex];
-      const propertyName = PROPERTY_NAMES[propertyIndex] || 'Property';
-      const paddockName = (feature.properties && feature.properties.title) ? String(feature.properties.title).trim() : 'Paddock';
-
-      if (!firestoreReady){
-        paddockInfoEl.innerHTML = '<span class="muted">Still connecting to Firebase… try again in a moment.</span>';
-        return;
-      }
-
-      const key = propertyId + '|' + paddockName;
-      const stockRec = livestockIndex.get(key);
-      paddockInfoEl.innerHTML = '<span class="muted">Loading diary entries…</span>';
-
-      let diaryList = [];
-      try {
-        diaryList = await getRecentDiary(propertyId, paddockName);
-      } catch (e) {
-        log('Error loading diary for paddock: ' + e.message);
-      }
-
-      renderPaddockInfo(propertyName, paddockName, stockRec, diaryList);
-    }
-
-    /* ---------- GeoJSON fetch with fallback ---------- */
-    async function fetchWithFallback(primaryUrl, fallbackUrl){
-      try {
-        const r = await fetch(primaryUrl, { cache:'no-store' });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        log('Loaded ' + primaryUrl);
-        return await r.json();
-      } catch (e) {
-        log(`Primary failed: ${primaryUrl}\n→ ${e.message}\nTrying fallback: ${fallbackUrl}`);
-        const r2 = await fetch(fallbackUrl, { cache:'no-store' });
-        if (!r2.ok) throw new Error('Fallback HTTP ' + r2.status);
-        log('Loaded fallback ' + fallbackUrl);
-        return await r2.json();
-      }
-    }
-
-    /* ---------- bootstrap once user is signed in ---------- */
-    auth.onAuthStateChanged(async user=>{
-      if (!user){
-        setStatus('Please sign in (Diary page) to view livestock and diary data on the map.');
-        firestoreReady = false;
-        return;
-      }
-      try {
-        setStatus('Loading livestock index…');
-        await loadLivestockIndex();
-        firestoreReady = true;
-        setStatus('Map ready. Click a paddock to see livestock and recent diary entries.');
-      } catch (e){
-        log('Error loading Firestore data: ' + e.message);
-        setStatus('Error loading Firestore data. See log.', true);
-      }
+  snap.forEach(doc=>{
+    const d = doc.data() || {};
+    if ((d.paddock || '').trim() !== paddockName) return;
+    const dateStr = d.date || '';
+    if (dateStr && dateStr < fromISO) return;
+    out.push({
+      date: dateStr,
+      activity: d.activity || '',
+      notes: d.notes || ''
     });
+  });
 
-    /* ---------- main map load ---------- */
-    (async () => {
-      try {
-        const bounds = [];
-        let loaded = 0;
+  diaryCache.set(cacheKey, out);
+  return out;
+}
 
-        for (let i = 0; i < CLOUD_URLS.length; i++){
-          try {
-            const data = await fetchWithFallback(CLOUD_URLS[i], LOCAL_FALLBACKS[i]);
-            if (data && (data.type === 'FeatureCollection' || data.type === 'Feature')) {
-              const layer = L.geoJSON(data, {
-                style: featureStyle,
-                onEachFeature: (feature, lyr)=>{
-                  const g = feature && feature.geometry && feature.geometry.type;
-                  const isPaddock = g === 'Polygon' || g === 'MultiPolygon';
-                  if (isPaddock) {
-                    lyr.on('click', ()=>{ handlePaddockClick(i, feature); });
-                  } else if (feature.properties && feature.properties.title) {
-                    // Landmarks etc: show tooltip with name
-                    lyr.bindTooltip(String(feature.properties.title), {direction:'top'});
-                  }
-                }
-              }).addTo(map);
+function renderPaddockInfo(propertyName, paddockName, stockRec, diaryList){
+  let html = '';
+  html += `<div><strong>Paddock:</strong> ${esc(paddockName)}</div>`;
+  html += `<div><strong>Property:</strong> ${esc(propertyName)}</div>`;
 
-              try { bounds.push(layer.getBounds()); } catch(_){}
-              loaded++;
-              setStatus(`Loaded ${loaded} of ${CLOUD_URLS.length} map files`);
-            } else {
-              log('Invalid GeoJSON at index ' + i);
+  if (stockRec){
+    html += `<div style="margin-top:6px;"><strong>Livestock in paddock:</strong> ${stockRec.total}</div>`;
+    const classes = Object.keys(stockRec.byClass);
+    if (classes.length){
+      html += '<div style="margin-top:4px;font-size:.9rem;">';
+      classes.sort().forEach(c=>{
+        html += `<span class="pill">${esc(c)}: ${stockRec.byClass[c]}</span>`;
+      });
+      html += '</div>';
+    }
+  } else {
+    html += `<div style="margin-top:6px;">No livestock records for this paddock.</div>`;
+  }
+
+  if (diaryList && diaryList.length){
+    html += `<div style="margin-top:10px;"><strong>Recent diary entries (last 30 days)</strong></div>`;
+    html += '<ul style="margin:4px 0 0 18px;padding:0;font-size:.9rem;">';
+    diaryList.forEach(e=>{
+      const label = [e.date, e.activity].filter(Boolean).join(' — ');
+      const notes = e.notes ? `: ${esc(e.notes)}` : '';
+      html += `<li>${esc(label)}${notes}</li>`;
+    });
+    html += '</ul>';
+  } else {
+    html += `<div style="margin-top:10px;">No diary entries for this paddock in the last 30 days.</div>`;
+  }
+
+  paddockInfoEl.innerHTML = html;
+}
+
+async function handlePaddockClick(propertyIndex, feature){
+  const propertyId   = PROPERTY_IDS[propertyIndex];
+  const propertyName = PROPERTY_NAMES[propertyIndex] || 'Property';
+  const paddockName  = (feature.properties && feature.properties.title)
+    ? String(feature.properties.title).trim()
+    : 'Paddock';
+
+  if (!firestoreReady){
+    paddockInfoEl.innerHTML = '<span class="muted">Still connecting to Firebase… try again in a moment.</span>';
+    return;
+  }
+
+  const key      = propertyId + '|' + paddockName;
+  const stockRec = livestockIndex.get(key);
+
+  paddockInfoEl.innerHTML = '<span class="muted">Loading diary entries…</span>';
+
+  let diaryList = [];
+  try {
+    diaryList = await getRecentDiary(propertyId, paddockName);
+  } catch (e) {
+    diaryList = [];
+  }
+
+  renderPaddockInfo(propertyName, paddockName, stockRec, diaryList);
+}
+
+/* --------- fetch with fallback --------- */
+async function fetchWithFallback(primaryUrl, fallbackUrl){
+  try{
+    const r = await fetch(primaryUrl, {cache:'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  }catch(e){
+    const r2 = await fetch(fallbackUrl, {cache:'no-store'});
+    if (!r2.ok) throw new Error('Fallback HTTP ' + r2.status);
+    return await r2.json();
+  }
+}
+
+/* --------- auth + Firestore bootstrap --------- */
+auth.onAuthStateChanged(async user=>{
+  if (!user){
+    firestoreReady = false;
+    setStatus('Signed out. Map will load but paddock details need you signed in (use Diary page).');
+    return;
+  }
+  try{
+    setStatus('Loading livestock index…');
+    await loadLivestockIndex();
+    firestoreReady = true;
+    setStatus('Map ready. Click a paddock to see livestock and recent diary entries.');
+  }catch(e){
+    firestoreReady = false;
+    setStatus('Error loading livestock data.');
+  }
+});
+
+/* --------- main map load --------- */
+(async () => {
+  try{
+    const bounds = [];
+    let loaded = 0;
+
+    for (let i=0;i<CLOUD_URLS.length;i++){
+      try{
+        const data = await fetchWithFallback(CLOUD_URLS[i], LOCAL_FALLBACKS[i]);
+        if (!data || !(data.type === 'FeatureCollection' || data.type === 'Feature')) continue;
+
+        const layer = L.geoJSON(data, {
+          style: featureStyle,
+          onEachFeature: (feature, lyr)=>{
+            const t = feature?.geometry?.type;
+            const isPaddock = t === 'Polygon' || t === 'MultiPolygon';
+            if (isPaddock){
+              lyr.on('click', ()=> handlePaddockClick(i, feature));
+            }else if (feature.properties && feature.properties.title){
+              lyr.bindTooltip(String(feature.properties.title), {direction:'top'});
             }
-          } catch (err) {
-            log('Failed to load source ' + i + ': ' + err.message);
           }
-        }
+        }).addTo(map);
 
-        if (bounds.length){
-          let b = bounds[0];
-          for (let i=1;i<bounds.length;i++) b = b.extend(bounds[i]);
-          map.fitBounds(b, { padding:[20,20] });
-        } else {
-          setStatus('No features drawn');
-        }
-      } catch (err) {
-        setStatus('Error loading map');
-        log(err);
+        try{ bounds.push(layer.getBounds()); }catch(_){}
+        loaded++;
+        setStatus(`Loaded ${loaded} of ${CLOUD_URLS.length} map files`);
+      }catch(e){
+        // ignore individual source failure
       }
-    })();
-  </script>
+    }
+
+    if (bounds.length){
+      let b = bounds[0];
+      for (let i=1;i<bounds.length;i++) b = b.extend(bounds[i]);
+      map.fitBounds(b, {padding:[20,20]});
+    }else{
+      setStatus('No features drawn');
+    }
+  }catch(e){
+    setStatus('Error loading map');
+  }
+})();
+</script>
 </body>
 </html>
