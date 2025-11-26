@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SkyFarm — Rainfall</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6fbf8;
+      --card:#ffffff;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --brand:#0B7A6E;
+      --line:#e5e7eb;
+      --warn:#9a3412;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:var(--bg);
+      color:var(--ink);
+    }
+
+    /* Header (matches other pages, + Rain link) */
+    #sf-header{position:sticky;top:0;z-index:10;}
+    #sf-header .bar{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:10px 14px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      flex-wrap:wrap;
+    }
+    #sf-header .brand{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--brand);
+      font-weight:700;
+      text-decoration:none;
+    }
+    #sf-header nav a{
+      color:var(--brand);
+      text-decoration:none;
+      font-weight:600;
+      margin-right:10px;
+    }
+    #sf-header nav a[aria-current="page"]{text-decoration:underline;}
+    .spacer{flex:1;}
+    .muted{color:var(--muted);font-size:.9rem;}
+    .hidden{display:none;}
+
+    .nav-db{position:relative;}
+    .nav-db button{font-size:.9rem;}
+    .db-menu{
+      position:absolute;
+      top:100%;
+      left:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      min-width:160px;
+      padding:4px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.12);
+      z-index:20;
+    }
+    .db-menu a{
+      display:block;
+      padding:6px 12px;
+      font-size:.9rem;
+      color:var(--ink);
+      text-decoration:none;
+    }
+    .db-menu a:hover{background:#f1f5f9;}
+
+    .wrap{max-width:1200px;margin:0 auto;padding:16px;}
+    h1{margin:12px 0;font-size:1.5rem;}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px;
+      margin:12px 0;
+    }
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+    label{font-size:.85rem;color:#475569;display:block;margin-bottom:4px;}
+    select,input,button{
+      padding:6px 10px;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      background:#fff;
+      font:inherit;
+    }
+    button{cursor:pointer;}
+    .btn{border:1px solid #cbd5e1;border-radius:10px;background:#fff;}
+    .primary{background:var(--brand);color:#fff;border-color:var(--brand);}
+    .small{font-size:.85rem;}
+    .status-warn{color:var(--warn);}
+
+    table{width:100%;border-collapse:collapse;font-size:.9rem;}
+    th,td{
+      border:1px solid #d4d4d8;
+      padding:4px 6px;
+      text-align:right;
+    }
+    th:first-child,td:first-child{text-align:center;}
+    th{background:#f1f5f9;}
+    .total-row td{font-weight:600;background:#ecfeff;}
+    .note{font-size:.8rem;color:var(--muted);margin-top:8px;}
+
+    /* Print */
+    @media print{
+      body{background:#fff;}
+      #sf-header,.controls{display:none !important;}
+      .wrap{margin:0;padding:8px;}
+      .card{border:none;padding:0;margin:0;}
+      table{font-size:.8rem;}
+      .rain-header{font-size:1rem;margin-bottom:4px;}
+      .note{font-size:.7rem;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- Common header -->
+<div id="sf-header">
+  <div class="bar">
+    <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+    <nav>
+      <a href="skyfarm-diary.html">Diary</a>
+      <a href="skyfarm-map.html">Map</a>
+      <a href="skyfarm-rain.html" aria-current="page">Rain</a>
+    </nav>
+    <div class="nav-db">
+      <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
+      <div id="dbMenu" class="db-menu hidden">
+        <a href="skyfarm-livestock.html">Livestock</a>
+        <a href="skyfarm-chemical.html">Chemicals</a>
+        <a href="skyfarm-seeds.html">Seeds</a>
+        <a href="skyfarm-barcode.html">Barcode Scanner</a>
+        <a href="skyfarm-users.html">Users &amp; Roles</a>
+      </div>
+    </div>
+    <span class="spacer"></span>
+    <span id="authWho" class="muted">Connecting…</span>
+    <button id="signOutBtn" class="btn small hidden" style="border-color:#ef4444;color:#ef4444;">Sign out</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>Rainfall</h1>
+
+  <div class="card controls">
+    <div class="row">
+      <div>
+        <label>Gauge</label>
+        <select id="gaugeSel" style="min-width:260px">
+          <option value="">Loading gauges…</option>
+        </select>
+      </div>
+      <div>
+        <label>Year</label>
+        <select id="yearSel"></select>
+      </div>
+      <button id="reloadBtn" class="btn">Reload</button>
+      <button id="printBtn" class="btn primary">Print / PDF</button>
+      <span class="muted" id="status" style="margin-left:auto">Loading…</span>
+    </div>
+    <div class="muted small" id="gaugeInfo"></div>
+  </div>
+
+  <div class="card">
+    <div class="rain-header" id="chartTitle">Yearly Rainfall Record</div>
+    <table id="rainTable">
+      <thead id="rainHead"></thead>
+      <tbody id="rainBody"></tbody>
+    </table>
+    <div class="note">
+      Enter the rainfall for the preceding 24 hours, measured in mm, at 9.00am on the day it was measured.
+      Total days is the number of days with ≥ 0.1&nbsp;mm of rain.
+    </div>
+  </div>
+</div>
+
+<!-- Auth overlay -->
+<div id="authOverlay" style="position:fixed;inset:0;background:rgba(15,23,42,.06);display:none;align-items:center;justify-content:center;z-index:50;">
+  <div style="width:min(520px,92vw);background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;">
+    <h2 style="margin:0 0 10px 0;">Sign in to SkyFarm</h2>
+    <p class="muted small">Email &amp; password only. Anonymous sign-in is disabled.</p>
+    <div class="row">
+      <div style="flex:1;min-width:260px;">
+        <label>Email</label>
+        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username">
+      </div>
+      <div style="flex:1;min-width:220px;">
+        <label>Password</label>
+        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <button id="signInBtn" class="btn primary">Sign in</button>
+      <span id="authMsg" class="muted small"></span>
+      <span class="spacer"></span>
+      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* Firebase init */
+  const firebaseConfig = {
+    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+    authDomain: "consentes-pastoral.firebaseapp.com",
+    projectId: "consentes-pastoral",
+    appId: "1:494858780013:web:d87497b370c82eeab06e64"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+
+  const $ = s => document.querySelector(s);
+  const gaugeSel = $('#gaugeSel');
+  const yearSel  = $('#yearSel');
+  const statusEl = $('#status');
+  const gaugeInfo = $('#gaugeInfo');
+  const rainHead = $('#rainHead');
+  const rainBody = $('#rainBody');
+  const chartTitle = $('#chartTitle');
+
+  const authOverlay = $('#authOverlay');
+  const authWho = $('#authWho');
+  const signOutBtn = $('#signOutBtn');
+
+  const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
+  const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
+
+  let propertiesById = new Map();
+  let gauges = [];
+  let currentGauge = null;
+
+  function setStatus(msg, warn){
+    statusEl.textContent = msg || '';
+    statusEl.classList.toggle('status-warn', !!warn);
+  }
+  function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+
+  /* Header DB menu */
+  (function(){
+    const btn = $('#dbMenuBtn');
+    const menu = $('#dbMenu');
+    if (!btn || !menu) return;
+    btn.onclick = e => { e.stopPropagation(); menu.classList.toggle('hidden'); };
+    document.addEventListener('click', e=>{
+      if (!menu.contains(e.target) && e.target !== btn) menu.classList.add('hidden');
+    });
+  })();
+
+  /* Auth handlers */
+  $('#signInBtn').onclick = async ()=>{
+    const email = $('#siEmail').value.trim();
+    const pass  = $('#siPass').value;
+    $('#authMsg').textContent = 'Signing in…';
+    try{
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      await auth.signInWithEmailAndPassword(email, pass);
+      $('#authMsg').textContent = 'Signed in.';
+      showOverlay(false);
+    }catch(e){
+      $('#authMsg').textContent = 'Sign-in failed: ' + (e && (e.message || e.code) || 'Unknown');
+    }
+  };
+  $('#closeOverlayBtn').onclick = ()=> showOverlay(false);
+  signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+  auth.onAuthStateChanged(async user=>{
+    if (user){
+      authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
+      signOutBtn.classList.remove('hidden');
+      showOverlay(false);
+      try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+      await initPage();
+    }else{
+      authWho.textContent = 'Not signed in';
+      signOutBtn.classList.add('hidden');
+      showOverlay(true);
+      setStatus('Please sign in', true);
+    }
+  });
+
+  /* Init page after auth */
+  async function initPage(){
+    setStatus('Loading gauges…');
+    await loadProperties();
+    await loadGauges();
+    initYears();
+    bindEvents();
+    setStatus('Ready');
+    // initial render
+    if (gaugeSel.value) await loadRain();
+  }
+
+  async function loadProperties(){
+    propertiesById.clear();
+    const snap = await db.collection('properties').get();
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      propertiesById.set(doc.id, d.name || '(Property)');
+    });
+  }
+
+  async function loadGauges(){
+    const saved = localStorage.getItem(ACTIVE_GAUGE_KEY) || '';
+    gauges = [];
+    const snap = await db.collection('gauges').get();
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      if (d.active === false) return;
+      const g = {
+        id: doc.id,
+        name: d.name || '(Gauge)',
+        propertyId: d.propertyId || null
+      };
+      gauges.push(g);
+    });
+    // sort by property then gauge name
+    gauges.sort((a,b)=>{
+      const pa = propertiesById.get(a.propertyId) || '';
+      const pb = propertiesById.get(b.propertyId) || '';
+      if (pa !== pb) return pa.localeCompare(pb);
+      return a.name.localeCompare(b.name);
+    });
+
+    gaugeSel.innerHTML = '';
+    if (!gauges.length){
+      gaugeSel.innerHTML = '<option value="">No gauges found</option>';
+      currentGauge = null;
+      return;
+    }
+
+    gauges.forEach(g=>{
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      const propName = propertiesById.get(g.propertyId) || '';
+      opt.textContent = propName ? `${propName} — ${g.name}` : g.name;
+      gaugeSel.appendChild(opt);
+    });
+
+    if (saved && gauges.some(g=>g.id === saved)){
+      gaugeSel.value = saved;
+    }
+    currentGauge = gauges.find(g=>g.id === gaugeSel.value) || gauges[0];
+    gaugeSel.value = currentGauge.id;
+    updateGaugeInfo();
+    localStorage.setItem(ACTIVE_GAUGE_KEY, currentGauge.id);
+  }
+
+  function initYears(){
+    const now = new Date();
+    const thisYear = now.getFullYear();
+    const saved = parseInt(localStorage.getItem(ACTIVE_YEAR_KEY) || '', 10);
+    const startYear = thisYear - 10;
+    const endYear   = thisYear + 1;
+
+    yearSel.innerHTML = '';
+    for (let y=endYear; y>=startYear; y--){
+      const opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = String(y);
+      yearSel.appendChild(opt);
+    }
+    if (saved && saved >= startYear && saved <= endYear){
+      yearSel.value = String(saved);
+    }else{
+      yearSel.value = String(thisYear);
+    }
+  }
+
+  function bindEvents(){
+    $('#reloadBtn').onclick = ()=> loadRain();
+    $('#printBtn').onclick  = ()=> window.print();
+    gaugeSel.onchange = ()=>{
+      currentGauge = gauges.find(g=>g.id === gaugeSel.value) || null;
+      localStorage.setItem(ACTIVE_GAUGE_KEY, gaugeSel.value || '');
+      updateGaugeInfo();
+      loadRain();
+    };
+    yearSel.onchange = ()=>{
+      localStorage.setItem(ACTIVE_YEAR_KEY, yearSel.value || '');
+      loadRain();
+    };
+  }
+
+  function updateGaugeInfo(){
+    if (!currentGauge){
+      gaugeInfo.textContent = '';
+      chartTitle.textContent = 'Yearly Rainfall Record';
+      return;
+    }
+    const propName = propertiesById.get(currentGauge.propertyId) || '(Property)';
+    gaugeInfo.textContent = `Gauge: ${currentGauge.name}  •  Property: ${propName}`;
+    chartTitle.textContent = `Yearly Rainfall Record — ${propName} — ${currentGauge.name}`;
+  }
+
+  function makeEmptyYear(){
+    const days = [];
+    for (let d=0; d<31; d++){
+      days.push(new Array(12).fill(null));
+    }
+    return days;
+  }
+
+  function parseDateInfo(docId, data){
+    const raw = data.dateISO || data.date || docId || '';
+    if (typeof raw !== 'string') return null;
+    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return null;
+    const year  = parseInt(m[1],10);
+    const month = parseInt(m[2],10); // 1-12
+    const day   = parseInt(m[3],10); // 1-31
+    if (!year || !month || !day) return null;
+    return {year, month, day};
+  }
+
+  function extractMm(data){
+    const v = data.mm ?? data.rainMm ?? data.amount ?? data.total ?? data.rainTotal ?? 0;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  async function loadRain(){
+    if (!currentGauge){
+      setStatus('No gauge selected', true);
+      return;
+    }
+    const year = parseInt(yearSel.value,10);
+    if (!year){
+      setStatus('Invalid year', true);
+      return;
+    }
+
+    setStatus('Loading rainfall…');
+    rainHead.innerHTML = '';
+    rainBody.innerHTML = '<tr><td colspan="13">Loading…</td></tr>';
+
+    try{
+      const baseRef = db.collection('gauges').doc(currentGauge.id).collection('daily');
+      const snap = await baseRef.get(); // filter client-side; structure may vary
+      const grid = makeEmptyYear();
+
+      snap.forEach(doc=>{
+        const data = doc.data() || {};
+        const info = parseDateInfo(doc.id, data);
+        if (!info || info.year !== year) return;
+        const mm = extractMm(data);
+        if (!Number.isFinite(mm)) return;
+        const dIdx = info.day - 1;
+        const mIdx = info.month - 1;
+        if (dIdx < 0 || dIdx >= 31 || mIdx < 0 || mIdx >= 12) return;
+        grid[dIdx][mIdx] = (grid[dIdx][mIdx] || 0) + mm;
+      });
+
+      renderTable(grid, year);
+      setStatus('Loaded');
+    }catch(e){
+      console.error(e);
+      rainBody.innerHTML = '<tr><td colspan="13">Error loading rainfall.</td></tr>';
+      setStatus('Error loading', true);
+    }
+  }
+
+  function renderTable(grid, year){
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    // Header
+    let headHtml = '<tr><th>Day</th>';
+    for (const m of months){
+      headHtml += `<th>${m}</th>`;
+    }
+    headHtml += '</tr>';
+    rainHead.innerHTML = headHtml;
+
+    const monthTotals = new Array(12).fill(0);
+    const monthRainDays = new Array(12).fill(0);
+
+    function fmt(v){
+      if (v == null) return '';
+      if (!Number.isFinite(v)) return '';
+      return (Math.abs(v % 1) < 0.001) ? v.toFixed(0) : v.toFixed(1);
+    }
+
+    let bodyHtml = '';
+    for (let d=0; d<31; d++){
+      bodyHtml += `<tr><td>${d+1}</td>`;
+      for (let m=0; m<12; m++){
+        const v = grid[d][m];
+        if (v != null && Number.isFinite(v)){
+          monthTotals[m] += v;
+          if (v >= 0.1) monthRainDays[m] += 1;
+        }
+        bodyHtml += `<td>${fmt(v)}</td>`;
+      }
+      bodyHtml += '</tr>';
+    }
+
+    // Totals
+    bodyHtml += '<tr class="total-row"><td>Total rain (mm)</td>';
+    for (let m=0; m<12; m++){
+      bodyHtml += `<td>${fmt(monthTotals[m])}</td>`;
+    }
+    bodyHtml += '</tr>';
+
+    bodyHtml += '<tr class="total-row"><td>Total rain days</td>';
+    for (let m=0; m<12; m++){
+      bodyHtml += `<td>${monthRainDays[m] || ''}</td>`;
+    }
+    bodyHtml += '</tr>';
+
+    rainBody.innerHTML = bodyHtml;
+  }
+
+</script>
+</body>
+</html>
