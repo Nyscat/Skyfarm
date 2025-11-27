@@ -14,73 +14,68 @@
     :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; --warn:#9a3412; }
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); margin:0; color:var(--ink); }
-    a { color:#0f766e; text-decoration:none; }
-    a:hover { text-decoration:underline; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
 
-    #sf-header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);border-bottom:1px solid rgba(148,163,184,.5);}
-    #sf-header .bar{max-width:1200px;margin:0 auto;padding:6px 12px;display:flex;align-items:center;gap:10px;}
-    #sf-header .brand{font-weight:600;font-size:1rem;padding:4px 10px;border-radius:999px;background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);color:#ecfdf3;box-shadow:0 10px 20px rgba(15,23,42,.25);}
-    #sf-header nav a{padding:4px 10px;border-radius:999px;font-size:.84rem;color:#0f172a;}
-    #sf-header nav a[aria-current="page"]{background:#e0f2fe;font-weight:500;}
-    .nav-db{position:relative;margin-left:8px;}
-    .spacer{flex:1;}
+    /* Header */
+    #sf-header { position:sticky; top:0; z-index:10; }
+    #sf-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--line); }
+    #sf-header .brand { display:flex; align-items:center; gap:8px; color:var(--brand); font-weight:700; text-decoration:none; }
+    #sf-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
+    #sf-header nav a[aria-current="page"] { text-decoration:underline; }
+    .spacer { flex:1; }
+    .muted { color:var(--muted); font-size:.9rem; }
+    .hidden { display:none; }
 
-    .btn{border:1px solid #cbd5e1;border-radius:999px;padding:5px 12px;font-size:.82rem;background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
-    .btn.small{padding:3px 10px;font-size:.78rem;}
-    .btn.primary{background:#047857;border-color:#047857;color:#ecfdf3;}
-    .btn.primary:hover{background:#065f46;border-color:#065f46;}
-    .btn.danger{border-color:#ef4444;color:#ef4444;background:#fff;}
-    .btn[disabled]{opacity:.5;cursor:default;}
+    .nav-db { position:relative; }
+    .nav-db button { font-size:.9rem; }
+    .db-menu {
+      position:absolute;
+      top:100%;
+      left:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      min-width:160px;
+      padding:4px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.12);
+      z-index:20;
+    }
+    .db-menu a {
+      display:block;
+      padding:6px 12px;
+      color:var(--ink);
+      text-decoration:none;
+      font-size:.9rem;
+    }
+    .db-menu a:hover { background:#f1f5f9; }
 
-    .db-menu{position:absolute;top:100%;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;min-width:180px;padding:4px 0;box-shadow:0 10px 25px rgba(15,23,42,.12);z-index:20;}
-    .db-menu a{display:block;padding:6px 12px;font-size:.85rem;color:var(--ink);}
-    .db-menu a:hover{background:#f1f5f9;}
-    .hidden{display:none;}
+    /* Cards / form */
+    h1 { margin: 12px 0; font-size: 1.6rem; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
+    label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
+    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
+    button { cursor:pointer; }
+    .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+    .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
+    .disabled { opacity:.55; pointer-events:none; }
 
-    .wrap{max-width:1200px;margin:0 auto;padding:12px;}
-    h1{font-size:1.5rem;margin:10px 0;}
+    .w80{width:80px}.w110{width:110px}.w140{width:140px}.w200{width:200px}.w240{width:240px}
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; border:1px solid #cbd5e1; }
+    .small { font-size:.9rem; }
+    .status-warn{ color:var(--warn) }
 
-    .card{background:#fff;border-radius:14px;border:1px solid #dbe4ee;padding:12px;margin-top:10px;box-shadow:0 10px 30px rgba(15,23,42,.03);}
-    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-    label{display:block;font-size:.8rem;color:#475569;margin-bottom:2px;}
-    select,input,textarea{font-size:.85rem;border-radius:10px;border:1px solid #cbd5e1;padding:6px 8px;font-family:inherit;}
-    select:focus,input:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 1px rgba(37,99,235,.25);}
-    textarea{min-height:40px;resize:vertical;}
+    /* Table */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; font-size: .95rem; vertical-align: top; }
+    th { background:#f1f5f9; position:sticky; top:0; }
+    .nowrap { white-space: nowrap; }
 
-    .muted{color:var(--muted);}
-    .small{font-size:.78rem;}
-    .pill{display:inline-block;padding:2px 7px;border-radius:999px;background:#e0f2fe;font-size:.7rem;margin-right:4px;}
-    .w240{min-width:240px;}
-    .w200{min-width:200px;}
-    .w140{min-width:140px;}
-    .w110{max-width:110px;}
-
-    table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px;}
-    th,td{border:1px solid #e5e7eb;padding:4px 6px;text-align:left;}
-    th{background:#f9fafb;color:#334155;}
-    tr:nth-child(even) td{background:#f9fafb;}
-
-    #filtersRow{align-items:flex-end;}
-    #entriesTable td.notes{max-width:350px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-    #authOverlay{position:fixed;inset:0;background:radial-gradient(circle at top,#0f172a 0,rgba(15,23,42,.96) 45%,rgba(15,23,42,.98) 100%);display:none;align-items:center;justify-content:center;z-index:50;}
+    /* Auth overlay */
+    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 10px}
-
-    .badge-warn{background:#f97316;color:#7c2d12;padding:2px 6px;border-radius:999px;font-size:.7rem;}
-
-    @media (max-width:800px){
-      .row{flex-direction:column;align-items:flex-start;}
-      .w240,.w200,.w140,.w110{min-width:100%;max-width:100%;}
-      #sf-header .bar{flex-wrap:wrap;}
-    }
-    @media print{
-      body{background:#fff;}
-      #sf-header,.no-print{display:none!important;}
-      .wrap{padding:8px;}
-      .card{box-shadow:none;border:none;margin:0;padding:4px 0;}
-      table{font-size:.75rem;}
-    }
   </style>
 </head>
 <body>
@@ -89,10 +84,10 @@
     <div class="bar">
       <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
       <nav>
-  <a href="skyfarm-diary.html" aria-current="page">Diary</a>
-  <a href="skyfarm-map.html">Map</a>
-  <a href="skyfarm-rain.html">Rain</a>
-</nav>
+        <a href="skyfarm-diary.html" aria-current="page">Diary</a>
+        <a href="skyfarm-map.html">Map</a>
+        <a href="skyfarm-rain.html">Rain</a>
+      </nav>
       <div class="nav-db">
         <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
         <div id="dbMenu" class="db-menu hidden">
@@ -105,15 +100,15 @@
       </div>
       <span class="spacer"></span>
       <span id="authWho" class="muted">Checking sign-in…</span>
-      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
+      <button id="signOutBtn" class="danger hidden">Sign out</button>
     </div>
   </div>
 
   <div class="wrap">
     <h1>Diary</h1>
 
-    <!-- Entry form -->
-    <div class="card no-print">
+    <!-- Main form -->
+    <div class="card" id="formCard">
       <div class="row">
         <div>
           <label>Property</label>
@@ -178,7 +173,7 @@
 
         <div style="flex:1; min-width:260px">
           <label>Notes</label>
-          <textarea id="notesInp" placeholder="Short description…"></textarea>
+          <input id="notesInp" placeholder="optional"/>
         </div>
       </div>
 
@@ -201,117 +196,96 @@
           <label>Head</label>
           <input id="headInp" type="number" min="0" step="1" class="w110"/>
         </div>
-        <div id="truckBuyerWrap" class="hidden">
-          <label>Buyer / Vendor</label>
-          <input id="truckBuyer" class="w200" placeholder="Buyer or vendor name"/>
+        <div id="stockDetail1">
+          <label>Buyer / Dest (Trucking)</label>
+          <input id="truckBuyer" class="w200" placeholder="e.g. Roma"/>
         </div>
-        <div id="truckRefWrap" class="hidden">
-          <label>Docket / NVD</label>
-          <input id="truckRef" class="w200" placeholder="Docket / NVD reference"/>
+        <div id="stockDetail2">
+          <label>Docket / Ref</label>
+          <input id="truckRef" class="w200" placeholder="NVD / docket"/>
         </div>
       </div>
 
-      <!-- Chemical row -->
+      <!-- Chemical fields -->
       <div id="chemRow" class="row hidden">
-        <div style="min-width:260px">
+        <div>
           <label>Chemical</label>
-          <select id="chemSel" class="w240"></select>
-          <div id="chemHint" class="small muted">paddock spray</div>
+          <select id="chemSel" class="w240"><option value="">(choose)</option></select>
         </div>
         <div>
-          <label>Qty</label>
+          <label>Qty used</label>
           <input id="chemQty" type="number" min="0" step="0.01" class="w110"/>
         </div>
         <div>
           <label>Unit</label>
-          <input id="chemUnit" class="w110" placeholder="L, kg, mL…"/>
+          <input id="chemUnit" class="w80" placeholder="KG/L" disabled/>
         </div>
+        <div><label>&nbsp;</label><span id="chemHint" class="pill">context</span></div>
+      </div>
+
+      <!-- Live paddock stock context -->
+      <div id="stockContext" class="row small" style="gap:6px; color:#334155;"></div>
+
+      <!-- Mustering panel (simple) -->
+      <div id="musterBox" class="card hidden" style="margin-top:8px">
+        <div class="row"><strong>Mustering details</strong></div>
+        <div class="row small" id="musterContext" style="gap:6px; color:#334155;"></div>
+
+        <div class="row">
+          <div>
+            <label>Expected (auto)</label>
+            <input id="mExp" type="number" class="w110" disabled/>
+          </div>
+          <div>
+            <label>Actual</label>
+            <input id="mAct" type="number" class="w110"/>
+          </div>
+          <div>
+            <label>Delta (auto)</label>
+            <input id="mDelta" type="number" class="w110" disabled/>
+          </div>
+          <div style="flex:1; min-width:260px">
+            <label>Reason / notes</label>
+            <input id="mReason" placeholder="e.g. moved, missed, dead…"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save + multi-action -->
+      <div class="row">
+        <button id="saveBtn" class="primary">Save entry</button>
+        <button id="resetBtn" class="btn" type="button">Reset</button>
+        <span id="msg" class="muted" aria-live="polite"></span>
       </div>
 
       <div class="row">
-        <div>
-          <button id="saveBtn" class="btn primary" type="button">Save entry</button>
-        </div>
-        <div class="small muted">
-          <span id="saveMsg"></span>
-        </div>
-        <span class="spacer"></span>
-        <div class="small muted">
-          <span class="badge-warn">TIP</span> Use “Add action” below to queue multiple actions (e.g. rainfall + stock movement) then save in one go.
-        </div>
+        <button id="addActionBtn" class="btn">Add action</button>
+        <button id="saveBatchBtn" class="primary">Save all actions</button>
+        <span id="batchMsg" class="muted"></span>
+      </div>
+
+      <div id="actionsList" class="card small" style="display:none">
+        <strong>Actions queued for this day</strong>
+        <ol id="actionsOl" style="margin-top:6px"></ol>
       </div>
     </div>
 
-    <!-- Multi-action batch -->
-    <div class="card no-print">
-      <h3 style="margin-top:0;">Queued actions</h3>
-      <div class="row">
-        <button id="addActionBtn" class="btn" type="button">Add action from form</button>
-        <button id="saveBatchBtn" class="btn primary" type="button">Save all queued</button>
-        <span class="small muted" id="batchMsg"></span>
-      </div>
-      <ol id="actionsOl" class="small" style="margin-top:8px;"></ol>
-    </div>
-
-    <!-- Filters + diary table -->
+    <!-- Recent entries -->
     <div class="card">
-      <div id="filtersRow" class="row no-print">
-        <div>
-          <label>Property</label>
-          <select id="filterPropSel" class="w200"></select>
-        </div>
-        <div>
-          <label>From</label>
-          <input id="filterFrom" type="date"/>
-        </div>
-        <div>
-          <label>To</label>
-          <input id="filterTo" type="date"/>
-        </div>
-        <div>
-          <label>Activity</label>
-          <select id="filterAct" class="w200">
-            <option value="">(all)</option>
-            <option>Rainfall</option>
-            <option>Move stock</option>
-            <option>Transfer stock (In)</option>
-            <option>Transfer stock (Out)</option>
-            <option>Trucking (sale)</option>
-            <option>Cattle Received (Purchase)</option>
-            <option>Spraying paddocks</option>
-            <option>Chemical (stock)</option>
-            <option>Mustering</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <div>
-          <label>&nbsp;</label>
-          <button id="refreshBtn" class="btn" type="button">Refresh</button>
-        </div>
+      <div class="row">
+        <strong>Recent entries</strong>
         <span class="spacer"></span>
-        <div>
-          <label>&nbsp;</label>
-          <button id="printDiaryBtn" class="btn" type="button">Print / PDF</button>
-        </div>
+        <label>Year</label>
+        <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
+        <button id="refreshBtn" class="btn">Refresh</button>
       </div>
-
-      <table id="entriesTable">
+      <table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Property</th>
-            <th>Paddock</th>
-            <th>Activity</th>
-            <th>Stock</th>
-            <th>Chemical</th>
-            <th>Rain (mm)</th>
-            <th class="notes">Notes</th>
+            <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Rain (mm)</th><th>Chemical</th><th>Head</th><th></th>
           </tr>
         </thead>
-        <tbody id="entriesBody">
-          <tr><td colspan="9" class="muted small">Loading…</td></tr>
-        </tbody>
+        <tbody id="entriesTbody"><tr><td colspan="8">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -322,18 +296,18 @@
       <h2>Sign in to SkyFarm</h2>
       <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
       <div class="row">
-        <div style="flex:1; min-width:220px;">
+        <div style="flex:1; min-width:260px">
           <label>Email</label>
-          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
+          <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
         </div>
-        <div style="flex:1; min-width:160px;">
+        <div style="flex:1; min-width:220px">
           <label>Password</label>
-          <input id="siPass" type="password" autocomplete="current-password"/>
+          <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
         </div>
       </div>
-      <div class="row" style="margin-top:10px;">
-        <button id="signInBtn" class="btn primary" type="button">Sign in</button>
-        <span id="authMsg" class="small muted"></span>
+      <div class="row">
+        <button id="signInBtn" class="primary">Sign in</button>
+        <span id="authMsg" class="muted"></span>
         <span class="spacer"></span>
         <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
@@ -358,329 +332,240 @@ const auth = firebase.auth();
    Helpers & constants
 ------------------------------------------------------- */
 const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
+const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
+const setStatus = (t, warn=false)=>{ const el=$('#status'); el.textContent=t||''; el.classList.toggle('status-warn', !!warn); };
+const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const todayISO = () => new Date().toISOString().slice(0,10);
+const yBounds = y => ({ start:`${y}-01-01`, end:`${y}-12-31` });
 
-const PROPERTY_IDS = {};
-const PROPERTY_NAME_BY_ID = {};
-const SUGGESTED_CLASSES = [
-  'Cows & Calves','Pregnant Cows','Weaners','Yearlings','Steers','Heifers','Bulls',
-  'Ewes & Lambs','Dry Ewes','Wethers','Rams'
-];
-
-function todayISO(){
-  const d = new Date();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${d.getFullYear()}-${m}-${day}`;
-}
-function escapeHtml(str){
-  return String(str||'').replace(/[&<>"']/g, s=>(
-    s==='&'?'&amp;':s==='<'?'&lt;':s==='>'?'&gt;':s==='"'?'&quot;':'&#039;'
-  ));
-}
+const PROPERTY_IDS = {
+  "Consentes": "s7PlDM9wrEpxuJ6DGIab",
+  "Mt Myrtle": "TRuxtRBx2zJlwZnRGYKJ",
+  "Gerawin":   "P0dQ0H2FWHeqqxejflZs"
+};
+const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
+const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
 
 /* -------------------------------------------------------
-   DOM refs
+   Elements
 ------------------------------------------------------- */
 const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'), activitySel = $('#activitySel');
-const paddockSel = $('#paddockSel'), toPaddockSel = $('#toPaddockSel'), notesInp = $('#notesInp');
+const paddockSel = $('#paddockSel'), toPaddockRow = $('#toPaddockRow'), toPaddockSel = $('#toPaddockSel'), notesInp = $('#notesInp');
 const rainMmInp = $('#rainMmInp'), gaugeSel = $('#gaugeSel');
 const transferPropRow = $('#transferPropRow'), transferPropSel = $('#transferPropSel');
 const speciesSel = $('#speciesSel'), classInp = $('#classInp'), headInp = $('#headInp'), truckBuyer=$('#truckBuyer'), truckRef=$('#truckRef');
 const chemRow = $('#chemRow'), chemSel = $('#chemSel'), chemQty = $('#chemQty'), chemUnit = $('#chemUnit'), chemHint = $('#chemHint');
-const stockRow = $('#stockRow'), toPaddockRow = $('#toPaddockRow');
-const saveBtn = $('#saveBtn'), saveMsg = $('#saveMsg');
-const filterPropSel = $('#filterPropSel'), filterFrom = $('#filterFrom'), filterTo = $('#filterTo'), filterAct = $('#filterAct');
-const entriesBody = $('#entriesBody'), statusEl = $('#status');
-const addActionBtn = $('#addActionBtn'), saveBatchBtn = $('#saveBatchBtn'), actionsOl = $('#actionsOl'), batchMsg = $('#batchMsg');
-const printDiaryBtn = $('#printDiaryBtn');
-const dbMenuBtn = $('#dbMenuBtn'), dbMenu = $('#dbMenu');
+const stockRow = $('#stockRow'), stockDetail1 = $('#stockDetail1'), stockDetail2 = $('#stockDetail2');
+const stockContext = $('#stockContext');
+const musterBox = $('#musterBox'), mExp=$('#mExp'), mAct=$('#mAct'), mDelta=$('#mDelta'), mReason=$('#mReason'), musterContext=$('#musterContext');
+const yearInp = $('#yearInp'), refreshBtn = $('#refreshBtn'), entriesTbody = $('#entriesTbody');
+
+const addActionBtn = $('#addActionBtn'), saveBatchBtn = $('#saveBatchBtn'), actionsListEl = $('#actionsList'), actionsOl = $('#actionsOl'), batchMsg = $('#batchMsg');
+
 const authOverlay = $('#authOverlay'), authWho = $('#authWho'), signOutBtn = $('#signOutBtn');
-const siEmail = $('#siEmail'), siPass = $('#siPass'), signInBtn = $('#signInBtn'), authMsg = $('#authMsg'), closeOverlayBtn = $('#closeOverlayBtn');
+const signInBtn = $('#signInBtn'), closeOverlayBtn = $('#closeOverlayBtn');
 
-function setMsg(msg, timeoutMs){
-  saveMsg.textContent = msg||'';
-  if (timeoutMs) setTimeout(()=>{ if (saveMsg.textContent===msg) saveMsg.textContent=''; }, timeoutMs);
-}
-function setStatus(msg){
-  statusEl.textContent = msg || '—';
-}
+const dbMenuBtn = $('#dbMenuBtn'), dbMenu = $('#dbMenu');
 
 /* -------------------------------------------------------
-   Header DB menu
-------------------------------------------------------- */
-dbMenuBtn.onclick = e=>{
-  e.stopPropagation();
-  dbMenu.classList.toggle('hidden');
-};
-document.addEventListener('click', ()=>dbMenu.classList.add('hidden'));
-
-/* -------------------------------------------------------
-   Auth
+   Auth overlay helpers
 ------------------------------------------------------- */
 function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
-function setAuthMsg(msg, isError){
-  authMsg.textContent = msg || '';
-  authMsg.style.color = isError ? '#b91c1c' : '#64748b';
-}
 
 signInBtn.onclick = async ()=>{
-  const email = siEmail.value.trim();
-  const pass  = siPass.value;
-  if (!email || !pass){
-    setAuthMsg('Enter email and password.', true);
-    return;
-  }
-  setAuthMsg('Signing in…');
+  const email = $('#siEmail').value.trim();
+  const pass  = $('#siPass').value;
+  $('#authMsg').textContent = 'Signing in…';
   try{
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     await auth.signInWithEmailAndPassword(email, pass);
-    setAuthMsg('Signed in.');
+    $('#authMsg').textContent = 'Signed in.';
     showOverlay(false);
-    await onPropertyChange();
-    await refreshEntries();
+    await initAfterAuth();
   }catch(e){
-    console.error(e);
-    setAuthMsg('Sign-in failed: ' + (e?.message || e?.code || 'Unknown'), true);
+    $('#authMsg').textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
   }
 };
-signOutBtn.onclick = async ()=>{
-  try{ await auth.signOut(); location.reload(); }catch(e){}
-};
+signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 closeOverlayBtn.onclick = ()=> showOverlay(false);
 
-auth.onAuthStateChanged(async user=>{
-  if (user){
-    authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
-    signOutBtn.classList.remove('hidden');
-    showOverlay(false);
-    try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
-    await loadProperties();
-    await onPropertyChange();
-    await refreshEntries();
-  }else{
-    authWho.textContent = 'Not signed in';
-    signOutBtn.classList.add('hidden');
-    showOverlay(true);
-    setStatus('Sign in to edit');
-  }
-});
-
-/* -------------------------------------------------------
-   Load properties / paddocks / chemicals / gauges
-------------------------------------------------------- */
-async function loadProperties(){
-  const snap = await db.collection('properties').get();
-  const options = [];
-  snap.forEach(doc=>{
-    const d = doc.data()||{};
-    const name = d.name || '(Property)';
-    PROPERTY_IDS[name] = doc.id;
-    PROPERTY_NAME_BY_ID[doc.id] = name;
-    options.push({id:doc.id,name});
+if (dbMenuBtn && dbMenu) {
+  dbMenuBtn.onclick = (e)=>{
+    e.stopPropagation();
+    dbMenu.classList.toggle('hidden');
+  };
+  document.addEventListener('click', (e)=>{
+    if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) {
+      dbMenu.classList.add('hidden');
+    }
   });
-  options.sort((a,b)=>a.name.localeCompare(b.name));
-  propSel.innerHTML = options.map(o=>`<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
-  filterPropSel.innerHTML = '<option value="ALL">(All properties)</option>' +
-    options.map(o=>`<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
 }
 
-async function loadPaddocksForProperty(propertyId){
-  paddockSel.innerHTML = '<option value="">(choose)</option>';
-  toPaddockSel.innerHTML = '<option value="">(choose)</option>';
+/* -------------------------------------------------------
+   Paddocks / Chemicals / Gauges / Livestock helpers
+------------------------------------------------------- */
+async function loadPaddocksForProperty(propertyId) {
+  if (!propertyId || propertyId === 'ALL') {
+    paddockSel.innerHTML = '<option value="">(choose a property)</option>';
+    toPaddockSel.innerHTML = '<option value="">(choose a property)</option>';
+    return;
+  }
+  paddockSel.innerHTML = '<option value="">(loading…)</option>';
+  toPaddockSel.innerHTML = '<option value="">(loading…)</option>';
 
-  if (!propertyId) return;
-  const snap = await db.collection('paddocks')
-    .where('propertyId','==',propertyId)
-    .orderBy('isYard','desc')
-    .orderBy('name').get();
+  try {
+    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
+    const rows = [];
+    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
 
-  const opts = [];
-  snap.forEach(doc=>{
-    const d = doc.data()||{};
-    opts.push({id:doc.id,name:d.name||'(paddock)',isYard:!!d.isYard});
-  });
-  const html = opts.map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name)}">${p.isYard?'[Yard] ':''}${escapeHtml(p.name)}</option>`).join('');
-  paddockSel.innerHTML = '<option value="">(choose)</option>' + html;
-  toPaddockSel.innerHTML = '<option value="">(choose)</option>' + html;
+    rows.sort((a,b) => {
+      const ya = !!a.isYards, yb = !!b.isYards;
+      if (ya !== yb) return ya ? -1 : 1;
+      return String(a.name||'').localeCompare(String(b.name||''));
+    });
+
+    if (!rows.length) {
+      paddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
+      toPaddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
+      return;
+    }
+
+    const optionsHtml =
+      '<option value="">(choose)</option>' +
+      rows.map(p => `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}${p.isYards?' — Yards':''}</option>`).join('');
+
+    paddockSel.innerHTML = optionsHtml;
+    toPaddockSel.innerHTML = optionsHtml;
+  } catch (e) {
+    console.error('Paddock load error:', e);
+    paddockSel.innerHTML = '<option value="">(load error)</option>';
+    toPaddockSel.innerHTML = '<option value="">(load error)</option>';
+  }
 }
 
 async function loadChemicalsForProperty(propertyId){
-  chemSel.innerHTML = '<option value="">(none)</option>';
-  if (!propertyId) return;
-  const snap = await db.collection('chemicals').where('propertyId','==',propertyId).orderBy('name').get();
-  const html = snap.docs.map(doc=>{
-    const d = doc.data()||{};
-    return `<option value="${doc.id}">${escapeHtml(d.name||'(chemical)')} (${escapeHtml(d.unit||'unit')})</option>`;
-  }).join('');
-  chemSel.innerHTML = '<option value="">(none)</option>' + html;
+  chemSel.innerHTML = '<option value="">(loading…)</option>';
+  if (!propertyId || propertyId === 'ALL'){ chemSel.innerHTML='<option value="">(choose property)</option>'; return; }
+  try{
+    const snap = await db.collection('chemicals').where('propertyId','==',propertyId).get();
+    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...(d.data()||{})}));
+    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+    chemSel.innerHTML = '<option value="">(choose)</option>' + rows.map(c => {
+      return `<option value="${c.id}" data-unit="${escapeHtml(c.unit||'')}">${escapeHtml(c.name||'Unnamed')} (${escapeHtml(c.unit||'')}) — ${Number(c.quantity||0)} left</option>`;
+    }).join('');
+    chemSel.onchange = ()=> chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
+    chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
+  }catch(e){
+    console.error('Chem load error:', e);
+    chemSel.innerHTML='<option value="">(load error)</option>';
+  }
 }
 
 async function loadGaugesForProperty(propertyId){
   gaugeSel.innerHTML = '<option value="">(none)</option>';
-  if (!propertyId) return;
-  const snap = await db.collection('gauges').where('propertyId','==',propertyId).get();
-  const html = snap.docs.map(doc=>{
-    const d = doc.data()||{};
-    return `<option value="${doc.id}">${escapeHtml(d.name||'(gauge)')}</option>`;
-  }).join('');
-  gaugeSel.innerHTML = '<option value="">(none)</option>' + html;
-}
-
-/* -------------------------------------------------------
-   Activity-specific UI logic
-------------------------------------------------------- */
-function onActivityChange(){
-  const act = activitySel.value;
-
-  const needsChem = (act==='Spraying paddocks' || act==='Chemical (stock)' || act==='Trucking (sale)');
-  chemRow.classList.toggle('hidden', !needsChem);
-  chemHint.textContent = (act==='Spraying paddocks') ? 'paddock spray'
-                     : (act==='Trucking (sale)' ? 'backline before transport' : 'stock treatment');
-
-  const needsStock = (
-    act==='Trucking (sale)' ||
-    act==='Move stock' ||
-    act==='Chemical (stock)' ||
-    act==='Mustering' ||
-    act==='Cattle Received (Purchase)' ||
-    act.startsWith('Transfer stock')
-  );
-  stockRow.classList.toggle('hidden', !needsStock);
-
-  const needsTransferProp = (act==='Transfer stock (In)' || act==='Transfer stock (Out)');
-  transferPropRow.classList.toggle('hidden', !needsTransferProp);
-
-  const needsToPaddock = (act === 'Move stock');
-  toPaddockRow.classList.toggle('hidden', !needsToPaddock);
-
-  const isTruck = (act==='Trucking (sale)' || act==='Cattle Received (Purchase)');
-  truckBuyerWrap.classList.toggle('hidden', !isTruck);
-  truckRefWrap.classList.toggle('hidden', !isTruck);
-
-  onPaddockOrSpeciesChange();
-}
-
-async function onPaddockOrSpeciesChange(){
-  const pid = propSel.value;
-  const act = activitySel.value;
-  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const speciesUI = speciesSel.value || 'Cattle';
-
-  const isStockMove = (
-    act==='Trucking (sale)' ||
-    act==='Move stock' ||
-    act==='Chemical (stock)' ||
-    act==='Mustering' ||
-    act==='Transfer stock (Out)'
-  );
-  const isStockIn = (
-    act==='Cattle Received (Purchase)' ||
-    act==='Transfer stock (In)'
-  );
-
-  if ((!paddockName && !isStockIn) || pid==='ALL'){
-    $('#classOptions').innerHTML = SUGGESTED_CLASSES.map(r=>`<option value="${escapeHtml(r)}"></option>`).join('');
+  if (!propertyId || propertyId === 'ALL') {
+    gaugeSel.innerHTML = '<option value="">(choose property)</option>';
     return;
   }
-
   try{
-    const q = db.collection('livestock')
-      .where('propertyId','==', pid);
-    let base = q;
-    if (paddockName && isStockMove){
-      base = base.where('location','==', paddockName);
-    }
-    const snap = await base.get();
-    const classes = new Set();
-    snap.forEach(doc=>{
-      const d = doc.data()||{};
-      if (!d.class) return;
-      if (d.species && String(d.species).toLowerCase() === String(speciesUI).toLowerCase()){
-        classes.add(String(d.class));
-      }
-    });
-    const list = (classes.size ? Array.from(classes).sort() : SUGGESTED_CLASSES);
-    $('#classOptions').innerHTML = list.map(r=>`<option value="${escapeHtml(r)}"></option>`).join('');
+    const snap = await db.collection('gauges').where('propertyId','==',propertyId).where('active','==',true).get();
+    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...(d.data()||{})}));
+    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+    gaugeSel.innerHTML = '<option value="">(none)</option>' +
+      rows.map(g=>`<option value="${g.id}">${escapeHtml(g.name||'(unnamed)')}</option>`).join('');
   }catch(e){
-    console.error(e);
+    console.error('Gauge load error:', e);
+    gaugeSel.innerHTML = '<option value="">(load error)</option>';
   }
 }
 
-activitySel.onchange = onActivityChange;
-paddockSel.onchange = onPaddockOrSpeciesChange;
-speciesSel.onchange = onPaddockOrSpeciesChange;
+async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
+  if (!propertyId || !paddockName) return [];
+  const speciesLC = String(speciesUI||'Cattle').toLowerCase();
 
-/* -------------------------------------------------------
-   Payload builder
-------------------------------------------------------- */
-function buildPayloadFromUI(){
-  const propertyId   = propSel.value;
-  const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '';
-  const date = dateInp.value || todayISO();
-  const time = timeInp.value || '';
-  const activity = activitySel.value;
-  const paddockId = paddockSel.value || '';
-  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const toPaddockId = toPaddockSel.value || '';
-  const toPaddockName = toPaddockSel.selectedOptions[0]?.dataset?.name || '';
-  const notes = notesInp.value || '';
-  const species = speciesSel.value || '';
-  const klass = classInp.value || '';
-  const head = parseInt(headInp.value||0,10);
-  const chemId = chemSel.value || null;
-  const chemQ = parseFloat(chemQty.value||0);
-  const chemU = chemUnit.value || '';
-  const chemName = chemId ? (chemSel.selectedOptions[0]?.textContent.split('(')[0].trim() || null) : null;
+  let snap = await db.collection('livestock')
+    .where('propertyId','==',propertyId)
+    .where('location','==',paddockName)
+    .where('species','==',speciesUI)
+    .get();
 
-  const rainMm = parseFloat(rainMmInp.value||0);
-  const gaugeId = gaugeSel.value || null;
-  const gaugeName = gaugeId ? (gaugeSel.selectedOptions[0]?.textContent || null) : null;
+  if (snap.empty){
+    const title = speciesLC.charAt(0).toUpperCase() + speciesLC.slice(1);
+    for (const sp of [title, speciesLC.toUpperCase()]){
+      const s2 = await db.collection('livestock')
+        .where('propertyId','==',propertyId)
+        .where('location','==',paddockName)
+        .where('species','==',sp)
+        .get();
+      if (!s2.empty){ snap = s2; break; }
+    }
+  }
 
-  const transferPropertyId = transferPropSel.value || null;
-  const transferPropertyName = transferPropSel.selectedOptions[0]?.textContent || '';
+  const rows=[];
+  if (snap.empty){
+    const s3 = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .where('location','==',paddockName)
+      .get();
+    s3.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
+    return rows.filter(r => String(r.species||'').toLowerCase() === speciesLC);
+  } else {
+    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
+    return rows;
+  }
+}
 
-  const payload = {
-    propertyId,
-    propertyName,
-    date,
-    time,
-    activity,
-    paddockId: paddockId || null,
-    paddock: paddockName || null,
-    toPaddockId: (activity === 'Move stock' && toPaddockId) ? toPaddockId : null,
-    toPaddock: (activity === 'Move stock' && toPaddockName) ? toPaddockName : null,
-    notes,
-    species: (
-      activity==='Mustering' ||
-      activity==='Move stock' ||
-      activity==='Chemical (stock)' ||
-      activity==='Trucking (sale)' ||
-      activity==='Cattle Received (Purchase)' ||
-      activity.startsWith('Transfer stock')
-    ) ? species : null,
-    livestockClass: klass || null,
-    headCount: (isFinite(head) && head>0) ? head : null,
-    chemicalId: chemId || null,
-    chemicalName: chemName,
-    chemQty: chemId ? chemQ : null,
-    chemUnit: chemId ? chemU : null,
-    truckBuyer: (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckBuyer.value || '') : null,
-    truckRef:   (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckRef.value || '')   : null,
-    rainfallMm: (isFinite(rainMm) && rainMm>0) ? rainMm : null,
-    gaugeId: gaugeId || null,
-    gaugeName: gaugeName || null,
-    transferPropertyId: transferPropertyId,
-    transferPropertyName: transferPropertyName,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  return { payload, propertyId, activity, paddockName, paddockNameTo: toPaddockName, species, klass, head, chemId, chemQ, transferPropertyId, transferPropertyName, gaugeId, rainfallMm: payload.rainfallMm };
+async function fetchUsedClasses(propertyId, speciesUI){
+  if (!propertyId) return [];
+  const speciesLC = String(speciesUI||'Cattle').toLowerCase();
+  const variants = [speciesUI, speciesLC.toUpperCase(), speciesLC.charAt(0).toUpperCase()+speciesLC.slice(1)];
+  const seen = new Set();
+
+  for (const sp of variants){
+    const snap = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .where('species','==',sp)
+      .get();
+    snap.forEach(d => {
+      const cls = (d.data()||{}).class;
+      if (cls) seen.add(String(cls));
+    });
+  }
+
+  const list = Array.from(seen).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+  return list;
 }
 
 /* -------------------------------------------------------
-   Livestock / chemicals side effects
+   Inventory side-effects
 ------------------------------------------------------- */
+async function applyChemicalUsage({ activity, propertyId, chemId, chemQty }) {
+  if (!chemId || !chemQty || chemQty <= 0) return;
+  const affectsChem =
+    activity === 'Spraying paddocks' ||
+    activity === 'Chemical (stock)' ||
+    activity === 'Trucking (sale)';
+  if (!affectsChem) return;
+
+  const ref = db.collection('chemicals').doc(chemId);
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return;
+      const data = snap.data() || {};
+      const current = Number(data.quantity || 0);
+      const next = Math.max(0, current - Number(chemQty));
+      tx.update(ref, {
+        quantity: next,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+  } catch (e) {
+    console.error('Chemical update failed', e);
+  }
+}
+
+// generic livestock adjuster
 async function adjustLivestockLine({ propertyId, paddockName, species, livestockClass, delta }) {
   if (!propertyId || !paddockName || !species || !livestockClass) return;
   if (!delta || !Number.isFinite(delta)) return;
@@ -722,7 +607,6 @@ async function adjustLivestockLine({ propertyId, paddockName, species, livestock
         }, { merge: true });
       });
     } else if (delta > 0) {
-      // create a new line if we're adding animals and none exists yet
       await db.collection('livestock').add({
         propertyId,
         location: paddockName,
@@ -750,18 +634,20 @@ async function findYardNameForProperty(propertyId) {
   try {
     const snap = await db.collection('paddocks')
       .where('propertyId','==',propertyId)
-      .where('isYard','==',true)
+      .where('isYards','==',true)
       .orderBy('name')
       .limit(1)
       .get();
     if (snap.empty) return null;
     const d = snap.docs[0].data() || {};
-    return d.name || null;
+    return d.name || '(unnamed)';
   } catch (e) {
     console.error('findYardNameForProperty failed', e);
     return null;
   }
-}async function applyLivestockChange({
+}
+
+async function applyLivestockChange({
   activity,
   propertyId,
   paddockName,
@@ -781,14 +667,12 @@ async function findYardNameForProperty(propertyId) {
   } else if (activity === 'Transfer stock (Out)') {
     delta = -Math.abs(head);
   } else if (activity === 'Transfer stock (In)') {
-    // manual adjustment onto this property
     delta = Math.abs(head);
   } else {
-    // other activities don't affect herd numbers here
     return;
   }
 
-  // 1) Always adjust the current property / paddock if we have one
+  // adjust current property / paddock
   if (paddockName) {
     await adjustLivestockLine({
       propertyId,
@@ -799,7 +683,7 @@ async function findYardNameForProperty(propertyId) {
     });
   }
 
-  // 2) If this is a cross-property transfer OUT, add to yards on the destination property
+  // cross-property transfer: add to yards on destination property
   if (activity === 'Transfer stock (Out)' && transferPropertyId) {
     const yardName = await findYardNameForProperty(transferPropertyId);
     if (!yardName) {
@@ -811,7 +695,7 @@ async function findYardNameForProperty(propertyId) {
       paddockName: yardName,
       species,
       livestockClass,
-      delta: Math.abs(head) // add animals at destination yards
+      delta: Math.abs(head)
     });
   }
 }
@@ -833,13 +717,12 @@ async function moveLivestockWithinProperty({
     species,
     String(species).toLowerCase(),
     String(species).toUpperCase(),
-    String(species).charAt(0).toUpperCase()+String(species).slice(1).toLowerCase()
+    String(species).charAt(0).toUpperCase() + String(species).slice(1).toLowerCase()
   ];
 
-  try{
-    // Find from doc
+  try {
     let fromDoc = null;
-    for (const sp of speciesVariants){
+    for (const sp of speciesVariants) {
       const snap = await db.collection('livestock')
         .where('propertyId','==',propertyId)
         .where('location','==',fromPaddock)
@@ -857,20 +740,17 @@ async function moveLivestockWithinProperty({
         const data = snap.data() || {};
         const current = Number(data.count || 0);
         const next = Math.max(0, current - headInt);
-        tx.set(fromDoc.ref, {
-          ...data,
+        tx.update(fromDoc.ref, {
           count: next,
-          movedOut: todayISO(),
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        });
       });
     } else {
-      console.warn('No livestock row found to move FROM', { propertyId, fromPaddock, species, livestockClass });
+      console.warn('Move stock: no FROM mob line', { propertyId, fromPaddock, species, livestockClass });
     }
 
-    // To paddock
     let toDoc = null;
-    for (const sp of speciesVariants){
+    for (const sp of speciesVariants) {
       const snap = await db.collection('livestock')
         .where('propertyId','==',propertyId)
         .where('location','==',toPaddock)
@@ -888,12 +768,10 @@ async function moveLivestockWithinProperty({
         const data = snap.data() || {};
         const current = Number(data.count || 0);
         const next = current + headInt;
-        tx.set(toDoc.ref, {
-          ...data,
+        tx.update(toDoc.ref, {
           count: next,
-          movedIn: todayISO(),
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        });
       });
     } else {
       await db.collection('livestock').add({
@@ -907,43 +785,257 @@ async function moveLivestockWithinProperty({
       });
     }
   } catch (e) {
-    console.error('Move livestock within property failed', e);
+    console.error('Move stock inventory update failed', e);
   }
 }
 
-/* Rainfall mirror: diary → gauges/{gaugeId}/daily/{date} */
+// rainfall mirror -> gauges/{gaugeId}/daily/{dateISO}
 async function applyRainfallEntry({ gaugeId, rainfallMm, dateISO }) {
-  const mm = Number(rainfallMm);
-  if (!gaugeId || !Number.isFinite(mm) || mm <= 0) return;
+  if (!gaugeId || !rainfallMm || rainfallMm <= 0 || !dateISO) return;
+  try {
+    const ref = db.collection('gauges').doc(gaugeId)
+      .collection('daily').doc(dateISO);
+    await ref.set({
+      date: dateISO,
+      total: Number(rainfallMm),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+  } catch(e) {
+    console.error('applyRainfallEntry failed', e);
+  }
+}
 
-  const dateStr = (dateISO || todayISO()).slice(0, 10);
-  const ref = db
-    .collection('gauges')
-    .doc(gaugeId)
-    .collection('daily')
-    .doc(dateStr);
+/* -------------------------------------------------------
+   UI logic
+------------------------------------------------------- */
+function onActivityChange(){
+  const act = activitySel.value;
+
+  const needsChem = (act==='Spraying paddocks' || act==='Chemical (stock)' || act==='Trucking (sale)');
+  chemRow.classList.toggle('hidden', !needsChem);
+  chemHint.textContent = (act==='Spraying paddocks') ? 'paddock spray'
+                     : (act==='Trucking (sale)' ? 'backline before transport' : 'stock treatment');
+
+  const needsStock = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering' || act==='Cattle Received (Purchase)' || act.startsWith('Transfer stock'));
+  stockRow.classList.toggle('hidden', !needsStock);
+
+  const needsTransferProp = (act==='Transfer stock (In)' || act==='Transfer stock (Out)');
+  transferPropRow.classList.toggle('hidden', !needsTransferProp);
+
+  const needsToPaddock = (act === 'Move stock');
+  toPaddockRow.classList.toggle('hidden', !needsToPaddock);
+
+  const needsTruckDetails = (act==='Trucking (sale)' || act==='Cattle Received (Purchase)');
+  stockDetail1.classList.toggle('hidden', !needsTruckDetails);
+  stockDetail2.classList.toggle('hidden', !needsTruckDetails);
+
+  const needsMuster = (act === 'Mustering');
+  musterBox.classList.toggle('hidden', !needsMuster);
+}
+
+async function refreshStockContext(){
+  const propertyId = propSel.value;
+  const paddockOpt = paddockSel.selectedOptions[0];
+  const paddockName = paddockOpt?.dataset?.name || '';
+  if (!propertyId || !paddockName) {
+    stockContext.innerHTML = '';
+    musterContext.textContent = '';
+    mExp.value = '';
+    mAct.value = '';
+    mDelta.value = '';
+    return;
+  }
 
   try {
-    await db.runTransaction(async tx => {
-      const snap = await tx.get(ref);
-      const existing = snap.exists ? Number((snap.data() || {}).mm || 0) : 0;
-      const next = (existing || 0) + mm;
-      tx.set(ref, {
-        mm: next,
-        source: 'diary',
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-    });
-  } catch (e) {
-    console.error('Rainfall mirror failed', e);
+    const snap = await db.collection('livestock')
+      .where('propertyId','==',propertyId)
+      .where('location','==',paddockName)
+      .get();
+    const rows=[];
+    snap.forEach(d => rows.push(d.data()||{}));
+    if (!rows.length){
+      stockContext.innerHTML = '<span class="muted small">No livestock recorded in this paddock.</span>';
+    } else {
+      stockContext.innerHTML = rows.map(r=>(
+        `<span class="pill">${escapeHtml(r.species||'Cattle')} — ${escapeHtml(r.class||'Unknown')} : ${Number(r.count||0)}</span>`
+      )).join('');
+    }
+
+    const species = speciesSel.value || 'Cattle';
+    const expectedTotal = rows
+      .filter(r => String(r.species||'').toLowerCase() === String(species).toLowerCase())
+      .reduce((sum,r)=> sum + Number(r.count||0), 0);
+    if (expectedTotal){
+      mExp.value = expectedTotal;
+      mAct.value = '';
+      mDelta.value = '';
+      musterContext.textContent = `${species} in ${paddockName}: expected ${expectedTotal} head.`;
+    } else {
+      mExp.value = '';
+      mAct.value = '';
+      mDelta.value = '';
+      musterContext.textContent = '';
+    }
+  } catch(e){
+    console.error('refreshStockContext failed', e);
+    stockContext.innerHTML = '<span class="muted small">Error loading stock.</span>';
   }
+}
+
+mAct.addEventListener('input', ()=>{
+  const exp = Number(mExp.value||0);
+  const act = Number(mAct.value||0);
+  if (exp || act){
+    mDelta.value = act - exp;
+  } else {
+    mDelta.value = '';
+  }
+});
+
+async function onPropertyChange(){
+  const propertyId = propSel.value;
+  await Promise.all([
+    loadPaddocksForProperty(propertyId),
+    loadChemicalsForProperty(propertyId),
+    loadGaugesForProperty(propertyId)
+  ]);
+  await refreshStockContext();
+
+  // populate transfer property dropdown (other properties)
+  const options = Object.entries(PROPERTY_IDS).map(([name,id])=>{
+    if (id === propertyId) return '';
+    return `<option value="${id}">${escapeHtml(name)}</option>`;
+  }).join('');
+  transferPropSel.innerHTML = '<option value="">(choose)</option>' + options;
+}
+
+paddockSel.addEventListener('change', async ()=>{
+  await refreshStockContext();
+  await refreshClassOptions();
+});
+speciesSel.addEventListener('change', async ()=>{
+  await refreshClassOptions();
+  await refreshStockContext();
+});
+activitySel.addEventListener('change', onActivityChange);
+
+async function refreshClassOptions(){
+  const propertyId = propSel.value;
+  const paddockOpt = paddockSel.selectedOptions[0];
+  const paddockName = paddockOpt?.dataset?.name || '';
+  const species = speciesSel.value || 'Cattle';
+
+  const classes = new Set(SUGGESTED_CLASSES);
+  try{
+    const usedGlobal = await fetchUsedClasses(propertyId, species);
+    usedGlobal.forEach(c=>classes.add(c));
+    const usedHere  = await fetchLivestockClasses(propertyId, paddockName, species);
+    usedHere.forEach(r => { if (r.class) classes.add(String(r.class)); });
+  }catch(e){
+    console.warn('refreshClassOptions skipped', e);
+  }
+  const list = Array.from(classes).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+  const dl = $('#classOptions');
+  dl.innerHTML = list.map(c=>`<option value="${escapeHtml(c)}"></option>`).join('');
+}
+
+/* -------------------------------------------------------
+   Build payload
+------------------------------------------------------- */
+function buildPayloadFromUI(){
+  const propertyId = propSel.value;
+  const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '(unknown)';
+  const activity = activitySel.value;
+  const date = dateInp.value || todayISO();
+  const time = timeInp.value || '00:00';
+
+  const paddockOpt = paddockSel.selectedOptions[0];
+  const paddockId  = paddockOpt?.value || '';
+  const paddockName = paddockOpt?.dataset?.name || '';
+
+  const toPaddockOpt = toPaddockSel.selectedOptions[0];
+  const toPaddockId  = toPaddockOpt?.value || '';
+  const toPaddockName = toPaddockOpt?.dataset?.name || '';
+
+  const transferPropertyId = transferPropSel.value || '';
+  const transferPropertyName = PROPERTY_NAME_BY_ID[transferPropertyId] || '';
+
+  const species = speciesSel.value || null;
+  const klass   = classInp.value || null;
+  const head    = headInp.value ? Number(headInp.value) : null;
+
+  const rainMm = rainMmInp.value ? Number(rainMmInp.value) : null;
+  const gaugeId = gaugeSel.value || null;
+  const gaugeName = gaugeSel.selectedOptions[0]?.textContent || null;
+
+  const chemId = chemSel.value || null;
+  const chemUnitVal = chemUnit.value || null;
+  const chemQ = chemQty.value ? Number(chemQty.value) : null;
+
+  const notes = notesInp.value || '';
+
+  const payload = {
+    date,
+    time,
+    propertyId,
+    propertyName,
+    activity,
+    paddockId: paddockId || null,
+    paddock: paddockName || null,
+    toPaddockId: toPaddockId || null,
+    toPaddock: toPaddockName || null,
+
+    transferPropertyId: transferPropertyId || null,
+    transferPropertyName: transferPropertyName || null,
+
+    species: species || null,
+    livestockClass: klass || null,
+    headCount: head || null,
+
+    chemicalId: chemId || null,
+    chemicalUnit: chemUnitVal,
+    chemicalQty: chemQ || null,
+
+    rainfallMm: (rainMm != null && isFinite(rainMm) && rainMm>0) ? rainMm : null,
+    gaugeId: gaugeId || null,
+    gaugeName: gaugeName || null,
+
+    buyer: truckBuyer.value || null,
+    truckRef: truckRef.value || null,
+
+    musterExpected: mExp.value || null,
+    musterActual: mAct.value || null,
+    musterDelta: mDelta.value || null,
+    musterReason: mReason.value || null,
+
+    notes: notes || null,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  return {
+    payload,
+    propertyId,
+    activity,
+    paddockName,
+    paddockNameTo: toPaddockName,
+    species,
+    klass,
+    head,
+    chemId,
+    chemQ,
+    transferPropertyId,
+    gaugeId,
+    rainfallMm: payload.rainfallMm,
+    dateISO: date
+  };
 }
 
 /* -------------------------------------------------------
    Save single entry
 ------------------------------------------------------- */
 async function saveEntry(){
-  if (propSel.value==='ALL') return alert('Select a specific property to save.');
+  if (propSel.value==='ALL' || !propSel.value) return alert('Select a specific property to save.');
 
   const {
     payload,
@@ -957,47 +1049,20 @@ async function saveEntry(){
     chemId,
     chemQ,
     transferPropertyId,
-    transferPropertyName,
     gaugeId,
-    rainfallMm
+    rainfallMm,
+    dateISO
   } = buildPayloadFromUI();
 
-  if (!activity){
-    alert('Choose an activity.');
-    return;
-  }
-
   if (activity === 'Move stock') {
-    if (!paddockName) {
-      alert('Choose the paddock you are moving FROM.');
-      return;
-    }
-    if (!paddockNameTo) {
-      alert('Choose the paddock you are moving TO.');
-      return;
-    }
-    if (!klass || !head || head <= 0) {
-      alert('For Move stock you must set Class and Head.');
-      return;
-    }
+    if (!paddockName) return alert('Choose the paddock you are moving FROM.');
+    if (!paddockNameTo) return alert('Choose the paddock you are moving TO.');
+    if (!klass || !head || head <= 0) return alert('For Move stock you must set Class and Head.');
   }
-
   if (activity.startsWith('Transfer stock')) {
-    if (!transferPropertyId) {
-      alert('Choose the other property in “To/From Property”.');
-      return;
-    }
-    if (!klass || !head || head <= 0) {
-      alert('For Transfer stock you must set Class and Head.');
-      return;
-    }
-  }
-
-  if (activity === 'Rainfall') {
-    if (!gaugeId || !rainfallMm) {
-      alert('For Rainfall you must pick a gauge and enter rainfall mm.');
-      return;
-    }
+    if (!paddockName) return alert('Choose the paddock the cattle are leaving/entering.');
+    if (!transferPropertyId) return alert('Choose the other property for Transfer stock.');
+    if (!klass || !head || head <= 0) return alert('For Transfer stock you must set Class and Head.');
   }
 
   try {
@@ -1016,12 +1081,13 @@ async function saveEntry(){
         paddockName,
         species,
         livestockClass: klass,
-        head
+        head,
+        transferPropertyId
       }),
       applyRainfallEntry({
         gaugeId,
         rainfallMm,
-        dateISO: payload.date
+        dateISO
       })
     ];
 
@@ -1053,44 +1119,59 @@ async function saveEntry(){
 ------------------------------------------------------- */
 const actions = [];
 function renderQueued(){
-  actionsOl.style.display = actions.length ? 'block' : 'none';
+  actionsListEl.style.display = actions.length ? 'block' : 'none';
   actionsOl.innerHTML = actions.map((a,i)=>(
-    `<li><span class="pill">${escapeHtml(a.activity)}</span> ${escapeHtml(a.propertyName||'')} — ${escapeHtml(a.paddock||'')} ${a.rainfallMm?`· ${a.rainfallMm}mm`:''} ${a.headCount?`· ${a.headCount} head`:''} <button data-i="${i}" class="btn small">Remove</button></li>`
+    `<li><span class="pill">${escapeHtml(a.activity)}</span> ${escapeHtml(a.propertyName)} — ${escapeHtml(a.paddock||'(no paddock)')}${a.notes? ' — ' + escapeHtml(a.notes) : ''} <button data-i="${i}" class="btn">Remove</button></li>`
   )).join('');
   actionsOl.querySelectorAll('button[data-i]').forEach(b=>{
     b.onclick = () => { actions.splice(Number(b.dataset.i),1); renderQueued(); };
   });
 }
 function currentActionFromUI(){
-  const { payload, propertyId, activity, paddockName, species, klass, head, chemId, chemQ, transferPropertyId, transferPropertyName, gaugeId, rainfallMm } = buildPayloadFromUI();
+  const {
+    payload,
+    propertyId,
+    activity,
+    paddockName,
+    paddockNameTo,
+    species,
+    klass,
+    head,
+    chemId,
+    chemQ,
+    transferPropertyId,
+    gaugeId,
+    rainfallMm,
+    dateISO
+  } = buildPayloadFromUI();
   return {
     ...payload,
+    payload,
     propertyId,
     activity,
     paddock: payload.paddock,
     toPaddockId: payload.toPaddockId,
     toPaddock: payload.toPaddock,
+    transferPropertyId,
     species,
     livestockClass: klass,
     headCount: payload.headCount,
     chemicalId: chemId,
-    chemicalName: payload.chemicalName,
+    chemicalName: null,
     chemQty: chemQ,
-    chemUnit: payload.chemUnit,
+    chemUnit: payload.chemicalUnit,
     gaugeId,
     rainfallMm,
-    date: payload.date,
-    transferPropertyId,
-    transferPropertyName
+    dateISO
   };
 }
 addActionBtn.onclick = ()=>{
-  if (propSel.value==='ALL') { alert('Choose a specific property'); return; }
+  if (propSel.value==='ALL' || !propSel.value) { alert('Choose a specific property'); return; }
   const a = currentActionFromUI();
   actions.push(a);
   renderQueued();
+  batchMsg.textContent = 'Action added.'; setTimeout(()=>batchMsg.textContent='', 1500);
 };
-
 saveBatchBtn.onclick = async ()=>{
   if (!actions.length) { alert('No actions queued. Click “Add action” first.'); return; }
   const batchId = 'b_'+Date.now();
@@ -1099,8 +1180,7 @@ saveBatchBtn.onclick = async ()=>{
     const batch = db.batch();
     actions.forEach((a, idx)=>{
       const ref = db.collection('diaryEntries').doc();
-      batch.set(ref, { ...a, batchId, batchIndex: idx, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+      batch.set(ref, { ...a, batchId, batchIndex: idx, createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
     });
     await batch.commit();
 
@@ -1118,12 +1198,13 @@ saveBatchBtn.onclick = async ()=>{
           paddockName: a.paddock,
           species: a.species,
           livestockClass: a.livestockClass,
-          head: a.headCount
+          head: a.headCount,
+          transferPropertyId: a.transferPropertyId
         }),
         applyRainfallEntry({
           gaugeId: a.gaugeId,
           rainfallMm: a.rainfallMm,
-          dateISO: a.date
+          dateISO: a.date || a.dateISO
         })
       ];
       if (a.activity === 'Move stock') {
@@ -1141,94 +1222,124 @@ saveBatchBtn.onclick = async ()=>{
       return Promise.all(sideEffects);
     }));
 
-    actions.length = 0; renderQueued();
-    batchMsg.textContent = 'Saved.'; setTimeout(()=>batchMsg.textContent='', 1500);
+    batchMsg.textContent = 'Batch saved.';
+    actions.length = 0;
+    renderQueued();
     await refreshEntries();
-  }catch(e){
+  } catch(e){
     console.error(e);
-    batchMsg.textContent = 'Save failed.'; setTimeout(()=>batchMsg.textContent='', 3000);
+    batchMsg.textContent = 'Batch save failed.';
   }
 };
 
 /* -------------------------------------------------------
-   Diary table & filters
+   Recent entries list
 ------------------------------------------------------- */
 async function refreshEntries(){
-  entriesBody.innerHTML = '<tr><td colspan="9" class="muted small">Loading…</td></tr>';
+  const y = yearInp.value ? Number(yearInp.value) : (new Date().getFullYear());
+  yearInp.value = y;
+  const { start, end } = yBounds(y);
+
+  entriesTbody.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
   try{
-    let q = db.collection('diaryEntries').orderBy('date','desc').orderBy('time','desc').limit(500);
-    const fp = filterPropSel.value;
-    if (fp && fp!=='ALL') q = q.where('propertyId','==',fp);
-    const fa = filterAct.value;
-    if (fa) q = q.where('activity','==',fa);
-
-    const from = filterFrom.value;
-    const to = filterTo.value;
-    if (from) q = q.where('date','>=',from);
-    if (to) q = q.where('date','<=',to);
-
-    const snap = await q.get();
+    const snap = await db.collection('diaryEntries')
+      .where('date','>=',start)
+      .where('date','<=',end)
+      .orderBy('date','desc')
+      .orderBy('time','desc')
+      .limit(200)
+      .get();
     if (snap.empty){
-      entriesBody.innerHTML = '<tr><td colspan="9" class="muted small">No entries in this range.</td></tr>';
+      entriesTbody.innerHTML = '<tr><td colspan="8">No entries for this year.</td></tr>';
       return;
     }
-    const rows = [];
-    snap.forEach(doc=>{
-      const d = doc.data()||{};
-      const stock = d.headCount ? `${d.headCount} ${d.species||''} ${d.livestockClass||''}`.trim() : '';
-      const chem = d.chemicalName ? `${d.chemicalName} ${d.chemQty||''} ${d.chemUnit||''}`.trim() : '';
-      rows.push(`<tr>
-        <td>${escapeHtml(d.date||'')}</td>
-        <td>${escapeHtml(d.time||'')}</td>
-        <td>${escapeHtml(d.propertyName||'')}</td>
-        <td>${escapeHtml(d.paddock||'')}</td>
-        <td>${escapeHtml(d.activity||'')}</td>
-        <td>${escapeHtml(stock)}</td>
-        <td>${escapeHtml(chem)}</td>
-        <td>${d.rainfallMm!=null ? escapeHtml(String(d.rainfallMm)) : ''}</td>
-        <td class="notes">${escapeHtml(d.notes||'')}</td>
-      </tr>`);
-    });
-    entriesBody.innerHTML = rows.join('');
+    const rows=[];
+    snap.forEach(d => rows.push({id:d.id, ...(d.data()||{})}));
+    entriesTbody.innerHTML = rows.map(r=>{
+      const dt = `${escapeHtml(r.date||'')} ${escapeHtml(r.time||'')}`;
+      const prop = escapeHtml(r.propertyName || PROPERTY_NAME_BY_ID[r.propertyId] || '');
+      const act = escapeHtml(r.activity||'');
+      const pad = escapeHtml(r.paddock||'');
+      const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
+      const chem = r.chemicalId ? `${escapeHtml(r.chemicalId)} (${r.chemicalQty||''} ${r.chemicalUnit||''})` : '';
+      const head = r.headCount != null ? Number(r.headCount) : '';
+      return `<tr>
+        <td class="nowrap">${dt}</td>
+        <td>${prop}</td>
+        <td>${act}</td>
+        <td>${pad}</td>
+        <td>${rain}</td>
+        <td>${chem}</td>
+        <td>${head}</td>
+        <td></td>
+      </tr>`;
+    }).join('');
   }catch(e){
-    console.error(e);
-    entriesBody.innerHTML = '<tr><td colspan="9" class="muted small">Error loading entries.</td></tr>';
+    console.error('refreshEntries failed', e);
+    entriesTbody.innerHTML = '<tr><td colspan="8">Error loading entries.</td></tr>';
   }
 }
-
-/* -------------------------------------------------------
-   Property change
-------------------------------------------------------- */
-async function onPropertyChange(){
-  transferPropSel.innerHTML = '<option value="">(choose)</option>' +
-    Object.entries(PROPERTY_IDS).filter(([n,id])=> id!==propSel.value)
-      .map(([n,id])=>`<option value="${id}">${n}</option>`).join('');
-
-  await loadPaddocksForProperty(propSel.value);
-  await loadChemicalsForProperty(propSel.value);
-  await loadGaugesForProperty(propSel.value);
-  await onPaddockOrSpeciesChange();
-}
-
-propSel.onchange = async ()=>{
-  await onPropertyChange();
-  await refreshEntries();
-};
-filterPropSel.onchange = refreshEntries;
-filterFrom.onchange = refreshEntries;
-filterTo.onchange = refreshEntries;
-filterAct.onchange = refreshEntries;
-$('#refreshBtn').onclick = refreshEntries;
-printDiaryBtn.onclick = ()=>window.print();
 
 /* -------------------------------------------------------
    Init
 ------------------------------------------------------- */
-window.addEventListener('load', ()=>{
+async function initAfterAuth(){
+  const user = auth.currentUser;
+  if (!user){
+    authWho.textContent = 'Not signed in';
+    showOverlay(true);
+    return;
+  }
+  authWho.textContent = user.email || 'Signed in';
+  signOutBtn.classList.remove('hidden');
+
+  // Properties from constant map
+  const opts = Object.entries(PROPERTY_IDS)
+    .map(([name,id])=>`<option value="${id}">${escapeHtml(name)}</option>`)
+    .join('');
+  propSel.innerHTML = '<option value="ALL">(All properties)</option>' + opts;
+
   dateInp.value = todayISO();
-  filterFrom.value = todayISO();
-  filterTo.value = todayISO();
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  timeInp.value = `${hh}:${mm}`;
+
+  yearInp.value = now.getFullYear();
+
+  propSel.onchange = onPropertyChange;
+  refreshBtn.onclick = refreshEntries;
+  $('#saveBtn').onclick = saveEntry;
+  $('#resetBtn').onclick = ()=>{
+    notesInp.value = '';
+    headInp.value = '';
+    classInp.value = '';
+    rainMmInp.value = '';
+    gaugeSel.selectedIndex = 0;
+    truckBuyer.value = '';
+    truckRef.value = '';
+    mExp.value = '';
+    mAct.value = '';
+    mDelta.value = '';
+    mReason.value = '';
+  };
+
+  await onPropertyChange();
   onActivityChange();
+  await refreshEntries();
+}
+
+// auth state
+auth.onAuthStateChanged(async user=>{
+  if (!user){
+    authWho.textContent = 'Not signed in';
+    showOverlay(true);
+  } else {
+    authWho.textContent = user.email || 'Signed in';
+    signOutBtn.classList.remove('hidden');
+    showOverlay(false);
+    await initAfterAuth();
+  }
 });
 </script>
 </body>
