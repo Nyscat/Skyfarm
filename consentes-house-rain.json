@@ -1,107 +1,11 @@
-import pandas as pd
-import json
-from pathlib import Path
-
-EXCEL_FILE = "Consentes House - Rainfall.xlsx"
-OUTPUT_FILE = "consentes-house-rain.json"
-
-def is_year_sheet(name):
-  try:
-    y = int(name)
-    return 1900 <= y <= 2100
-  except ValueError:
-    return False
-
-def main():
-  xls = pd.ExcelFile(EXCEL_FILE)
-  year_sheets = [s for s in xls.sheet_names if is_year_sheet(s)]
-  year_sheets.sort()
-  print("Found year sheets:", year_sheets)
-
-  years_data = {}
-  all_year_totals = []
-  monthly_sums = [0.0] * 12
-  monthly_counts = [0] * 12
-  monthly_wet_days_sum = [0.0] * 12
-  monthly_wet_days_counts = [0] * 12
-
-  for sheet in year_sheets:
-    year = int(sheet)
-    df = pd.read_excel(EXCEL_FILE, sheet_name=sheet)
-
-    # ASSUMPTION:
-    # Column 0 = Day, columns 1..12 = Jan..Dec
-    # If your layout is different, this is the only bit we’ll tweak.
-    if df.shape[1] == 13:
-      month_df = df.iloc[:, 1:13]
-    elif df.shape[1] == 12:
-      month_df = df
-    else:
-      raise ValueError(f"Unexpected column count in sheet {sheet}: {df.shape[1]}")
-
-    month_df = month_df.apply(pd.to_numeric, errors="coerce").fillna(0.0)
-
-    monthly_totals = []
-    monthly_wet_days = []
-    year_total = 0.0
-
-    for m in range(12):
-      col = month_df.iloc[:, m]
-      total = float(col.sum())
-      wet_days = float((col >= 0.1).sum())
-
-      monthly_totals.append(round(total, 1))
-      monthly_wet_days.append(int(wet_days))
-      year_total += total
-
-      monthly_sums[m] += total
-      monthly_counts[m] += 1
-      monthly_wet_days_sum[m] += wet_days
-      monthly_wet_days_counts[m] += 1
-
-    year_total = round(year_total, 1)
-    all_year_totals.append(year_total)
-
-    years_data[str(year)] = {
-      "monthlyTotals": monthly_totals,
-      "monthlyWetDays": monthly_wet_days,
-      "annualTotal": year_total
-    }
-
-  monthly_avg = []
-  monthly_wet_avg = []
-  for m in range(12):
-    if monthly_counts[m] > 0:
-      monthly_avg.append(round(monthly_sums[m] / monthly_counts[m], 1))
-    else:
-      monthly_avg.append(0.0)
-
-    if monthly_wet_days_counts[m] > 0:
-      monthly_wet_avg.append(round(monthly_wet_days_sum[m] / monthly_wet_days_counts[m], 1))
-    else:
-      monthly_wet_avg.append(0.0)
-
-  if all_year_totals:
-    annual_avg = round(sum(all_year_totals) / len(all_year_totals), 1)
-  else:
-    annual_avg = 0.0
-
-  result = {
-    "gaugeName": "Consentes House",
-    "fromYear": min(int(y) for y in years_data.keys()),
-    "toYear": max(int(y) for y in years_data.keys()),
-    "years": years_data,
-    "longTerm": {
-      "monthlyAverage": monthly_avg,
-      "monthlyWetDaysAverage": monthly_wet_avg,
-      "annualAverage": annual_avg
-    }
+{
+  "gaugeName": "Consentes House",
+  "fromYear": 2000,
+  "toYear": 2025,
+  "years": {},
+  "longTerm": {
+    "monthlyAverage": [0,0,0,0,0,0,0,0,0,0,0,0],
+    "monthlyWetDaysAverage": [0,0,0,0,0,0,0,0,0,0,0,0],
+    "annualAverage": 0
   }
-
-  Path(OUTPUT_FILE).write_text(json.dumps(result, indent=2))
-  print(f"Wrote {OUTPUT_FILE}")
-
-if __name__ == "__main__":
-  main()
-
-Add rainfall averages file
+}
