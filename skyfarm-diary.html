@@ -14,68 +14,73 @@
     :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; --warn:#9a3412; }
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); margin:0; color:var(--ink); }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    a { color:#0f766e; text-decoration:none; }
+    a:hover { text-decoration:underline; }
 
-    /* Header */
-    #sf-header { position:sticky; top:0; z-index:10; }
-    #sf-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--line); }
-    #sf-header .brand { display:flex; align-items:center; gap:8px; color:var(--brand); font-weight:700; text-decoration:none; }
-    #sf-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
-    #sf-header nav a[aria-current="page"] { text-decoration:underline; }
-    .spacer { flex:1; }
-    .muted { color:var(--muted); font-size:.9rem; }
-    .hidden { display:none; }
+    #sf-header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);border-bottom:1px solid rgba(148,163,184,.5);}
+    #sf-header .bar{max-width:1200px;margin:0 auto;padding:6px 12px;display:flex;align-items:center;gap:10px;}
+    #sf-header .brand{font-weight:600;font-size:1rem;padding:4px 10px;border-radius:999px;background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);color:#ecfdf3;box-shadow:0 10px 20px rgba(15,23,42,.25);}
+    #sf-header nav a{padding:4px 10px;border-radius:999px;font-size:.84rem;color:#0f172a;}
+    #sf-header nav a[aria-current="page"]{background:#e0f2fe;font-weight:500;}
+    .nav-db{position:relative;margin-left:8px;}
+    .spacer{flex:1;}
 
-    .nav-db { position:relative; }
-    .nav-db button { font-size:.9rem; }
-    .db-menu {
-      position:absolute;
-      top:100%;
-      left:0;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:10px;
-      min-width:160px;
-      padding:4px 0;
-      box-shadow:0 10px 25px rgba(15,23,42,.12);
-      z-index:20;
-    }
-    .db-menu a {
-      display:block;
-      padding:6px 12px;
-      color:var(--ink);
-      text-decoration:none;
-      font-size:.9rem;
-    }
-    .db-menu a:hover { background:#f1f5f9; }
+    .btn{border:1px solid #cbd5e1;border-radius:999px;padding:5px 12px;font-size:.82rem;background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
+    .btn.small{padding:3px 10px;font-size:.78rem;}
+    .btn.primary{background:#047857;border-color:#047857;color:#ecfdf3;}
+    .btn.primary:hover{background:#065f46;border-color:#065f46;}
+    .btn.danger{border-color:#ef4444;color:#ef4444;background:#fff;}
+    .btn[disabled]{opacity:.5;cursor:default;}
 
-    /* Cards / form */
-    h1 { margin: 12px 0; font-size: 1.6rem; }
-    .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin:12px 0; }
-    .row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; align-items:center; }
-    label { font-size:.9rem; color:#475569; margin-bottom:4px; display:block; }
-    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; font:inherit; }
-    button { cursor:pointer; }
-    .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
-    .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
-    .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
-    .disabled { opacity:.55; pointer-events:none; }
+    .db-menu{position:absolute;top:100%;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;min-width:180px;padding:4px 0;box-shadow:0 10px 25px rgba(15,23,42,.12);z-index:20;}
+    .db-menu a{display:block;padding:6px 12px;font-size:.85rem;color:var(--ink);}
+    .db-menu a:hover{background:#f1f5f9;}
+    .hidden{display:none;}
 
-    .w80{width:80px}.w110{width:110px}.w140{width:140px}.w200{width:200px}.w240{width:240px}
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e2e8f0; font-size:.8rem; margin-right:6px; border:1px solid #cbd5e1; }
-    .small { font-size:.9rem; }
-    .status-warn{ color:var(--warn) }
+    .wrap{max-width:1200px;margin:0 auto;padding:12px;}
+    h1{font-size:1.5rem;margin:10px 0;}
 
-    /* Table */
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; font-size: .95rem; vertical-align: top; }
-    th { background:#f1f5f9; position:sticky; top:0; }
-    .nowrap { white-space: nowrap; }
+    .card{background:#fff;border-radius:14px;border:1px solid #dbe4ee;padding:12px;margin-top:10px;box-shadow:0 10px 30px rgba(15,23,42,.03);}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+    label{display:block;font-size:.8rem;color:#475569;margin-bottom:2px;}
+    select,input,textarea{font-size:.85rem;border-radius:10px;border:1px solid #cbd5e1;padding:6px 8px;font-family:inherit;}
+    select:focus,input:focus,textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 1px rgba(37,99,235,.25);}
+    textarea{min-height:40px;resize:vertical;}
 
-    /* Auth overlay */
-    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50}
+    .muted{color:var(--muted);}
+    .small{font-size:.78rem;}
+    .pill{display:inline-block;padding:2px 7px;border-radius:999px;background:#e0f2fe;font-size:.7rem;margin-right:4px;}
+    .w240{min-width:240px;}
+    .w200{min-width:200px;}
+    .w140{min-width:140px;}
+    .w110{max-width:110px;}
+
+    table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px;}
+    th,td{border:1px solid #e5e7eb;padding:4px 6px;text-align:left;}
+    th{background:#f9fafb;color:#334155;}
+    tr:nth-child(even) td{background:#f9fafb;}
+
+    #filtersRow{align-items:flex-end;}
+    #entriesTable td.notes{max-width:350px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+    #authOverlay{position:fixed;inset:0;background:radial-gradient(circle at top,#0f172a 0,rgba(15,23,42,.96) 45%,rgba(15,23,42,.98) 100%);display:none;align-items:center;justify-content:center;z-index:50;}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 10px}
+
+    .badge-warn{background:#f97316;color:#7c2d12;padding:2px 6px;border-radius:999px;font-size:.7rem;}
+
+    @media (max-width:800px){
+      .row{flex-direction:column;align-items:flex-start;}
+      .w240,.w200,.w140,.w110{min-width:100%;max-width:100%;}
+      #sf-header .bar{flex-wrap:wrap;}
+    }
+    @media print{
+      body{background:#fff;}
+      #sf-header,.no-print{display:none!important;}
+      .wrap{padding:8px;}
+      .card{box-shadow:none;border:none;margin:0;padding:4px 0;}
+      table{font-size:.75rem;}
+    }
   </style>
 </head>
 <body>
@@ -84,7 +89,7 @@
     <div class="bar">
       <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
       <nav>
-  <a href="skyfarm-diary.html">Diary</a>
+  <a href="skyfarm-diary.html" aria-current="page">Diary</a>
   <a href="skyfarm-map.html">Map</a>
   <a href="skyfarm-rain.html">Rain</a>
 </nav>
@@ -100,15 +105,15 @@
       </div>
       <span class="spacer"></span>
       <span id="authWho" class="muted">Checking sign-in…</span>
-      <button id="signOutBtn" class="danger hidden">Sign out</button>
+      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
     </div>
   </div>
 
   <div class="wrap">
     <h1>Diary</h1>
 
-    <!-- Main form -->
-    <div class="card" id="formCard">
+    <!-- Entry form -->
+    <div class="card no-print">
       <div class="row">
         <div>
           <label>Property</label>
@@ -173,7 +178,7 @@
 
         <div style="flex:1; min-width:260px">
           <label>Notes</label>
-          <input id="notesInp" placeholder="optional"/>
+          <textarea id="notesInp" placeholder="Short description…"></textarea>
         </div>
       </div>
 
@@ -196,129 +201,117 @@
           <label>Head</label>
           <input id="headInp" type="number" min="0" step="1" class="w110"/>
         </div>
-        <div id="stockDetail1">
-          <label>Buyer / Dest (Trucking)</label>
-          <input id="truckBuyer" class="w200" placeholder="e.g. Roma"/>
+        <div id="truckBuyerWrap" class="hidden">
+          <label>Buyer / Vendor</label>
+          <input id="truckBuyer" class="w200" placeholder="Buyer or vendor name"/>
         </div>
-        <div id="stockDetail2">
-          <label>Docket / Ref</label>
-          <input id="truckRef" class="w200" placeholder="NVD / docket"/>
+        <div id="truckRefWrap" class="hidden">
+          <label>Docket / NVD</label>
+          <input id="truckRef" class="w200" placeholder="Docket / NVD reference"/>
         </div>
       </div>
 
-      <!-- Chemical fields -->
+      <!-- Chemical row -->
       <div id="chemRow" class="row hidden">
-        <div>
+        <div style="min-width:260px">
           <label>Chemical</label>
-          <select id="chemSel" class="w240"><option value="">(choose)</option></select>
+          <select id="chemSel" class="w240"></select>
+          <div id="chemHint" class="small muted">paddock spray</div>
         </div>
         <div>
-          <label>Qty used</label>
+          <label>Qty</label>
           <input id="chemQty" type="number" min="0" step="0.01" class="w110"/>
         </div>
         <div>
           <label>Unit</label>
-          <input id="chemUnit" class="w80" placeholder="KG/L" disabled/>
+          <input id="chemUnit" class="w110" placeholder="L, kg, mL…"/>
         </div>
-        <div><label>&nbsp;</label><span id="chemHint" class="pill">context</span></div>
-      </div>
-
-      <!-- Live paddock stock context -->
-      <div id="stockContext" class="row small" style="gap:6px; color:#334155;"></div>
-
-      <!-- Mustering panel -->
-      <div id="musterBox" class="card hidden" style="margin-top:8px">
-        <div class="row"><strong>Mustering details</strong></div>
-        <div class="row small" id="musterContext" style="gap:6px; color:#334155;"></div>
-
-        <div class="row">
-          <div>
-            <label>Expected (auto)</label>
-            <input id="mExp" type="number" class="w110" disabled/>
-          </div>
-          <div>
-            <label>Actual</label>
-            <input id="mAct" type="number" class="w110"/>
-          </div>
-          <div>
-            <label>Delta (auto)</label>
-            <input id="mDelta" type="number" class="w110" disabled/>
-          </div>
-          <div style="flex:1; min-width:260px">
-            <label>Reason / notes</label>
-            <input id="mReason" placeholder="e.g. counted late, moved to North 2…"/>
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>Add calves</label>
-            <input id="mAddCalves" type="number" class="w110"/>
-          </div>
-          <div>
-            <label>Add weaners</label>
-            <input id="mAddWeaners" type="number" class="w110"/>
-          </div>
-          <div class="spacer"></div>
-          <button id="addClassRowBtn" class="btn">Add class row</button>
-        </div>
-
-        <div class="row">
-          <strong>Reclass / counts by class</strong>
-        </div>
-        <div class="row" style="overflow:auto">
-          <table id="mClassTable" style="min-width:760px">
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Expected</th>
-                <th>New count</th>
-                <th>Reclass to</th>
-                <th>Qty</th>
-                <th>Missing</th>
-              </tr>
-            </thead>
-            <tbody id="mClassBody"><tr><td colspan="6" class="muted">Pick property + paddock + species…</td></tr></tbody>
-          </table>
-        </div>
-        <div class="muted small">Set a <em>New count</em> to overwrite a class total, or use <em>Reclass to + Qty</em> to move headcounts between classes. Use <em>Missing</em> to hold animals that didn’t turn up.</div>
-      </div>
-
-      <!-- Save + multi-action -->
-      <div class="row">
-        <button id="saveBtn" class="primary">Save entry</button>
-        <button id="resetBtn" class="btn" type="button">Reset</button>
-        <span id="msg" class="muted" aria-live="polite"></span>
       </div>
 
       <div class="row">
-        <button id="addActionBtn" class="btn">Add action</button>
-        <button id="saveBatchBtn" class="primary">Save all actions</button>
-        <span id="batchMsg" class="muted"></span>
-      </div>
-
-      <div id="actionsList" class="card small" style="display:none">
-        <strong>Actions queued for this day</strong>
-        <ol id="actionsOl" style="margin-top:6px"></ol>
+        <div>
+          <button id="saveBtn" class="btn primary" type="button">Save entry</button>
+        </div>
+        <div class="small muted">
+          <span id="saveMsg"></span>
+        </div>
+        <span class="spacer"></span>
+        <div class="small muted">
+          <span class="badge-warn">TIP</span> Use “Add action” below to queue multiple actions (e.g. rainfall + stock movement) then save in one go.
+        </div>
       </div>
     </div>
 
-    <!-- Recent entries -->
-    <div class="card">
+    <!-- Multi-action batch -->
+    <div class="card no-print">
+      <h3 style="margin-top:0;">Queued actions</h3>
       <div class="row">
-        <strong>Recent entries</strong>
-        <span class="spacer"></span>
-        <label>Year</label>
-        <input id="yearInp" type="number" min="2000" max="2100" class="w110"/>
-        <button id="refreshBtn" class="btn">Refresh</button>
+        <button id="addActionBtn" class="btn" type="button">Add action from form</button>
+        <button id="saveBatchBtn" class="btn primary" type="button">Save all queued</button>
+        <span class="small muted" id="batchMsg"></span>
       </div>
-      <table>
+      <ol id="actionsOl" class="small" style="margin-top:8px;"></ol>
+    </div>
+
+    <!-- Filters + diary table -->
+    <div class="card">
+      <div id="filtersRow" class="row no-print">
+        <div>
+          <label>Property</label>
+          <select id="filterPropSel" class="w200"></select>
+        </div>
+        <div>
+          <label>From</label>
+          <input id="filterFrom" type="date"/>
+        </div>
+        <div>
+          <label>To</label>
+          <input id="filterTo" type="date"/>
+        </div>
+        <div>
+          <label>Activity</label>
+          <select id="filterAct" class="w200">
+            <option value="">(all)</option>
+            <option>Rainfall</option>
+            <option>Move stock</option>
+            <option>Transfer stock (In)</option>
+            <option>Transfer stock (Out)</option>
+            <option>Trucking (sale)</option>
+            <option>Cattle Received (Purchase)</option>
+            <option>Spraying paddocks</option>
+            <option>Chemical (stock)</option>
+            <option>Mustering</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="refreshBtn" class="btn" type="button">Refresh</button>
+        </div>
+        <span class="spacer"></span>
+        <div>
+          <label>&nbsp;</label>
+          <button id="printDiaryBtn" class="btn" type="button">Print / PDF</button>
+        </div>
+      </div>
+
+      <table id="entriesTable">
         <thead>
           <tr>
-            <th>Date</th><th>Property</th><th>Activity</th><th>Paddock</th><th>Rain (mm)</th><th>Chemical</th><th>Head</th><th></th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Property</th>
+            <th>Paddock</th>
+            <th>Activity</th>
+            <th>Stock</th>
+            <th>Chemical</th>
+            <th>Rain (mm)</th>
+            <th class="notes">Notes</th>
           </tr>
         </thead>
-        <tbody id="entriesTbody"><tr><td colspan="8">Loading…</td></tr></tbody>
+        <tbody id="entriesBody">
+          <tr><td colspan="9" class="muted small">Loading…</td></tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -329,18 +322,18 @@
       <h2>Sign in to SkyFarm</h2>
       <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
       <div class="row">
-        <div style="flex:1; min-width:260px">
+        <div style="flex:1; min-width:220px;">
           <label>Email</label>
-          <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
+          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
         </div>
-        <div style="flex:1; min-width:220px">
+        <div style="flex:1; min-width:160px;">
           <label>Password</label>
-          <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+          <input id="siPass" type="password" autocomplete="current-password"/>
         </div>
       </div>
-      <div class="row">
-        <button id="signInBtn" class="primary">Sign in</button>
-        <span id="authMsg" class="muted"></span>
+      <div class="row" style="margin-top:10px;">
+        <button id="signInBtn" class="btn primary" type="button">Sign in</button>
+        <span id="authMsg" class="small muted"></span>
         <span class="spacer"></span>
         <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
@@ -365,255 +358,329 @@ const auth = firebase.auth();
    Helpers & constants
 ------------------------------------------------------- */
 const $ = s => document.querySelector(s);
-const setMsg = (t, ms=3000)=>{ $('#msg').textContent=t||''; if(t && ms){ setTimeout(()=>$('#msg').textContent='', ms); } };
-const setStatus = (t, warn=false)=>{ const el=$('#status'); el.textContent=t||''; el.classList.toggle('status-warn', !!warn); };
-const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-const todayISO = () => new Date().toISOString().slice(0,10);
-const yBounds = y => ({ start:`${y}-01-01`, end:`${y}-12-31` });
+const $$ = s => Array.from(document.querySelectorAll(s));
 
-const PROPERTY_IDS = {
-  "Consentes": "s7PlDM9wrEpxuJ6DGIab",
-  "Mt Myrtle": "TRuxtRBx2zJlwZnRGYKJ",
-  "Gerawin":   "P0dQ0H2FWHeqqxejflZs",
-};
-const PROPERTY_NAME_BY_ID = Object.fromEntries(Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n]));
-const SUGGESTED_CLASSES = ["Cows","Heifers","Bulls","Steers","PTIC cows","Joined cows","Calves","Weaners"];
+const PROPERTY_IDS = {};
+const PROPERTY_NAME_BY_ID = {};
+const SUGGESTED_CLASSES = [
+  'Cows & Calves','Pregnant Cows','Weaners','Yearlings','Steers','Heifers','Bulls',
+  'Ewes & Lambs','Dry Ewes','Wethers','Rams'
+];
+
+function todayISO(){
+  const d = new Date();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, s=>(
+    s==='&'?'&amp;':s==='<'?'&lt;':s==='>'?'&gt;':s==='"'?'&quot;':'&#039;'
+  ));
+}
 
 /* -------------------------------------------------------
-   Elements
+   DOM refs
 ------------------------------------------------------- */
 const propSel = $('#propSel'), dateInp = $('#dateInp'), timeInp = $('#timeInp'), activitySel = $('#activitySel');
-const paddockSel = $('#paddockSel'), toPaddockRow = $('#toPaddockRow'), toPaddockSel = $('#toPaddockSel'), notesInp = $('#notesInp');
+const paddockSel = $('#paddockSel'), toPaddockSel = $('#toPaddockSel'), notesInp = $('#notesInp');
 const rainMmInp = $('#rainMmInp'), gaugeSel = $('#gaugeSel');
 const transferPropRow = $('#transferPropRow'), transferPropSel = $('#transferPropSel');
 const speciesSel = $('#speciesSel'), classInp = $('#classInp'), headInp = $('#headInp'), truckBuyer=$('#truckBuyer'), truckRef=$('#truckRef');
 const chemRow = $('#chemRow'), chemSel = $('#chemSel'), chemQty = $('#chemQty'), chemUnit = $('#chemUnit'), chemHint = $('#chemHint');
-const stockRow = $('#stockRow'), stockDetail1 = $('#stockDetail1'), stockDetail2 = $('#stockDetail2');
-const stockContext = $('#stockContext');
-const musterBox = $('#musterBox'), mExp=$('#mExp'), mAct=$('#mAct'), mDelta=$('#mDelta'), mReason=$('#mReason'), mAddCalves=$('#mAddCalves'), mAddWeaners=$('#mAddWeaners'), mClassBody=$('#mClassBody'), addClassRowBtn=$('#addClassRowBtn'), musterContext=$('#musterContext');
-const yearInp = $('#yearInp'), refreshBtn = $('#refreshBtn'), entriesTbody = $('#entriesTbody');
-
-const addActionBtn = $('#addActionBtn'), saveBatchBtn = $('#saveBatchBtn'), actionsListEl = $('#actionsList'), actionsOl = $('#actionsOl'), batchMsg = $('#batchMsg');
-
-const authOverlay = $('#authOverlay'), authWho = $('#authWho'), signOutBtn = $('#signOutBtn');
-const signInBtn = $('#signInBtn'), closeOverlayBtn = $('#closeOverlayBtn');
-
+const stockRow = $('#stockRow'), toPaddockRow = $('#toPaddockRow');
+const saveBtn = $('#saveBtn'), saveMsg = $('#saveMsg');
+const filterPropSel = $('#filterPropSel'), filterFrom = $('#filterFrom'), filterTo = $('#filterTo'), filterAct = $('#filterAct');
+const entriesBody = $('#entriesBody'), statusEl = $('#status');
+const addActionBtn = $('#addActionBtn'), saveBatchBtn = $('#saveBatchBtn'), actionsOl = $('#actionsOl'), batchMsg = $('#batchMsg');
+const printDiaryBtn = $('#printDiaryBtn');
 const dbMenuBtn = $('#dbMenuBtn'), dbMenu = $('#dbMenu');
+const authOverlay = $('#authOverlay'), authWho = $('#authWho'), signOutBtn = $('#signOutBtn');
+const siEmail = $('#siEmail'), siPass = $('#siPass'), signInBtn = $('#signInBtn'), authMsg = $('#authMsg'), closeOverlayBtn = $('#closeOverlayBtn');
+
+function setMsg(msg, timeoutMs){
+  saveMsg.textContent = msg||'';
+  if (timeoutMs) setTimeout(()=>{ if (saveMsg.textContent===msg) saveMsg.textContent=''; }, timeoutMs);
+}
+function setStatus(msg){
+  statusEl.textContent = msg || '—';
+}
 
 /* -------------------------------------------------------
-   Auth overlay helpers
+   Header DB menu
+------------------------------------------------------- */
+dbMenuBtn.onclick = e=>{
+  e.stopPropagation();
+  dbMenu.classList.toggle('hidden');
+};
+document.addEventListener('click', ()=>dbMenu.classList.add('hidden'));
+
+/* -------------------------------------------------------
+   Auth
 ------------------------------------------------------- */
 function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+function setAuthMsg(msg, isError){
+  authMsg.textContent = msg || '';
+  authMsg.style.color = isError ? '#b91c1c' : '#64748b';
+}
 
 signInBtn.onclick = async ()=>{
-  const email = $('#siEmail').value.trim();
-  const pass  = $('#siPass').value;
-  $('#authMsg').textContent = 'Signing in…';
+  const email = siEmail.value.trim();
+  const pass  = siPass.value;
+  if (!email || !pass){
+    setAuthMsg('Enter email and password.', true);
+    return;
+  }
+  setAuthMsg('Signing in…');
   try{
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     await auth.signInWithEmailAndPassword(email, pass);
-    $('#authMsg').textContent = 'Signed in.';
+    setAuthMsg('Signed in.');
     showOverlay(false);
     await onPropertyChange();
     await refreshEntries();
   }catch(e){
-    $('#authMsg').textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
+    console.error(e);
+    setAuthMsg('Sign-in failed: ' + (e?.message || e?.code || 'Unknown'), true);
   }
 };
-signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+signOutBtn.onclick = async ()=>{
+  try{ await auth.signOut(); location.reload(); }catch(e){}
+};
 closeOverlayBtn.onclick = ()=> showOverlay(false);
 
-/* Database menu */
-if (dbMenuBtn && dbMenu) {
-  dbMenuBtn.onclick = (e)=>{
-    e.stopPropagation();
-    dbMenu.classList.toggle('hidden');
-  };
-  document.addEventListener('click', (e)=>{
-    if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) {
-      dbMenu.classList.add('hidden');
-    }
-  });
-}
+auth.onAuthStateChanged(async user=>{
+  if (user){
+    authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
+    signOutBtn.classList.remove('hidden');
+    showOverlay(false);
+    try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+    await loadProperties();
+    await onPropertyChange();
+    await refreshEntries();
+  }else{
+    authWho.textContent = 'Not signed in';
+    signOutBtn.classList.add('hidden');
+    showOverlay(true);
+    setStatus('Sign in to edit');
+  }
+});
 
 /* -------------------------------------------------------
-   Paddocks / Chemicals / Gauges / Livestock helpers
+   Load properties / paddocks / chemicals / gauges
 ------------------------------------------------------- */
-async function loadPaddocksForProperty(propertyId) {
-  if (!propertyId || propertyId === 'ALL') {
-    paddockSel.innerHTML = '<option value="">(choose a property)</option>';
-    toPaddockSel.innerHTML = '<option value="">(choose a property)</option>';
-    return;
-  }
-  paddockSel.innerHTML = '<option value="">(loading…)</option>';
-  toPaddockSel.innerHTML = '<option value="">(loading…)</option>';
+async function loadProperties(){
+  const snap = await db.collection('properties').get();
+  const options = [];
+  snap.forEach(doc=>{
+    const d = doc.data()||{};
+    const name = d.name || '(Property)';
+    PROPERTY_IDS[name] = doc.id;
+    PROPERTY_NAME_BY_ID[doc.id] = name;
+    options.push({id:doc.id,name});
+  });
+  options.sort((a,b)=>a.name.localeCompare(b.name));
+  propSel.innerHTML = options.map(o=>`<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
+  filterPropSel.innerHTML = '<option value="ALL">(All properties)</option>' +
+    options.map(o=>`<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
+}
 
-  try {
-    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
-    const rows = [];
-    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
+async function loadPaddocksForProperty(propertyId){
+  paddockSel.innerHTML = '<option value="">(choose)</option>';
+  toPaddockSel.innerHTML = '<option value="">(choose)</option>';
 
-    rows.sort((a,b) => {
-      const ya = !!a.isYards, yb = !!b.isYards;
-      if (ya !== yb) return ya ? -1 : 1;
-      return String(a.name||'').localeCompare(String(b.name||''));
-    });
+  if (!propertyId) return;
+  const snap = await db.collection('paddocks')
+    .where('propertyId','==',propertyId)
+    .orderBy('isYard','desc')
+    .orderBy('name').get();
 
-    if (!rows.length) {
-      paddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
-      toPaddockSel.innerHTML = '<option value="">(no paddocks found)</option>';
-      return;
-    }
-
-    const optionsHtml =
-      '<option value="">(choose)</option>' +
-      rows.map(p => `<option value="${p.id}" data-name="${escapeHtml(p.name||'')}">${escapeHtml(p.name||'(unnamed)')}${p.isYards?' — Yards':''}</option>`).join('');
-
-    paddockSel.innerHTML = optionsHtml;
-    toPaddockSel.innerHTML = optionsHtml;
-  } catch (e) {
-    console.error('Paddock load error:', e);
-    paddockSel.innerHTML = '<option value="">(load error)</option>';
-    toPaddockSel.innerHTML = '<option value="">(load error)</option>';
-  }
+  const opts = [];
+  snap.forEach(doc=>{
+    const d = doc.data()||{};
+    opts.push({id:doc.id,name:d.name||'(paddock)',isYard:!!d.isYard});
+  });
+  const html = opts.map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name)}">${p.isYard?'[Yard] ':''}${escapeHtml(p.name)}</option>`).join('');
+  paddockSel.innerHTML = '<option value="">(choose)</option>' + html;
+  toPaddockSel.innerHTML = '<option value="">(choose)</option>' + html;
 }
 
 async function loadChemicalsForProperty(propertyId){
-  chemSel.innerHTML = '<option value="">(loading…)</option>';
-  if (!propertyId || propertyId === 'ALL'){ chemSel.innerHTML='<option value="">(choose property)</option>'; return; }
-  try{
-    const snap = await db.collection('chemicals').where('propertyId','==',propertyId).get();
-    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...(d.data()||{})}));
-    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
-    chemSel.innerHTML = '<option value="">(choose)</option>' + rows.map(c => {
-      return `<option value="${c.id}" data-unit="${escapeHtml(c.unit||'')}">${escapeHtml(c.name||'Unnamed')} (${escapeHtml(c.unit||'')}) — ${Number(c.quantity||0)} left</option>`;
-    }).join('');
-    chemSel.onchange = ()=> chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
-    chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
-  }catch(e){
-    console.error('Chem load error:', e);
-    chemSel.innerHTML='<option value="">(load error)</option>';
-  }
+  chemSel.innerHTML = '<option value="">(none)</option>';
+  if (!propertyId) return;
+  const snap = await db.collection('chemicals').where('propertyId','==',propertyId).orderBy('name').get();
+  const html = snap.docs.map(doc=>{
+    const d = doc.data()||{};
+    return `<option value="${doc.id}">${escapeHtml(d.name||'(chemical)')} (${escapeHtml(d.unit||'unit')})</option>`;
+  }).join('');
+  chemSel.innerHTML = '<option value="">(none)</option>' + html;
 }
 
 async function loadGaugesForProperty(propertyId){
   gaugeSel.innerHTML = '<option value="">(none)</option>';
-  if (!propertyId || propertyId === 'ALL') {
-    gaugeSel.innerHTML = '<option value="">(choose property)</option>';
-    return;
-  }
-  try{
-    const snap = await db.collection('gauges').where('propertyId','==',propertyId).where('active','==',true).get();
-    const rows=[]; snap.forEach(d=> rows.push({id:d.id, ...(d.data()||{})}));
-    rows.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
-    gaugeSel.innerHTML = '<option value="">(none)</option>' +
-      rows.map(g=>`<option value="${g.id}">${escapeHtml(g.name||'(unnamed)')}</option>`).join('');
-  }catch(e){
-    console.error('Gauge load error:', e);
-    gaugeSel.innerHTML = '<option value="">(load error)</option>';
-  }
-}
-
-async function fetchLivestockClasses(propertyId, paddockName, speciesUI){
-  if (!propertyId || !paddockName) return [];
-  const speciesLC = String(speciesUI||'Cattle').toLowerCase();
-
-  let snap = await db.collection('livestock')
-    .where('propertyId','==',propertyId)
-    .where('location','==',paddockName)
-    .where('species','==',speciesUI)
-    .get();
-
-  if (snap.empty){
-    const title = speciesLC.charAt(0).toUpperCase() + speciesLC.slice(1);
-    for (const sp of [title, speciesLC.toUpperCase()]){
-      const s2 = await db.collection('livestock')
-        .where('propertyId','==',propertyId)
-        .where('location','==',paddockName)
-        .where('species','==',sp)
-        .get();
-      if (!s2.empty){ snap = s2; break; }
-    }
-  }
-
-  const rows=[];
-  if (snap.empty){
-    const s3 = await db.collection('livestock')
-      .where('propertyId','==',propertyId)
-      .where('location','==',paddockName)
-      .get();
-    s3.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
-    return rows.filter(r => String(r.species||'').toLowerCase() === speciesLC);
-  } else {
-    snap.forEach(d => rows.push({ id:d.id, ...(d.data()||{}) }));
-    return rows;
-  }
-}
-
-async function fetchUsedClasses(propertyId, speciesUI){
-  if (!propertyId) return [];
-  const speciesLC = String(speciesUI||'Cattle').toLowerCase();
-  const variants = [speciesUI, speciesLC.toUpperCase(), speciesLC.charAt(0).toUpperCase()+speciesLC.slice(1)];
-  const seen = new Set();
-
-  for (const sp of variants){
-    const snap = await db.collection('livestock')
-      .where('propertyId','==',propertyId)
-      .where('species','==',sp)
-      .get();
-    snap.forEach(d => {
-      const cls = (d.data()||{}).class;
-      if (cls) seen.add(String(cls));
-    });
-  }
-
-  try {
-    const snap2 = await db.collection('diaryEntries')
-      .where('propertyId','==',propertyId)
-      .where('species','==',speciesUI)
-      .limit(500)
-      .get();
-    snap2.forEach(d => {
-      const cls = (d.data()||{}).livestockClass;
-      if (cls) seen.add(String(cls));
-    });
-  } catch(e) {
-    console.warn('class mining (diary) skipped:', e?.code||e?.message);
-  }
-
-  const list = Array.from(seen).filter(Boolean).sort((a,b)=>a.localeCompare(b));
-  return list;
+  if (!propertyId) return;
+  const snap = await db.collection('gauges').where('propertyId','==',propertyId).get();
+  const html = snap.docs.map(doc=>{
+    const d = doc.data()||{};
+    return `<option value="${doc.id}">${escapeHtml(d.name||'(gauge)')}</option>`;
+  }).join('');
+  gaugeSel.innerHTML = '<option value="">(none)</option>' + html;
 }
 
 /* -------------------------------------------------------
-   Inventory side-effects
+   Activity-specific UI logic
 ------------------------------------------------------- */
-async function applyChemicalUsage({ activity, propertyId, chemId, chemQty }) {
-  if (!chemId || !chemQty || chemQty <= 0) return;
-  const affectsChem =
-    activity === 'Spraying paddocks' ||
-    activity === 'Chemical (stock)' ||
-    activity === 'Trucking (sale)';
-  if (!affectsChem) return;
+function onActivityChange(){
+  const act = activitySel.value;
 
-  const ref = db.collection('chemicals').doc(chemId);
-  try {
-    await db.runTransaction(async tx => {
-      const snap = await tx.get(ref);
-      if (!snap.exists) return;
-      const data = snap.data() || {};
-      const current = Number(data.quantity || 0);
-      const next = Math.max(0, current - Number(chemQty));
-      tx.update(ref, {
-        quantity: next,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+  const needsChem = (act==='Spraying paddocks' || act==='Chemical (stock)' || act==='Trucking (sale)');
+  chemRow.classList.toggle('hidden', !needsChem);
+  chemHint.textContent = (act==='Spraying paddocks') ? 'paddock spray'
+                     : (act==='Trucking (sale)' ? 'backline before transport' : 'stock treatment');
+
+  const needsStock = (
+    act==='Trucking (sale)' ||
+    act==='Move stock' ||
+    act==='Chemical (stock)' ||
+    act==='Mustering' ||
+    act==='Cattle Received (Purchase)' ||
+    act.startsWith('Transfer stock')
+  );
+  stockRow.classList.toggle('hidden', !needsStock);
+
+  const needsTransferProp = (act==='Transfer stock (In)' || act==='Transfer stock (Out)');
+  transferPropRow.classList.toggle('hidden', !needsTransferProp);
+
+  const needsToPaddock = (act === 'Move stock');
+  toPaddockRow.classList.toggle('hidden', !needsToPaddock);
+
+  const isTruck = (act==='Trucking (sale)' || act==='Cattle Received (Purchase)');
+  truckBuyerWrap.classList.toggle('hidden', !isTruck);
+  truckRefWrap.classList.toggle('hidden', !isTruck);
+
+  onPaddockOrSpeciesChange();
+}
+
+async function onPaddockOrSpeciesChange(){
+  const pid = propSel.value;
+  const act = activitySel.value;
+  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const speciesUI = speciesSel.value || 'Cattle';
+
+  const isStockMove = (
+    act==='Trucking (sale)' ||
+    act==='Move stock' ||
+    act==='Chemical (stock)' ||
+    act==='Mustering' ||
+    act==='Transfer stock (Out)'
+  );
+  const isStockIn = (
+    act==='Cattle Received (Purchase)' ||
+    act==='Transfer stock (In)'
+  );
+
+  if ((!paddockName && !isStockIn) || pid==='ALL'){
+    $('#classOptions').innerHTML = SUGGESTED_CLASSES.map(r=>`<option value="${escapeHtml(r)}"></option>`).join('');
+    return;
+  }
+
+  try{
+    const q = db.collection('livestock')
+      .where('propertyId','==', pid);
+    let base = q;
+    if (paddockName && isStockMove){
+      base = base.where('location','==', paddockName);
+    }
+    const snap = await base.get();
+    const classes = new Set();
+    snap.forEach(doc=>{
+      const d = doc.data()||{};
+      if (!d.class) return;
+      if (d.species && String(d.species).toLowerCase() === String(speciesUI).toLowerCase()){
+        classes.add(String(d.class));
+      }
     });
-  } catch (e) {
-    console.error('Chemical update failed', e);
+    const list = (classes.size ? Array.from(classes).sort() : SUGGESTED_CLASSES);
+    $('#classOptions').innerHTML = list.map(r=>`<option value="${escapeHtml(r)}"></option>`).join('');
+  }catch(e){
+    console.error(e);
   }
 }
 
+activitySel.onchange = onActivityChange;
+paddockSel.onchange = onPaddockOrSpeciesChange;
+speciesSel.onchange = onPaddockOrSpeciesChange;
+
+/* -------------------------------------------------------
+   Payload builder
+------------------------------------------------------- */
+function buildPayloadFromUI(){
+  const propertyId   = propSel.value;
+  const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '';
+  const date = dateInp.value || todayISO();
+  const time = timeInp.value || '';
+  const activity = activitySel.value;
+  const paddockId = paddockSel.value || '';
+  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+  const toPaddockId = toPaddockSel.value || '';
+  const toPaddockName = toPaddockSel.selectedOptions[0]?.dataset?.name || '';
+  const notes = notesInp.value || '';
+  const species = speciesSel.value || '';
+  const klass = classInp.value || '';
+  const head = parseInt(headInp.value||0,10);
+  const chemId = chemSel.value || null;
+  const chemQ = parseFloat(chemQty.value||0);
+  const chemU = chemUnit.value || '';
+  const chemName = chemId ? (chemSel.selectedOptions[0]?.textContent.split('(')[0].trim() || null) : null;
+
+  const rainMm = parseFloat(rainMmInp.value||0);
+  const gaugeId = gaugeSel.value || null;
+  const gaugeName = gaugeId ? (gaugeSel.selectedOptions[0]?.textContent || null) : null;
+
+  const transferPropertyId = transferPropSel.value || null;
+  const transferPropertyName = transferPropSel.selectedOptions[0]?.textContent || '';
+
+  const payload = {
+    propertyId,
+    propertyName,
+    date,
+    time,
+    activity,
+    paddockId: paddockId || null,
+    paddock: paddockName || null,
+    toPaddockId: (activity === 'Move stock' && toPaddockId) ? toPaddockId : null,
+    toPaddock: (activity === 'Move stock' && toPaddockName) ? toPaddockName : null,
+    notes,
+    species: (
+      activity==='Mustering' ||
+      activity==='Move stock' ||
+      activity==='Chemical (stock)' ||
+      activity==='Trucking (sale)' ||
+      activity==='Cattle Received (Purchase)' ||
+      activity.startsWith('Transfer stock')
+    ) ? species : null,
+    livestockClass: klass || null,
+    headCount: (isFinite(head) && head>0) ? head : null,
+    chemicalId: chemId || null,
+    chemicalName: chemName,
+    chemQty: chemId ? chemQ : null,
+    chemUnit: chemId ? chemU : null,
+    truckBuyer: (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckBuyer.value || '') : null,
+    truckRef:   (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckRef.value || '')   : null,
+    rainfallMm: (isFinite(rainMm) && rainMm>0) ? rainMm : null,
+    gaugeId: gaugeId || null,
+    gaugeName: gaugeName || null,
+    transferPropertyId: transferPropertyId,
+    transferPropertyName: transferPropertyName,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  return { payload, propertyId, activity, paddockName, paddockNameTo: toPaddockName, species, klass, head, chemId, chemQ, transferPropertyId, transferPropertyName, gaugeId, rainfallMm: payload.rainfallMm };
+}
+
+/* -------------------------------------------------------
+   Livestock / chemicals side effects
+------------------------------------------------------- */
 async function applyLivestockChange({
   activity,
   propertyId,
@@ -625,9 +692,9 @@ async function applyLivestockChange({
   if (!propertyId || !species || !livestockClass || !head || head <= 0) return;
 
   let delta = 0;
-  if (activity === 'Trucking (sale)') {
+  if (activity === 'Trucking (sale)' || activity === 'Transfer stock (Out)') {
     delta = -Math.abs(head);
-  } else if (activity === 'Cattle Received (Purchase)') {
+  } else if (activity === 'Cattle Received (Purchase)' || activity === 'Transfer stock (In)') {
     delta = Math.abs(head);
   } else {
     return;
@@ -635,29 +702,34 @@ async function applyLivestockChange({
 
   try {
     const q = await db.collection('livestock')
-      .where('propertyId', '==', propertyId)
-      .where('location', '==', paddockName || '')
-      .where('species', '==', species)
-      .where('class', '==', livestockClass)
-      .limit(1)
-      .get();
+      .where('propertyId','==',propertyId)
+      .where('location','==',paddockName)
+      .where('class','==',livestockClass)
+      .where('species','==',species)
+      .limit(1).get();
 
     if (!q.empty) {
       const doc = q.docs[0];
-      const data = doc.data() || {};
-      const current = Number(data.count || 0);
-      const next = Math.max(0, current + delta);
-      await doc.ref.update({
-        count: next,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      await db.runTransaction(async tx=>{
+        const snap = await tx.get(doc.ref);
+        if (!snap.exists) return;
+        const data = snap.data()||{};
+        const current = Number(data.count||0);
+        const next = Math.max(0, current + delta);
+        tx.set(doc.ref, {
+          ...data,
+          count: next,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
       });
     } else if (delta > 0) {
+      // Create line if transferring in / receiving but none exists
       await db.collection('livestock').add({
         propertyId,
-        location: paddockName || '',
+        location: paddockName,
         species,
         class: livestockClass,
-        count: delta,
+        count: Math.abs(delta),
         movedIn: todayISO(),
         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -691,12 +763,13 @@ async function moveLivestockWithinProperty({
     species,
     String(species).toLowerCase(),
     String(species).toUpperCase(),
-    String(species).charAt(0).toUpperCase() + String(species).slice(1).toLowerCase()
+    String(species).charAt(0).toUpperCase()+String(species).slice(1).toLowerCase()
   ];
 
-  try {
+  try{
+    // Find from doc
     let fromDoc = null;
-    for (const sp of speciesVariants) {
+    for (const sp of speciesVariants){
       const snap = await db.collection('livestock')
         .where('propertyId','==',propertyId)
         .where('location','==',fromPaddock)
@@ -714,17 +787,20 @@ async function moveLivestockWithinProperty({
         const data = snap.data() || {};
         const current = Number(data.count || 0);
         const next = Math.max(0, current - headInt);
-        tx.update(fromDoc.ref, {
+        tx.set(fromDoc.ref, {
+          ...data,
           count: next,
+          movedOut: todayISO(),
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        }, { merge: true });
       });
     } else {
-      console.warn('Move stock: no FROM mob line', { propertyId, fromPaddock, species, livestockClass });
+      console.warn('No livestock row found to move FROM', { propertyId, fromPaddock, species, livestockClass });
     }
 
+    // To paddock
     let toDoc = null;
-    for (const sp of speciesVariants) {
+    for (const sp of speciesVariants){
       const snap = await db.collection('livestock')
         .where('propertyId','==',propertyId)
         .where('location','==',toPaddock)
@@ -742,10 +818,12 @@ async function moveLivestockWithinProperty({
         const data = snap.data() || {};
         const current = Number(data.count || 0);
         const next = current + headInt;
-        tx.update(toDoc.ref, {
+        tx.set(toDoc.ref, {
+          ...data,
           count: next,
+          movedIn: todayISO(),
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        }, { merge: true });
       });
     } else {
       await db.collection('livestock').add({
@@ -759,182 +837,36 @@ async function moveLivestockWithinProperty({
       });
     }
   } catch (e) {
-    console.error('Move stock inventory update failed', e);
+    console.error('Move livestock within property failed', e);
   }
 }
 
-/* -------------------------------------------------------
-   UI logic
-------------------------------------------------------- */
-function onActivityChange(){
-  const act = activitySel.value;
+/* Rainfall mirror: diary → gauges/{gaugeId}/daily/{date} */
+async function applyRainfallEntry({ gaugeId, rainfallMm, dateISO }) {
+  const mm = Number(rainfallMm);
+  if (!gaugeId || !Number.isFinite(mm) || mm <= 0) return;
 
-  const needsChem = (act==='Spraying paddocks' || act==='Chemical (stock)' || act==='Trucking (sale)');
-  chemRow.classList.toggle('hidden', !needsChem);
-  chemHint.textContent = (act==='Spraying paddocks') ? 'paddock spray'
-                     : (act==='Trucking (sale)' ? 'backline before transport' : 'stock treatment');
+  const dateStr = (dateISO || todayISO()).slice(0, 10);
+  const ref = db
+    .collection('gauges')
+    .doc(gaugeId)
+    .collection('daily')
+    .doc(dateStr);
 
-  const needsStock = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering' || act==='Cattle Received (Purchase)' || act.startsWith('Transfer stock'));
-  stockRow.classList.toggle('hidden', !needsStock);
-
-  const needsTransferProp = (act==='Transfer stock (In)' || act==='Transfer stock (Out)');
-  transferPropRow.classList.toggle('hidden', !needsTransferProp);
-
-  const needsToPaddock = (act === 'Move stock');
-  toPaddockRow.classList.toggle('hidden', !needsToPaddock);
-
-  const needsTruckDetails = (act==='Trucking (sale)' || act==='Cattle Received (Purchase)');
-  stockDetail1.classList.toggle('hidden', !needsTruckDetails);
-  stockDetail2.classList.toggle('hidden', !needsTruckDetails);
-  stockDetail1.querySelector('label').textContent = (act==='Trucking (sale)') ? 'Buyer / Dest (Trucking)' : 'Seller / Source';
-  stockDetail1.querySelector('input').placeholder = (act==='Trucking (sale)') ? 'e.g. Roma' : 'e.g. Mt Myrtle';
-
-  musterBox.classList.toggle('hidden', act!=='Mustering');
-  if (act==='Cattle Received (Purchase)') speciesSel.value = 'Cattle';
-
-  onPaddockOrSpeciesChange();
-}
-
-async function onPaddockOrSpeciesChange(){
-  const pid = propSel.value;
-  const act = activitySel.value;
-  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const speciesUI = speciesSel.value || 'Cattle';
-
-  const isStockMove = (act==='Trucking (sale)' || act==='Move stock' || act==='Chemical (stock)' || act==='Mustering' || act==='Transfer stock (Out)');
-  const isStockIn   = (act==='Cattle Received (Purchase)' || act==='Transfer stock (In)');
-
-  if ((!paddockName && !isStockIn) || pid==='ALL'){
-    $('#classOptions').innerHTML = SUGGESTED_CLASSES.map(r=>`<option value="${escapeHtml(r)}"></option>`).join('');
-    musterContext.innerHTML=''; stockContext.innerHTML='';
-    mClassBody.innerHTML='<tr><td colspan="6" class="muted">Pick property + paddock + species…</td></tr>';
-    mExp.value='';
-    return;
+  try {
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      const existing = snap.exists ? Number((snap.data() || {}).mm || 0) : 0;
+      const next = (existing || 0) + mm;
+      tx.set(ref, {
+        mm: next,
+        source: 'diary',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    });
+  } catch (e) {
+    console.error('Rainfall mirror failed', e);
   }
-
-  let rows = [];
-  if (isStockMove && paddockName){
-    rows = await fetchLivestockClasses(pid, paddockName, speciesUI);
-  } else if (isStockIn) {
-    const used = await fetchUsedClasses(pid, speciesUI);
-    rows = (used.length ? used : SUGGESTED_CLASSES).map(cls => ({ id: null, class: cls, count: 0 }));
-  }
-
-  rows.sort((a,b)=> String(a.class||'').localeCompare(String(b.class||'')));
-  $('#classOptions').innerHTML = rows.map(r=>`<option value="${escapeHtml(r.class||'')}"></option>`).join('');
-
-  if (isStockMove && paddockName){
-    const total = rows.reduce((s,r)=> s + Number(r.count||0), 0);
-    if (rows.length){
-      stockContext.innerHTML = [
-        `<span class="pill">In ${escapeHtml(paddockName)}: ${total} head</span>`,
-        ...rows.map(r =>
-          `<button type="button" class="pill" role="button" data-cls="${escapeHtml(r.class||'')}" data-head="${Number(r.count||0)}" title="Click to fill class & head">`+
-          `${escapeHtml(r.class||'')}: ${Number(r.count||0)}</button>`
-        )
-      ].join(' ');
-      stockContext.querySelectorAll('.pill[data-cls]').forEach(btn=>{
-        btn.onclick = () => { classInp.value = btn.dataset.cls || ''; headInp.value  = btn.dataset.head || ''; headInp.focus(); };
-      });
-    } else {
-      stockContext.innerHTML = `<span class="muted">No livestock lines found for ${escapeHtml(paddockName)} (${escapeHtml(speciesUI)}).</span>`;
-    }
-  } else {
-    stockContext.innerHTML = '';
-  }
-
-  if (act==='Mustering'){
-    const total = rows.reduce((s,r)=>s+Number(r.count||0),0);
-    mExp.value = total;
-    mDelta.value = (Number(mAct.value||0) - Number(mExp.value||0)) || 0;
-
-    const parts = rows.map(r=>`${escapeHtml(r.class||'')}: ${Number(r.count||0)}`);
-    musterContext.innerHTML = `<span class="pill">Expected total: ${total}</span> ${parts.length? ' | ' + parts.join(', ') : ''}`;
-
-    const existingClasses = new Set(rows.map(r=>String(r.class||'')));
-    for (const cls of SUGGESTED_CLASSES){
-      if (!existingClasses.has(cls)) rows.push({ id:null, class:cls, count:0, _new:true });
-    }
-
-    mClassBody.innerHTML = rows.map(r=>`
-      <tr data-id="${r.id||''}" data-class="${escapeHtml(r.class||'')}">
-        <td><input class="mc-class w200" value="${escapeHtml(r.class||'')}" ${r.id ? 'disabled' : ''} /></td>
-        <td><input class="mc-current w110" value="${Number(r.count||0)}" disabled /></td>
-        <td><input class="mc-new w110" type="number" min="0" /></td>
-        <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" /></td>
-        <td><input class="mc-qty w110" type="number" min="0" /></td>
-        <td><input class="mc-miss w110" type="number" min="0" /></td>
-      </tr>`).join('');
-  } else {
-    mClassBody.innerHTML = '<tr><td colspan="6" class="muted">Mustering not selected.</td></tr>';
-  }
-}
-
-addClassRowBtn.onclick = ()=>{
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input class="mc-class w200" placeholder="New class name" /></td>
-    <td><input class="mc-current w110" value="0" disabled /></td>
-    <td><input class="mc-new w110" type="number" min="0" /></td>
-    <td><input class="mc-to w200" placeholder="e.g. Cows, Heifers, Joined cows" /></td>
-    <td><input class="mc-qty w110" type="number" min="0" /></td>
-    <td><input class="mc-miss w110" type="number" min="0" /></td>`;
-  mClassBody.appendChild(tr);
-};
-
-/* -------------------------------------------------------
-   Save helpers
-------------------------------------------------------- */
-function buildPayloadFromUI(){
-  const propertyId   = propSel.value;
-  const propertyName = PROPERTY_NAME_BY_ID[propertyId] || '';
-  const date = dateInp.value || todayISO();
-  const time = timeInp.value || '';
-  const activity = activitySel.value;
-  const paddockId = paddockSel.value || '';
-  const paddockName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-  const toPaddockId = toPaddockSel.value || '';
-  const toPaddockName = toPaddockSel.selectedOptions[0]?.dataset?.name || '';
-  const notes = notesInp.value || '';
-  const species = speciesSel.value || '';
-  const klass = classInp.value || '';
-  const head = parseInt(headInp.value||0,10);
-  const chemId = chemSel.value || null;
-  const chemQ = parseFloat(chemQty.value||0);
-  const chemU = chemUnit.value || '';
-  const chemName = chemId ? (chemSel.selectedOptions[0]?.textContent.split('(')[0].trim() || null) : null;
-
-  const rainMm = parseFloat(rainMmInp.value||0);
-  const gaugeId = gaugeSel.value || null;
-  const gaugeName = gaugeId ? (gaugeSel.selectedOptions[0]?.textContent || null) : null;
-
-  const payload = {
-    propertyId,
-    propertyName,
-    date,
-    time,
-    activity,
-    paddockId: paddockId || null,
-    paddock: paddockName || null,
-    toPaddockId: (activity === 'Move stock' && toPaddockId) ? toPaddockId : null,
-    toPaddock: (activity === 'Move stock' && toPaddockName) ? toPaddockName : null,
-    notes,
-    species: (activity==='Mustering' || activity==='Move stock' || activity==='Trucking (sale)' || activity==='Chemical (stock)' || activity.startsWith('Transfer') || activity==='Cattle Received (Purchase)') ? species : null,
-    livestockClass: klass || null,
-    headCount: (isFinite(head) && head>0) ? head : null,
-    chemicalId: chemId || null,
-    chemicalName: chemName,
-    chemQty: chemId ? chemQ : null,
-    chemUnit: chemId ? chemU : null,
-    truckBuyer: (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckBuyer.value || '') : null,
-    truckRef:   (activity==='Trucking (sale)' || activity==='Cattle Received (Purchase)') ? (truckRef.value || '')   : null,
-    rainfallMm: (isFinite(rainMm) && rainMm>0) ? rainMm : null,
-    gaugeId: gaugeId || null,
-    gaugeName: gaugeName || null,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  return { payload, propertyId, activity, paddockName, paddockNameTo: toPaddockName, species, klass, head, chemId, chemQ };
 }
 
 /* -------------------------------------------------------
@@ -953,8 +885,17 @@ async function saveEntry(){
     klass,
     head,
     chemId,
-    chemQ
+    chemQ,
+    transferPropertyId,
+    transferPropertyName,
+    gaugeId,
+    rainfallMm
   } = buildPayloadFromUI();
+
+  if (!activity){
+    alert('Choose an activity.');
+    return;
+  }
 
   if (activity === 'Move stock') {
     if (!paddockName) {
@@ -967,6 +908,24 @@ async function saveEntry(){
     }
     if (!klass || !head || head <= 0) {
       alert('For Move stock you must set Class and Head.');
+      return;
+    }
+  }
+
+  if (activity.startsWith('Transfer stock')) {
+    if (!transferPropertyId) {
+      alert('Choose the other property in “To/From Property”.');
+      return;
+    }
+    if (!klass || !head || head <= 0) {
+      alert('For Transfer stock you must set Class and Head.');
+      return;
+    }
+  }
+
+  if (activity === 'Rainfall') {
+    if (!gaugeId || !rainfallMm) {
+      alert('For Rainfall you must pick a gauge and enter rainfall mm.');
       return;
     }
   }
@@ -988,6 +947,11 @@ async function saveEntry(){
         species,
         livestockClass: klass,
         head
+      }),
+      applyRainfallEntry({
+        gaugeId,
+        rainfallMm,
+        dateISO: payload.date
       })
     ];
 
@@ -1019,16 +983,16 @@ async function saveEntry(){
 ------------------------------------------------------- */
 const actions = [];
 function renderQueued(){
-  actionsListEl.style.display = actions.length ? 'block' : 'none';
+  actionsOl.style.display = actions.length ? 'block' : 'none';
   actionsOl.innerHTML = actions.map((a,i)=>(
-    `<li><span class="pill">${escapeHtml(a.activity)}</span> ${escapeHtml(a.propertyName)} — ${escapeHtml(a.paddock||'(no paddock)')}${a.notes? ' — ' + escapeHtml(a.notes) : ''} <button data-i="${i}" class="btn">Remove</button></li>`
+    `<li><span class="pill">${escapeHtml(a.activity)}</span> ${escapeHtml(a.propertyName||'')} — ${escapeHtml(a.paddock||'')} ${a.rainfallMm?`· ${a.rainfallMm}mm`:''} ${a.headCount?`· ${a.headCount} head`:''} <button data-i="${i}" class="btn small">Remove</button></li>`
   )).join('');
   actionsOl.querySelectorAll('button[data-i]').forEach(b=>{
     b.onclick = () => { actions.splice(Number(b.dataset.i),1); renderQueued(); };
   });
 }
 function currentActionFromUI(){
-  const { payload, propertyId, activity, paddockName, species, klass, head, chemId, chemQ } = buildPayloadFromUI();
+  const { payload, propertyId, activity, paddockName, species, klass, head, chemId, chemQ, transferPropertyId, transferPropertyName, gaugeId, rainfallMm } = buildPayloadFromUI();
   return {
     ...payload,
     propertyId,
@@ -1042,7 +1006,12 @@ function currentActionFromUI(){
     chemicalId: chemId,
     chemicalName: payload.chemicalName,
     chemQty: chemQ,
-    chemUnit: payload.chemUnit
+    chemUnit: payload.chemUnit,
+    gaugeId,
+    rainfallMm,
+    date: payload.date,
+    transferPropertyId,
+    transferPropertyName
   };
 }
 addActionBtn.onclick = ()=>{
@@ -1050,8 +1019,8 @@ addActionBtn.onclick = ()=>{
   const a = currentActionFromUI();
   actions.push(a);
   renderQueued();
-  batchMsg.textContent = 'Action added.'; setTimeout(()=>batchMsg.textContent='', 1500);
 };
+
 saveBatchBtn.onclick = async ()=>{
   if (!actions.length) { alert('No actions queued. Click “Add action” first.'); return; }
   const batchId = 'b_'+Date.now();
@@ -1060,7 +1029,8 @@ saveBatchBtn.onclick = async ()=>{
     const batch = db.batch();
     actions.forEach((a, idx)=>{
       const ref = db.collection('diaryEntries').doc();
-      batch.set(ref, { ...a, batchId, batchIndex: idx, createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+      batch.set(ref, { ...a, batchId, batchIndex: idx, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
     });
     await batch.commit();
 
@@ -1079,6 +1049,11 @@ saveBatchBtn.onclick = async ()=>{
           species: a.species,
           livestockClass: a.livestockClass,
           head: a.headCount
+        }),
+        applyRainfallEntry({
+          gaugeId: a.gaugeId,
+          rainfallMm: a.rainfallMm,
+          dateISO: a.date
         })
       ];
       if (a.activity === 'Move stock') {
@@ -1101,47 +1076,58 @@ saveBatchBtn.onclick = async ()=>{
     await refreshEntries();
   }catch(e){
     console.error(e);
-    batchMsg.textContent = 'Save failed.'; setTimeout(()=>batchMsg.textContent='', 2500);
+    batchMsg.textContent = 'Save failed.'; setTimeout(()=>batchMsg.textContent='', 3000);
   }
 };
 
 /* -------------------------------------------------------
-   Listing
+   Diary table & filters
 ------------------------------------------------------- */
 async function refreshEntries(){
-  entriesTbody.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
-  const y = Number(yearInp.value || new Date().getFullYear());
-  const {start,end} = yBounds(y);
+  entriesBody.innerHTML = '<tr><td colspan="9" class="muted small">Loading…</td></tr>';
   try{
-    const snap = await db.collection('diaryEntries').where('date','>=',start).where('date','<=',end).orderBy('date','desc').limit(200).get();
-    const rows=[];
+    let q = db.collection('diaryEntries').orderBy('date','desc').orderBy('time','desc').limit(500);
+    const fp = filterPropSel.value;
+    if (fp && fp!=='ALL') q = q.where('propertyId','==',fp);
+    const fa = filterAct.value;
+    if (fa) q = q.where('activity','==',fa);
+
+    const from = filterFrom.value;
+    const to = filterTo.value;
+    if (from) q = q.where('date','>=',from);
+    if (to) q = q.where('date','<=',to);
+
+    const snap = await q.get();
+    if (snap.empty){
+      entriesBody.innerHTML = '<tr><td colspan="9" class="muted small">No entries in this range.</td></tr>';
+      return;
+    }
+    const rows = [];
     snap.forEach(doc=>{
-      const d = { id:doc.id, ...doc.data() };
+      const d = doc.data()||{};
+      const stock = d.headCount ? `${d.headCount} ${d.species||''} ${d.livestockClass||''}`.trim() : '';
+      const chem = d.chemicalName ? `${d.chemicalName} ${d.chemQty||''} ${d.chemUnit||''}`.trim() : '';
       rows.push(`<tr>
         <td>${escapeHtml(d.date||'')}</td>
+        <td>${escapeHtml(d.time||'')}</td>
         <td>${escapeHtml(d.propertyName||'')}</td>
-        <td>${escapeHtml(d.activity||'')}</td>
         <td>${escapeHtml(d.paddock||'')}</td>
-        <td>${Number(d.rainfallMm||0) || ''}</td>
-        <td>${escapeHtml(d.chemicalName||'')}</td>
-        <td>${Number(d.headCount||0) || ''}</td>
-        <td class="nowrap"><button class="btn danger" onclick="delEntry('${d.id}')">Delete</button></td>
+        <td>${escapeHtml(d.activity||'')}</td>
+        <td>${escapeHtml(stock)}</td>
+        <td>${escapeHtml(chem)}</td>
+        <td>${d.rainfallMm!=null ? escapeHtml(String(d.rainfallMm)) : ''}</td>
+        <td class="notes">${escapeHtml(d.notes||'')}</td>
       </tr>`);
     });
-    entriesTbody.innerHTML = rows.length? rows.join('') : '<tr><td colspan="8">No entries.</td></tr>';
+    entriesBody.innerHTML = rows.join('');
   }catch(e){
     console.error(e);
-    entriesTbody.innerHTML = '<tr><td colspan="8">Load failed.</td></tr>';
+    entriesBody.innerHTML = '<tr><td colspan="9" class="muted small">Error loading entries.</td></tr>';
   }
 }
-window.delEntry = async function(id){
-  if(!confirm('Delete this entry?')) return;
-  try{ await db.collection('diaryEntries').doc(id).delete(); await refreshEntries(); }
-  catch(e){ console.error(e); alert('Delete failed'); }
-};
 
 /* -------------------------------------------------------
-   Property change + bootstrap
+   Property change
 ------------------------------------------------------- */
 async function onPropertyChange(){
   transferPropSel.innerHTML = '<option value="">(choose)</option>' +
@@ -1154,58 +1140,26 @@ async function onPropertyChange(){
   await onPaddockOrSpeciesChange();
 }
 
-activitySel.onchange = onActivityChange;
-paddockSel.onchange  = onPaddockOrSpeciesChange;
-speciesSel.onchange  = onPaddockOrSpeciesChange;
-refreshBtn.onclick   = refreshEntries;
-$('#saveBtn').onclick = saveEntry;
-$('#resetBtn').onclick = ()=>{
-  dateInp.value = todayISO(); timeInp.value=''; notesInp.value='';
-  activitySel.value='Ploughing'; onActivityChange();
-  paddockSel.value=''; toPaddockSel.value=''; chemSel.value=''; chemQty.value=''; chemUnit.value='';
-  rainMmInp.value=''; gaugeSel.value='';
-  speciesSel.value='Cattle'; classInp.value=''; headInp.value='';
-  truckBuyer.value=''; truckRef.value='';
-  mExp.value=''; mAct.value=''; mDelta.value=''; mReason.value='';
-  mAddCalves.value=''; mAddWeaners.value='';
-  mClassBody.innerHTML='<tr><td colspan="6" class="muted">Pick property + paddock + species…</td></tr>';
-  stockContext.innerHTML='';
+propSel.onchange = async ()=>{
+  await onPropertyChange();
+  await refreshEntries();
 };
-
-propSel.onchange = onPropertyChange;
+filterPropSel.onchange = refreshEntries;
+filterFrom.onchange = refreshEntries;
+filterTo.onchange = refreshEntries;
+filterAct.onchange = refreshEntries;
+$('#refreshBtn').onclick = refreshEntries;
+printDiaryBtn.onclick = ()=>window.print();
 
 /* -------------------------------------------------------
    Init
 ------------------------------------------------------- */
-(async function init(){
-  propSel.innerHTML =
-    '<option value="ALL">(All properties)</option>' +
-    Object.entries(PROPERTY_IDS).map(([name,id])=>`<option value="${id}">${name}</option>`).join('');
-  propSel.value = 'TRuxtRBx2zJlwZnRGYKJ';
-
-  yearInp.value = new Date().getFullYear();
+window.addEventListener('load', ()=>{
   dateInp.value = todayISO();
-
-  setStatus('Connecting…');
-
-  auth.onAuthStateChanged(async (u)=>{
-    if (u){
-      authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
-      signOutBtn.classList.remove('hidden');
-      showOverlay(false);
-
-      await onPropertyChange();
-      onActivityChange();
-      await refreshEntries();
-      setStatus('Connected');
-    } else {
-      authWho.textContent = 'Not signed in';
-      signOutBtn.classList.add('hidden');
-      setStatus('Please sign in', true);
-      showOverlay(true);
-    }
-  });
-})();
+  filterFrom.value = todayISO();
+  filterTo.value = todayISO();
+  onActivityChange();
+});
 </script>
 </body>
 </html>
