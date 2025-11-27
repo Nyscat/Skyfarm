@@ -9,57 +9,155 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <!-- XLSX for Excel parsing in the browser -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root{
       --bg:#f6fbf8;
       --card:#ffffff;
-      --ink:#0f172a;
-      --muted:#64748b;
-      --brand:#0B7A6E;
-      --line:#e5e7eb;
-      --warn:#9a3412;
+      --line:#dbe3eb;
+      --ink:#111827;
+      --muted:#6b7280;
+      --accent:#047857;
+      --accent-soft:#ecfdf3;
+      --danger:#b91c1c;
+      --danger-soft:#fef2f2;
+      --focus:#2563eb;
+      --shadow:0 18px 40px rgba(15,23,42,.1);
+      --shadow-soft:0 10px 30px rgba(15,23,42,.08);
     }
+
     *{box-sizing:border-box;}
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      background:var(--bg);
+      padding:0;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,-system-ui,"Segoe UI",sans-serif;
+      background:radial-gradient(circle at top, #e0f2fe 0, #f6fbf8 42%, #f6fbf8 100%);
       color:var(--ink);
+      -webkit-font-smoothing:antialiased;
     }
 
-    /* Header */
-    #sf-header{position:sticky;top:0;z-index:10;}
-    #sf-header .bar{
+    a{color:#0f766e;text-decoration:none;}
+    a:hover{text-decoration:underline;}
+
+    header{
+      background:rgba(255,255,255,.93);
+      border-bottom:1px solid rgba(148,163,184,.4);
+      backdrop-filter:blur(18px);
+      position:sticky;
+      top:0;
+      z-index:40;
+    }
+    .header-inner{
       display:flex;
       align-items:center;
+      justify-content:space-between;
+      max-width:1200px;
+      margin:0 auto;
+      padding:8px 16px;
       gap:12px;
-      padding:10px 14px;
-      background:#fff;
-      border-bottom:1px solid var(--line);
-      flex-wrap:wrap;
     }
-    #sf-header .brand{
+    .brand{
       display:flex;
       align-items:center;
       gap:8px;
-      color:var(--brand);
-      font-weight:700;
-      text-decoration:none;
     }
-    #sf-header nav a{
-      color:var(--brand);
-      text-decoration:none;
+    .brand-icon{
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 10%, #e0f2fe, #0f766e);
+      box-shadow:0 10px 20px rgba(15,23,42,.25);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#ecfdf3;
       font-weight:600;
-      margin-right:10px;
+      font-size:16px;
     }
-    #sf-header nav a[aria-current="page"]{text-decoration:underline;}
+    .brand-text{
+      display:flex;
+      flex-direction:column;
+    }
+    .brand-text span:first-child{
+      font-weight:600;
+      font-size:1rem;
+      letter-spacing:.02em;
+    }
+    .brand-text span:last-child{
+      font-size:.78rem;
+      color:var(--muted);
+    }
+
+    .header-right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.6);
+      padding:4px 10px;
+      font-size:.75rem;
+      color:var(--muted);
+      gap:6px;
+      background:rgba(255,255,255,.7);
+    }
+    .pill-label{
+      padding:2px 6px;
+      border-radius:999px;
+      background:#ecfdf3;
+      color:#065f46;
+      font-weight:500;
+      font-size:.72rem;
+    }
+
+    .btn{
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.7);
+      padding:6px 12px;
+      background:#fff;
+      font-size:.8rem;
+      font-weight:500;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      color:var(--ink);
+      box-shadow:0 2px 4px rgba(15,23,42,.04);
+    }
+    .btn:hover{background:#f9fafb;box-shadow:0 4px 10px rgba(15,23,42,.08);}
+    .btn.primary{
+      background:#047857;
+      color:#ecfdf3;
+      border-color:#047857;
+      box-shadow:0 8px 18px rgba(4,120,87,.35);
+    }
+    .btn.primary:hover{
+      background:#065f46;
+      border-color:#065f46;
+    }
+    .btn.sm{
+      padding:4px 9px;
+      font-size:.75rem;
+      border-radius:999px;
+    }
+    .btn.icon-only{
+      width:30px;
+      height:30px;
+      padding:0;
+      justify-content:center;
+    }
+
     .spacer{flex:1;}
-    .muted{color:var(--muted);font-size:.9rem;}
+    .muted{color:var(--muted);}
+    .small{font-size:.8rem;}
     .hidden{display:none;}
 
-    .nav-db{position:relative;}
-    .nav-db button{font-size:.9rem;}
+    .db-menu-wrap{position:relative;}
     .db-menu{
       position:absolute;
       top:100%;
@@ -75,7 +173,7 @@
     .db-menu a{
       display:block;
       padding:6px 12px;
-      font-size:.9rem;
+      font-size:.85rem;
       color:var(--ink);
       text-decoration:none;
     }
@@ -90,94 +188,177 @@
       border-radius:12px;
       padding:12px;
       margin:12px 0;
+      box-shadow:0 10px 30px rgba(15,23,42,.04);
     }
-    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-    label{font-size:.85rem;color:#475569;display:block;margin-bottom:4px;}
-    select,input,button{
-      padding:6px 10px;
-      border-radius:10px;
-      border:1px solid #cbd5e1;
-      background:#fff;
-      font:inherit;
+    .card.controls{display:flex;flex-direction:column;gap:10px;}
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:flex-end;
     }
-    button{cursor:pointer;}
-    .btn{border:1px solid #cbd5e1;border-radius:10px;background:#fff;}
-    .primary{background:var(--brand);color:#fff;border-color:var(--brand);}
-    .small{font-size:.85rem;}
-    .status-warn{color:var(--warn);}
 
-    table{width:100%;border-collapse:collapse;font-size:.9rem;}
+    label{
+      display:block;
+      font-size:.8rem;
+      font-weight:500;
+      color:var(--muted);
+      margin-bottom:3px;
+    }
+
+    select,input[type="text"],input[type="number"],input[type="email"],input[type="password"],input[type="date"],input[type="file"]{
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.9);
+      padding:6px 10px;
+      font-size:.9rem;
+      min-width:80px;
+      outline:none;
+      background:#fff;
+    }
+    select:focus,input:focus{
+      border-color:var(--focus);
+      box-shadow:0 0 0 1px rgba(37,99,235,.2);
+    }
+
+    #status{
+      font-size:.8rem;
+    }
+    .status-warn{color:var(--danger);}
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:4px;
+      font-size:.78rem;
+    }
     th,td{
-      border:1px solid #d4d4d8;
-      padding:4px 6px;
+      border:1px solid #e5e7eb;
+      padding:4px 5px;
       text-align:right;
     }
-    th:first-child,td:first-child{text-align:center;}
-    th{background:#f1f5f9;}
-    .total-row td{font-weight:600;background:#ecfeff;}
-    .note{font-size:.8rem;color:var(--muted);margin-top:8px;}
+    th{
+      background:#f9fafb;
+      font-weight:600;
+      color:#4b5563;
+    }
+    th:first-child,td:first-child{
+      text-align:left;
+      white-space:nowrap;
+    }
+    tbody tr:nth-child(odd) td{background:#f9fafb;}
+    tbody tr:nth-child(even) td{background:#ffffff;}
 
-    .summary-grid{
+    .total-row td{
+      font-weight:600;
+      background:#ecfdf3;
+      border-top:2px solid #34d399;
+    }
+    .cum-row td{
+      font-weight:500;
+      background:#e0f2fe;
+      border-top:2px solid #3b82f6;
+    }
+
+    .rain-header{
+      font-weight:600;
+      margin-bottom:6px;
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:6px;
+      font-size:.95rem;
+    }
+
+    .legend{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      font-size:.75rem;
+      color:var(--muted);
+      margin-top:6px;
+    }
+    .legend span{display:inline-flex;align-items:center;gap:4px;}
+    .legend-swatch{
+      width:12px;
+      height:12px;
+      border-radius:999px;
+    }
+    .swatch-total{background:#22c55e;}
+    .swatch-cum{background:#3b82f6;}
+
+    /* Summary section */
+    #summaryCard{
+      border-style:dashed;
+      border-color:#cbd5f5;
+      background:linear-gradient(135deg,#f5f3ff,#eff6ff);
+    }
+
+    #summaryContent{
       display:grid;
-      grid-template-columns:repeat(3, minmax(0,1fr));
-      gap:8px;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:10px;
       margin-top:8px;
-      font-size:.85rem;
     }
     .summary-item{
-      padding:6px 8px;
       border-radius:10px;
-      background:#f8fafc;
-      border:1px solid #e5e7eb;
+      padding:8px;
+      border:1px solid rgba(148,163,184,.6);
+      background:rgba(255,255,255,.85);
     }
-    .summary-item strong{display:block;font-size:.8rem;margin-bottom:2px;}
-    .summary-bad{border-color:#f97316;background:#fff7ed;}
-    .summary-good{border-color:#22c55e;background:#ecfdf3;}
+    .summary-item.wet{border-color:#22c55e;background:#ecfdf3;}
+    .summary-item.dry{border-color:#f97316;background:#fff7ed;}
 
-    @media (max-width:900px){
-      .summary-grid{grid-template-columns:repeat(2, minmax(0,1fr));}
-    }
-    @media (max-width:600px){
-      .summary-grid{grid-template-columns:1fr;}
+    /* Auth overlay */
+    #authOverlay{
+      position:fixed;
+      inset:0;
+      background:radial-gradient(circle at top,#0f172a 0,rgba(15,23,42,.92) 45%,rgba(15,23,42,.94) 100%);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:50;
     }
 
-    @media print{
-      body{background:#fff;}
-      #sf-header,.controls{display:none !important;}
-      .wrap{margin:0;padding:8px;}
-      .card{border:none;padding:0;margin:0;}
-      table{font-size:.8rem;}
-      .rain-header{font-size:1rem;margin-bottom:4px;}
-      .note{font-size:.7rem;}
+    @media (max-width:700px){
+      .header-inner{flex-wrap:wrap;gap:6px;}
+      .row{flex-direction:column;align-items:flex-start;}
+      .card.controls{gap:8px;}
+      table{font-size:.72rem;}
+      .rain-header{flex-direction:column;align-items:flex-start;}
     }
   </style>
 </head>
 <body>
-
-<!-- Header -->
-<div id="sf-header">
-  <div class="bar">
-    <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
-    <nav>
-      <a href="skyfarm-diary.html">Diary</a>
-      <a href="skyfarm-map.html">Map</a>
-      <a href="skyfarm-rain.html" aria-current="page">Rain</a>
-    </nav>
-    <div class="nav-db">
-      <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
-      <div id="dbMenu" class="db-menu hidden">
-        <a href="skyfarm-livestock.html">Livestock</a>
-        <a href="skyfarm-chemical.html">Chemicals</a>
-        <a href="skyfarm-seeds.html">Seeds</a>
-        <a href="skyfarm-barcode.html">Barcode Scanner</a>
-        <a href="skyfarm-users.html">Users &amp; Roles</a>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">SF</div>
+      <div class="brand-text">
+        <span>SkyFarm</span>
+        <span>Property rainfall</span>
       </div>
     </div>
-    <span class="spacer"></span>
-    <span id="authWho" class="muted">Connecting…</span>
-    <button id="signOutBtn" class="btn small hidden" style="border-color:#ef4444;color:#ef4444;">Sign out</button>
+    <div class="header-right">
+      <div class="pill">
+        <span class="pill-label">Beta</span>
+        <span>Rainfall to 9am daily</span>
+      </div>
+
+      <div class="db-menu-wrap">
+        <button id="dbMenuBtn" class="btn sm icon-only" title="Database tools">
+          ☰
+        </button>
+        <div id="dbMenu" class="db-menu hidden">
+          <a href="skyfarm-properties.html">Properties</a>
+          <a href="skyfarm-gauges.html">Rain gauges</a>
+          <a href="skyfarm-rain.html">Rainfall</a>
+        </div>
+      </div>
+
+      <button id="signOutBtn" class="btn sm hidden">Sign out</button>
+    </div>
   </div>
-</div>
+</header>
 
 <div class="wrap">
   <h1>Rainfall</h1>
@@ -201,15 +382,40 @@
     <div class="muted small" id="gaugeInfo"></div>
   </div>
 
+  <div id="importCard" class="card" style="margin-top:12px;display:none;">
+    <div class="row">
+      <div>
+        <h2 style="margin-top:0;">Historic rainfall import</h2>
+        <p class="small muted">
+          Admin only. Select the <strong>Consentes House - Rainfall.xlsx</strong> workbook and click import.
+        </p>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="importFile">Workbook</label>
+        <input id="importFile" type="file" accept=".xlsx,.xls" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="runImportBtn" class="btn" type="button">Import to Firestore</button>
+      </div>
+    </div>
+    <p id="importStatus" class="small muted" style="margin-top:8px;"></p>
+  </div>
+
   <div class="card">
     <div class="rain-header" id="chartTitle">Yearly Rainfall Record</div>
     <table id="rainTable">
       <thead id="rainHead"></thead>
       <tbody id="rainBody"></tbody>
     </table>
-    <div class="note">
-      Enter the rainfall for the preceding 24 hours, measured in mm, at 9.00am on the day it was measured.
-      Total days is the number of days with ≥ 0.1&nbsp;mm of rain.
+
+    <div class="legend">
+      <span><span class="legend-swatch swatch-total"></span> Total rain (mm)</span>
+      <span><span class="legend-swatch swatch-cum"></span> Cumulative total (mm)</span>
+      <span>Rainfall is recorded up to 9.00am on the day it was measured.</span>
+      <span>Total days is the number of days with ≥ 0.1&nbsp;mm of rain.</span>
     </div>
   </div>
 
@@ -222,12 +428,12 @@
 </div>
 
 <!-- Auth overlay -->
-<div id="authOverlay" style="position:fixed;inset:0;background:rgba(15,23,42,.06);display:none;align-items:center;justify-content:center;z-index:50;">
+<div id="authOverlay" style="position:fixed;inset:0;background:radial-gradient(circle at top,#0f172a 0,rgba(15,23,42,.92) 45%,rgba(15,23,42,.94) 100%);display:none;align-items:center;justify-content:center;z-index:50;">
   <div style="width:min(520px,92vw);background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;">
     <h2 style="margin:0 0 10px 0;">Sign in to SkyFarm</h2>
-    <p class="muted small">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div class="row">
-      <div style="flex:1;min-width:260px;">
+    <p class="muted small">Email &amp; password only. Anonymous sign-in is disabled for this app.</p>
+    <div class="row" style="margin-top:8px;">
+      <div style="flex:1;min-width:220px;">
         <label>Email</label>
         <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username">
       </div>
@@ -272,6 +478,12 @@
 
   const summaryContent = $('#summaryContent');
 
+  // Historic import UI
+  const importCard   = $('#importCard');
+  const importFile   = $('#importFile');
+  const importBtn    = $('#runImportBtn');
+  const importStatus = $('#importStatus');
+
   const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
   const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
 
@@ -286,74 +498,222 @@
   }
   function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
 
+  function setImportStatus(msg){
+    if (!importStatus) return;
+    importStatus.textContent = msg || '';
+  }
+
+  // ===== Historic rainfall import (Consentes House) =====
+
+  const HISTORIC_GAUGE_ID = 's7PlDM9wrEpxuJ6DGIab';
+
+  const monthMap = {
+    jan: 1, feb: 2, mar: 3, apr: 4,
+    may: 5, jun: 6, jul: 7, aug: 8,
+    sep: 9, oct: 10, nov: 11, dec: 12,
+  };
+
+  function parseWorkbookToEntries(workbook){
+    const entries = [];
+
+    workbook.SheetNames.forEach(sheetName=>{
+      const year = parseInt(sheetName, 10);
+      if (!year || year < 1900 || year > 3000) return;
+
+      const ws = workbook.Sheets[sheetName];
+      if (!ws) return;
+
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+      if (!rows || rows.length < 2) return;
+
+      const headers = rows[0].map(v => (v == null ? '' : String(v).trim().toLowerCase()));
+      const monthIdxByCol = {};
+
+      headers.forEach((h, idx)=>{
+        if (idx === 0) return;
+        if (!h) return;
+        const key = h.slice(0,3);
+        if (monthMap[key]) monthIdxByCol[idx] = monthMap[key];
+      });
+
+      for (let r = 1; r < rows.length; r++){
+        const row = rows[r];
+        if (!row || row.length === 0) continue;
+
+        const dayVal = row[0];
+        const dayNum = Number(dayVal);
+        if (!Number.isFinite(dayNum) || dayNum < 1 || dayNum > 31) continue;
+
+        for (let c = 1; c < row.length; c++){
+          const month = monthIdxByCol[c];
+          if (!month) continue;
+
+          const cell = row[c];
+          const val = Number(cell);
+          if (!Number.isFinite(val)) continue;
+          if (Math.abs(val) < 0.0001) continue;
+
+          const mmRounded = Math.round(val * 10) / 10;
+          const dateStr =
+            String(year).padStart(4,'0') + '-' +
+            String(month).padStart(2,'0') + '-' +
+            String(dayNum).padStart(2,'0');
+
+          entries.push({date: dateStr, mm: mmRounded});
+        }
+      }
+    });
+
+    return entries;
+  }
+
+  async function runHistoricImport(){
+    if (!importFile || !importFile.files || !importFile.files[0]){
+      alert('Choose the "Consentes House - Rainfall.xlsx" file first.');
+      return;
+    }
+
+    const file = importFile.files[0];
+    try{
+      setImportStatus('Reading workbook…');
+      const buf = await file.arrayBuffer();
+      const workbook = XLSX.read(buf, {type:'array'});
+
+      const entries = parseWorkbookToEntries(workbook);
+      if (!entries.length){
+        setImportStatus('No rainy days found in workbook. Check the file.');
+        return;
+      }
+
+      setImportStatus(`Found ${entries.length} rainy days. Writing to Firestore…`);
+
+      const batchLimit = 400;
+      let batch = db.batch();
+      let countInBatch = 0;
+      let written = 0;
+
+      for (let i = 0; i < entries.length; i++){
+        const e = entries[i];
+        const docRef = db
+          .collection('gauges')
+          .doc(HISTORIC_GAUGE_ID)
+          .collection('daily')
+          .doc(e.date);
+
+        batch.set(docRef, {mm: e.mm, source: 'historicImport'});
+        countInBatch++;
+
+        if (countInBatch >= batchLimit){
+          await batch.commit();
+          written += countInBatch;
+          setImportStatus(`Wrote ${written}/${entries.length} days…`);
+          batch = db.batch();
+          countInBatch = 0;
+        }
+      }
+
+      if (countInBatch > 0){
+        await batch.commit();
+        written += countInBatch;
+      }
+
+      setImportStatus(`Import complete. Wrote ${written} rainy days.`);
+      alert('Historic rainfall import complete. Reload the page and select an older year to check.');
+    }catch(err){
+      console.error('Historic import failed', err);
+      setImportStatus('Import failed: ' + (err.message || err));
+      alert('Import failed. Check the console log for more detail.');
+    }
+  }
+
+  if (importBtn){
+    importBtn.addEventListener('click', ()=>{
+      runHistoricImport();
+    });
+  }
+
   /* Header DB menu */
   (function(){
     const btn = $('#dbMenuBtn');
     const menu = $('#dbMenu');
     if (!btn || !menu) return;
     btn.onclick = e => { e.stopPropagation(); menu.classList.toggle('hidden'); };
-    document.addEventListener('click', e=>{
-      if (!menu.contains(e.target) && e.target !== btn) menu.classList.add('hidden');
-    });
+    document.addEventListener('click', ()=> menu.classList.add('hidden'));
   })();
 
-  /* Auth handlers */
-  $('#signInBtn').onclick = async ()=>{
-    const email = $('#siEmail').value.trim();
-    const pass  = $('#siPass').value;
-    $('#authMsg').textContent = 'Signing in…';
+  /* Auth */
+  const siEmail = $('#siEmail');
+  const siPass = $('#siPass');
+  const signInBtn = $('#signInBtn');
+  const authMsg = $('#authMsg');
+  const closeOverlayBtn = $('#closeOverlayBtn');
+
+  function setAuthMsg(msg, isError){
+    authMsg.textContent = msg || '';
+    authMsg.style.color = isError ? '#b91c1c' : '#6b7280';
+  }
+
+  signInBtn.onclick = async ()=>{
+    const email = (siEmail.value || '').trim();
+    const pass = siPass.value || '';
+    if (!email || !pass){
+      setAuthMsg('Enter email and password.', true);
+      return;
+    }
+    setAuthMsg('Signing in…');
+    signInBtn.disabled = true;
     try{
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
       await auth.signInWithEmailAndPassword(email, pass);
-      $('#authMsg').textContent = 'Signed in.';
+      setAuthMsg('Signed in.');
       showOverlay(false);
     }catch(e){
-      $('#authMsg').textContent = 'Sign-in failed: ' + (e && (e.message || e.code) || 'Unknown');
+      console.error(e);
+      setAuthMsg(e.message || 'Sign-in failed.', true);
+    }finally{
+      signInBtn.disabled = false;
     }
   };
-  $('#closeOverlayBtn').onclick = ()=> showOverlay(false);
-  signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+  closeOverlayBtn.onclick = ()=> showOverlay(false);
 
   auth.onAuthStateChanged(async user=>{
     if (user){
-      authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
+      // note: authWho element is not shown in this version, but we keep the text update
+      const whoEl = document.getElementById('authWho');
+      if (whoEl){
+        whoEl.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
+      }
       signOutBtn.classList.remove('hidden');
       showOverlay(false);
+      if (importCard) importCard.style.display = 'block';
       try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
       await initPage();
     }else{
-      authWho.textContent = 'Not signed in';
+      const whoEl = document.getElementById('authWho');
+      if (whoEl){
+        whoEl.textContent = 'Not signed in';
+      }
       signOutBtn.classList.add('hidden');
       showOverlay(true);
+      if (importCard) importCard.style.display = 'none';
       setStatus('Please sign in', true);
     }
   });
 
-  async function initPage(){
-    setStatus('Loading gauges…');
-    await loadProperties();
-    await loadGauges();
-    initYears();
-    bindEvents();
-    // Load long-term averages JSON (best effort)
-    loadClimatology();
-    setStatus('Ready');
-    if (gaugeSel.value) await loadRain();
-  }
+  signOutBtn.onclick = ()=> auth.signOut();
 
+  /* Data loading */
   async function loadProperties(){
-    propertiesById.clear();
     const snap = await db.collection('properties').get();
+    propertiesById = new Map();
     snap.forEach(doc=>{
-      const d = doc.data() || {};
-      propertiesById.set(doc.id, d.name || '(Property)');
+      propertiesById.set(doc.id, doc.data().name || '(Property)');
     });
   }
 
   async function loadGauges(){
-    const saved = localStorage.getItem(ACTIVE_GAUGE_KEY) || '';
-    gauges = [];
     const snap = await db.collection('gauges').get();
+    gauges = [];
     snap.forEach(doc=>{
       const d = doc.data() || {};
       if (d.active === false) return;
@@ -368,31 +728,62 @@
     });
 
     gaugeSel.innerHTML = '';
-    if (!gauges.length){
-      gaugeSel.innerHTML = '<option value="">No gauges found</option>';
-      currentGauge = null;
-      return;
-    }
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select gauge…';
+    gaugeSel.appendChild(placeholder);
+
     gauges.forEach(g=>{
       const opt = document.createElement('option');
       opt.value = g.id;
-      const propName = propertiesById.get(g.propertyId) || '';
-      opt.textContent = propName ? `${propName} — ${g.name}` : g.name;
+      const pname = propertiesById.get(g.propertyId) || '';
+      opt.textContent = pname ? `${pname} — ${g.name}` : g.name;
       gaugeSel.appendChild(opt);
     });
 
-    if (saved && gauges.some(g=>g.id === saved)) gaugeSel.value = saved;
-    currentGauge = gauges.find(g=>g.id === gaugeSel.value) || gauges[0];
-    gaugeSel.value = currentGauge.id;
-    updateGaugeInfo();
-    localStorage.setItem(ACTIVE_GAUGE_KEY, currentGauge.id);
+    const savedId = localStorage.getItem(ACTIVE_GAUGE_KEY) || '';
+    if (savedId){
+      const found = gauges.find(g=>g.id === savedId);
+      if (found){
+        gaugeSel.value = savedId;
+        currentGauge = found;
+      }
+    }
+
+    if (!currentGauge && gauges.length){
+      currentGauge = gauges[0];
+      gaugeSel.value = currentGauge.id;
+    }
+  }
+
+  async function loadClimatology(){
+    try{
+      const res = await fetch('consentes-house-rain.json');
+      if (!res.ok) return;
+      climatology = await res.json();
+    }catch(e){
+      console.warn('Failed to load climatology', e);
+    }
+  }
+
+  function updateGaugeInfo(){
+    if (!currentGauge){
+      gaugeInfo.textContent = '';
+      return;
+    }
+    const pname = propertiesById.get(currentGauge.propertyId) || '';
+    gaugeInfo.innerHTML = pname
+      ? `<strong>${currentGauge.name}</strong> on <strong>${pname}</strong>`
+      : `<strong>${currentGauge.name}</strong>`;
   }
 
   function initYears(){
     const now = new Date();
     const thisYear = now.getFullYear();
     const saved = parseInt(localStorage.getItem(ACTIVE_YEAR_KEY) || '', 10);
-    const startYear = thisYear - 10;
+
+    const earliestYear = 2000; // earliest year in historic data
+    const startYear = earliestYear;
     const endYear   = thisYear + 1;
 
     yearSel.innerHTML = '';
@@ -414,101 +805,80 @@
     $('#printBtn').onclick  = ()=> window.print();
     gaugeSel.onchange = ()=>{
       currentGauge = gauges.find(g=>g.id === gaugeSel.value) || null;
-      localStorage.setItem(ACTIVE_GAUGE_KEY, gaugeSel.value || '');
+      if (currentGauge){
+        localStorage.setItem(ACTIVE_GAUGE_KEY, currentGauge.id);
+      }
       updateGaugeInfo();
       loadRain();
     };
     yearSel.onchange = ()=>{
-      localStorage.setItem(ACTIVE_YEAR_KEY, yearSel.value || '');
+      localStorage.setItem(ACTIVE_YEAR_KEY, yearSel.value);
       loadRain();
     };
   }
 
-  function updateGaugeInfo(){
-    if (!currentGauge){
-      gaugeInfo.textContent = '';
-      chartTitle.textContent = 'Yearly Rainfall Record';
-      return;
+  async function initPage(){
+    try{
+      setStatus('Loading properties…');
+      await loadProperties();
+      setStatus('Loading gauges…');
+      await loadGauges();
+      setStatus('Loading climatology…');
+      await loadClimatology();
+      setStatus('');
+      initYears();
+      updateGaugeInfo();
+      bindEvents();
+      await loadRain();
+    }catch(e){
+      console.error(e);
+      setStatus('Failed to load data.', true);
     }
-    const propName = propertiesById.get(currentGauge.propertyId) || '(Property)';
-    gaugeInfo.textContent = `Gauge: ${currentGauge.name}  •  Property: ${propName}`;
-    chartTitle.textContent = `Yearly Rainfall Record — ${propName} — ${currentGauge.name}`;
-  }
-
-  function makeEmptyYear(){
-    const days = [];
-    for (let d=0; d<31; d++){
-      days.push(new Array(12).fill(null));
-    }
-    return days;
-  }
-
-  function parseDateInfo(docId, data){
-    const raw = data.dateISO || data.date || docId || '';
-    if (typeof raw !== 'string') return null;
-    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return null;
-    const year  = parseInt(m[1],10);
-    const month = parseInt(m[2],10);
-    const day   = parseInt(m[3],10);
-    if (!year || !month || !day) return null;
-    return {year, month, day};
-  }
-
-  function extractMm(data){
-    const v = data.mm ?? data.rainMm ?? data.amount ?? data.total ?? data.rainTotal ?? 0;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
   }
 
   async function loadRain(){
     if (!currentGauge){
-      setStatus('No gauge selected', true);
+      setStatus('Select a gauge.', true);
       return;
     }
-    const year = parseInt(yearSel.value,10);
+    const year = parseInt(yearSel.value, 10);
     if (!year){
-      setStatus('Invalid year', true);
+      setStatus('Select a year.', true);
       return;
     }
 
     setStatus('Loading rainfall…');
     rainHead.innerHTML = '';
-    rainBody.innerHTML = '<tr><td colspan="13">Loading…</td></tr>';
+    rainBody.innerHTML = '';
+    chartTitle.textContent = `Yearly Rainfall Record — ${year}`;
 
-    try{
-      const baseRef = db.collection('gauges').doc(currentGauge.id).collection('daily');
-      const snap = await baseRef.get();
-      const grid = makeEmptyYear();
+    const start = new Date(year, 0, 1);
+    const end   = new Date(year+1, 0, 1);
 
-      snap.forEach(doc=>{
-        const data = doc.data() || {};
-        const info = parseDateInfo(doc.id, data);
-        if (!info || info.year !== year) return;
-        const mm = extractMm(data);
-        if (!Number.isFinite(mm)) return;
-        const dIdx = info.day - 1;
-        const mIdx = info.month - 1;
-        if (dIdx < 0 || dIdx >= 31 || mIdx < 0 || mIdx >= 12) return;
-        grid[dIdx][mIdx] = (grid[dIdx][mIdx] || 0) + mm;
-      });
+    const dailySnap = await db.collection('gauges').doc(currentGauge.id)
+      .collection('daily')
+      .where(firebase.firestore.FieldPath.documentId(), '>=', formatDateId(start))
+      .where(firebase.firestore.FieldPath.documentId(), '<', formatDateId(end))
+      .get();
 
-      const stats = renderTable(grid);
-      setStatus('Loaded');
-      updateSummary(year, stats.monthTotals);
-    }catch(e){
-      console.error(e);
-      rainBody.innerHTML = '<tr><td colspan="13">Error loading rainfall.</td></tr>';
-      setStatus('Error loading', true);
-      updateSummary(null, null);
-    }
-  }
+    const grid = new Array(31).fill(0).map(()=> new Array(12).fill(null));
 
-  function renderTable(grid){
+    dailySnap.forEach(doc=>{
+      const id = doc.id; // YYYY-MM-DD
+      const mm = (doc.data() || {}).mm;
+      if (!Number.isFinite(mm)) return;
+      const y = parseInt(id.slice(0,4), 10);
+      const m = parseInt(id.slice(5,7), 10) - 1;
+      const d = parseInt(id.slice(8,10), 10) - 1;
+      if (y === year && m>=0 && m<12 && d>=0 && d<31){
+        grid[d][m] = mm;
+      }
+    });
+
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     let headHtml = '<tr><th>Day</th>';
-    for (const m of months) headHtml += `<th>${m}</th>`;
+    for (let m=0; m<12; m++) headHtml += `<th>${months[m]}</th>`;
     headHtml += '</tr>';
     rainHead.innerHTML = headHtml;
 
@@ -542,111 +912,56 @@
 
     // cumulative total row
     const cum = new Array(12).fill(0);
-    let running = 0;
     for (let m=0; m<12; m++){
-      running += monthTotals[m];
-      cum[m] = running;
+      cum[m] = (m === 0 ? monthTotals[m] : cum[m-1] + monthTotals[m]);
     }
-    bodyHtml += '<tr class="total-row"><td>Cumulative total (mm)</td>';
+    bodyHtml += '<tr class="cum-row"><td>Cumulative total (mm)</td>';
     for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(cum[m])}</td>`;
     bodyHtml += '</tr>';
 
-    // total rain days
-    bodyHtml += '<tr class="total-row"><td>Total rain days</td>';
-    for (let m=0; m<12; m++) bodyHtml += `<td>${monthRainDays[m] || ''}</td>`;
+    // rain days row
+    bodyHtml += '<tr><td>Rain days (≥0.1mm)</td>';
+    for (let m=0; m<12; m++) bodyHtml += `<td>${monthRainDays[m]}</td>`;
     bodyHtml += '</tr>';
 
     rainBody.innerHTML = bodyHtml;
-    return { monthTotals, monthRainDays };
+
+    setStatus('');
+    renderSummary(year, monthTotals);
   }
 
-  async function loadClimatology(){
-    try{
-      const resp = await fetch('consentes-house-rain.json', {cache:'no-store'});
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      climatology = await resp.json();
-      if (!climatology || !climatology.longTerm){
-        summaryContent.textContent = 'Averages file is present but empty. You can fill monthlyAverage and annualAverage later.';
-      }
-    }catch(e){
-      console.error('Failed to load consentes-house-rain.json', e);
-      summaryContent.textContent = 'Long-term averages file not found or unreadable.';
-    }
-  }
-
-  function updateSummary(year, monthTotals){
-    if (!summaryContent) return;
-    if (!currentGauge){
-      summaryContent.textContent = 'Select a gauge and year to see summary.';
+  function renderSummary(year, monthTotals){
+    if (!climatology || !climatology.monthlyAverages){
+      summaryContent.textContent = 'No climatology data available.';
       return;
     }
-
-    const gaugeName = (currentGauge.name || '').toLowerCase();
-    if (!climatology){
-      summaryContent.textContent = 'Loading long-term averages…';
-      return;
-    }
-
-    // Only wired for Consentes House for now
-    if (!gaugeName.includes('consentes')) {
-      summaryContent.textContent = 'Long-term averages are currently only set up for Consentes House.';
-      return;
-    }
-
-    if (!year || !monthTotals){
-      summaryContent.textContent = 'Select a year to compare against long-term averages.';
-      return;
-    }
-
-    const lt = climatology.longTerm || {};
-    const ltaMonthly = Array.isArray(lt.monthlyAverage) ? lt.monthlyAverage : [];
-    const ltaAnnual = typeof lt.annualAverage === 'number' ? lt.annualAverage : null;
-
-    const thisYearTotal = monthTotals.reduce((sum,v)=> sum + (Number.isFinite(v)?v:0), 0);
-    let yearPct = null;
-    if (ltaAnnual && ltaAnnual > 0){
-      yearPct = (thisYearTotal / ltaAnnual) * 100;
-    }
-
+    const avg = climatology.monthlyAverages;
     const monthsLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    function fmt1(x){
-      if (x == null || !Number.isFinite(x)) return '–';
-      return Math.abs(x % 1) < 0.05 ? x.toFixed(0) : x.toFixed(1);
-    }
-    function fmtPct(x){
-      if (x == null || !Number.isFinite(x)) return '–';
-      return x.toFixed(0) + '%';
-    }
-
     let html = '';
-    html += `<div class="muted small">Gauge averages source: <code>consentes-house-rain.json</code> (long-term).</div>`;
-    html += '<div class="summary-grid">';
-
-    // Annual tile
-    let annualClass = '';
-    if (yearPct != null){
-      if (yearPct < 80) annualClass = 'summary-bad';
-      else if (yearPct > 120) annualClass = 'summary-good';
+    let yearTotal = 0;
+    let avgYearTotal = 0;
+    for (let i=0; i<12; i++){
+      yearTotal += monthTotals[i] || 0;
+      avgYearTotal += avg[i] || 0;
     }
-    html += `<div class="summary-item ${annualClass}">
-      <strong>${year} vs long-term</strong>
-      <div>This year: ${fmt1(thisYearTotal)} mm</div>
-      <div>Average: ${fmt1(ltaAnnual)} mm</div>
-      <div>Pct of avg: ${fmtPct(yearPct)}</div>
+    const pctYear = avgYearTotal ? (yearTotal / avgYearTotal * 100) : null;
+
+    function fmt1(v){ return v == null ? '—' : v.toFixed(1); }
+    function fmtPct(v){ return v == null ? '—' : v.toFixed(0) + '%'; }
+
+    html += `<div class="summary-item ${pctYear != null && pctYear >= 110 ? 'wet' : pctYear != null && pctYear <= 90 ? 'dry' : ''}">
+      <strong>${year}</strong>
+      <div>This year: ${fmt1(yearTotal)} mm</div>
+      <div>Average: ${fmt1(avgYearTotal)} mm</div>
+      <div>Percent of avg: ${fmtPct(pctYear)}</div>
     </div>`;
 
-    // First 2 months tiles
-    for (let i=0; i<3; i++){
+    for (let i=0; i<12; i++){
       const thisM = monthTotals[i] || 0;
-      const avgM = (Array.isArray(ltaMonthly) && i < ltaMonthly.length) ? (ltaMonthly[i] || 0) : 0;
-      let pct = null;
-      if (avgM && avgM > 0) pct = (thisM / avgM) * 100;
-      let cls = '';
-      if (pct != null){
-        if (pct < 80) cls = 'summary-bad';
-        else if (pct > 120) cls = 'summary-good';
-      }
+      const avgM = avg[i] || 0;
+      const pct = avgM ? (thisM / avgM * 100) : null;
+      const cls = pct != null && pct >= 130 ? 'wet' : pct != null && pct <= 70 ? 'dry' : '';
       html += `<div class="summary-item ${cls}">
         <strong>${monthsLabels[i]}</strong>
         <div>This year: ${fmt1(thisM)} mm</div>
@@ -657,6 +972,13 @@
 
     html += '</div>';
     summaryContent.innerHTML = html;
+  }
+
+  function formatDateId(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
   }
 </script>
 </body>
