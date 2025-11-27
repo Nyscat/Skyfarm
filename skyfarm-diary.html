@@ -681,55 +681,54 @@ function buildPayloadFromUI(){
 /* -------------------------------------------------------
    Livestock / chemicals side effects
 ------------------------------------------------------- */
-async function applyLivestockChange({
-  activity,
-  propertyId,
-  paddockName,
-  species,
-  livestockClass,
-  head
-}) {
-  if (!propertyId || !species || !livestockClass || !head || head <= 0) return;
+async function adjustLivestockLine({ propertyId, paddockName, species, livestockClass, delta }) {
+  if (!propertyId || !paddockName || !species || !livestockClass) return;
+  if (!delta || !Number.isFinite(delta)) return;
 
-  let delta = 0;
-  if (activity === 'Trucking (sale)' || activity === 'Transfer stock (Out)') {
-    delta = -Math.abs(head);
-  } else if (activity === 'Cattle Received (Purchase)' || activity === 'Transfer stock (In)') {
-    delta = Math.abs(head);
-  } else {
-    return;
-  }
+  const headInt = Math.floor(Math.abs(delta));
+  if (!headInt) return;
+
+  const speciesVariants = [
+    species,
+    String(species).toLowerCase(),
+    String(species).toUpperCase(),
+    String(species).charAt(0).toUpperCase()+String(species).slice(1).toLowerCase()
+  ];
 
   try {
-    const q = await db.collection('livestock')
-      .where('propertyId','==',propertyId)
-      .where('location','==',paddockName)
-      .where('class','==',livestockClass)
-      .where('species','==',species)
-      .limit(1).get();
+    let docToUpdate = null;
+    for (const sp of speciesVariants) {
+      const snap = await db.collection('livestock')
+        .where('propertyId','==',propertyId)
+        .where('location','==',paddockName)
+        .where('species','==',sp)
+        .where('class','==',livestockClass)
+        .limit(1)
+        .get();
+      if (!snap.empty) { docToUpdate = snap.docs[0]; break; }
+    }
 
-    if (!q.empty) {
-      const doc = q.docs[0];
-      await db.runTransaction(async tx=>{
-        const snap = await tx.get(doc.ref);
+    if (docToUpdate) {
+      await db.runTransaction(async tx => {
+        const snap = await tx.get(docToUpdate.ref);
         if (!snap.exists) return;
-        const data = snap.data()||{};
-        const current = Number(data.count||0);
-        const next = Math.max(0, current + delta);
-        tx.set(doc.ref, {
+        const data = snap.data() || {};
+        const current = Number(data.count || 0);
+        const next = current + delta;
+        tx.set(docToUpdate.ref, {
           ...data,
-          count: next,
+          count: Math.max(0, next),
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
+        }, { merge: true });
       });
     } else if (delta > 0) {
-      // Create line if transferring in / receiving but none exists
+      // create a new line if we're adding animals and none exists yet
       await db.collection('livestock').add({
         propertyId,
         location: paddockName,
         species,
         class: livestockClass,
-        count: Math.abs(delta),
+        count: headInt,
         movedIn: todayISO(),
         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -742,7 +741,78 @@ async function applyLivestockChange({
       });
     }
   } catch (e) {
-    console.error('Livestock update failed', e);
+    console.error('adjustLivestockLine failed', e);
+  }
+}
+
+async function findYardNameForProperty(propertyId) {
+  if (!propertyId) return null;
+  try {
+    const snap = await db.collection('paddocks')
+      .where('propertyId','==',propertyId)
+      .where('isYard','==',true)
+      .orderBy('name')
+      .limit(1)
+      .get();
+    if (snap.empty) return null;
+    const d = snap.docs[0].data() || {};
+    return d.name || null;
+  } catch (e) {
+    console.error('findYardNameForProperty failed', e);
+    return null;
+  }
+}async function applyLivestockChange({
+  activity,
+  propertyId,
+  paddockName,
+  species,
+  livestockClass,
+  head,
+  transferPropertyId
+}) {
+  if (!propertyId || !species || !livestockClass || !head || head <= 0) return;
+
+  let delta = 0;
+
+  if (activity === 'Trucking (sale)') {
+    delta = -Math.abs(head);
+  } else if (activity === 'Cattle Received (Purchase)') {
+    delta = Math.abs(head);
+  } else if (activity === 'Transfer stock (Out)') {
+    delta = -Math.abs(head);
+  } else if (activity === 'Transfer stock (In)') {
+    // manual adjustment onto this property
+    delta = Math.abs(head);
+  } else {
+    // other activities don't affect herd numbers here
+    return;
+  }
+
+  // 1) Always adjust the current property / paddock if we have one
+  if (paddockName) {
+    await adjustLivestockLine({
+      propertyId,
+      paddockName,
+      species,
+      livestockClass,
+      delta
+    });
+  }
+
+  // 2) If this is a cross-property transfer OUT, add to yards on the destination property
+  if (activity === 'Transfer stock (Out)' && transferPropertyId) {
+    const yardName = await findYardNameForProperty(transferPropertyId);
+    if (!yardName) {
+      console.warn('No yard paddock found on destination property for transfer', { transferPropertyId });
+      return;
+    }
+    await adjustLivestockLine({
+      propertyId: transferPropertyId,
+      paddockName: yardName,
+      species,
+      livestockClass,
+      delta: Math.abs(head) // add animals at destination yards
+    });
   }
 }
 
