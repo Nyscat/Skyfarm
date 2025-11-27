@@ -117,6 +117,30 @@
     .total-row td{font-weight:600;background:#ecfeff;}
     .note{font-size:.8rem;color:var(--muted);margin-top:8px;}
 
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:8px;
+      margin-top:8px;
+      font-size:.85rem;
+    }
+    .summary-item{
+      padding:6px 8px;
+      border-radius:10px;
+      background:#f8fafc;
+      border:1px solid #e5e7eb;
+    }
+    .summary-item strong{display:block;font-size:.8rem;margin-bottom:2px;}
+    .summary-bad{border-color:#f97316;background:#fff7ed;}
+    .summary-good{border-color:#22c55e;background:#ecfdf3;}
+
+    @media (max-width:900px){
+      .summary-grid{grid-template-columns:repeat(2, minmax(0,1fr));}
+    }
+    @media (max-width:600px){
+      .summary-grid{grid-template-columns:1fr;}
+    }
+
     @media print{
       body{background:#fff;}
       #sf-header,.controls{display:none !important;}
@@ -130,6 +154,7 @@
 </head>
 <body>
 
+<!-- Header -->
 <div id="sf-header">
   <div class="bar">
     <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
@@ -187,6 +212,13 @@
       Total days is the number of days with ≥ 0.1&nbsp;mm of rain.
     </div>
   </div>
+
+  <div class="card" id="summaryCard">
+    <h3 style="margin-top:0;">Summary & averages</h3>
+    <div id="summaryContent" class="muted small">
+      Loading long-term averages from <code>consentes-house-rain.json</code>…
+    </div>
+  </div>
 </div>
 
 <!-- Auth overlay -->
@@ -214,6 +246,7 @@
 </div>
 
 <script>
+  /* Firebase init */
   const firebaseConfig = {
     apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
     authDomain: "consentes-pastoral.firebaseapp.com",
@@ -237,12 +270,15 @@
   const authWho = $('#authWho');
   const signOutBtn = $('#signOutBtn');
 
+  const summaryContent = $('#summaryContent');
+
   const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
   const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
 
   let propertiesById = new Map();
   let gauges = [];
   let currentGauge = null;
+  let climatology = null; // from consentes-house-rain.json
 
   function setStatus(msg, warn){
     statusEl.textContent = msg || '';
@@ -250,6 +286,7 @@
   }
   function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
 
+  /* Header DB menu */
   (function(){
     const btn = $('#dbMenuBtn');
     const menu = $('#dbMenu');
@@ -260,6 +297,7 @@
     });
   })();
 
+  /* Auth handlers */
   $('#signInBtn').onclick = async ()=>{
     const email = $('#siEmail').value.trim();
     const pass  = $('#siPass').value;
@@ -297,6 +335,8 @@
     await loadGauges();
     initYears();
     bindEvents();
+    // Load long-term averages JSON (best effort)
+    loadClimatology();
     setStatus('Ready');
     if (gaugeSel.value) await loadRain();
   }
@@ -453,12 +493,14 @@
         grid[dIdx][mIdx] = (grid[dIdx][mIdx] || 0) + mm;
       });
 
-      renderTable(grid);
+      const stats = renderTable(grid);
       setStatus('Loaded');
+      updateSummary(year, stats.monthTotals);
     }catch(e){
       console.error(e);
       rainBody.innerHTML = '<tr><td colspan="13">Error loading rainfall.</td></tr>';
       setStatus('Error loading', true);
+      updateSummary(null, null);
     }
   }
 
@@ -498,7 +540,7 @@
     for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(monthTotals[m])}</td>`;
     bodyHtml += '</tr>';
 
-    // NEW: cumulative total row
+    // cumulative total row
     const cum = new Array(12).fill(0);
     let running = 0;
     for (let m=0; m<12; m++){
@@ -515,6 +557,106 @@
     bodyHtml += '</tr>';
 
     rainBody.innerHTML = bodyHtml;
+    return { monthTotals, monthRainDays };
+  }
+
+  async function loadClimatology(){
+    try{
+      const resp = await fetch('consentes-house-rain.json', {cache:'no-store'});
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      climatology = await resp.json();
+      if (!climatology || !climatology.longTerm){
+        summaryContent.textContent = 'Averages file is present but empty. You can fill monthlyAverage and annualAverage later.';
+      }
+    }catch(e){
+      console.error('Failed to load consentes-house-rain.json', e);
+      summaryContent.textContent = 'Long-term averages file not found or unreadable.';
+    }
+  }
+
+  function updateSummary(year, monthTotals){
+    if (!summaryContent) return;
+    if (!currentGauge){
+      summaryContent.textContent = 'Select a gauge and year to see summary.';
+      return;
+    }
+
+    const gaugeName = (currentGauge.name || '').toLowerCase();
+    if (!climatology){
+      summaryContent.textContent = 'Loading long-term averages…';
+      return;
+    }
+
+    // Only wired for Consentes House for now
+    if (!gaugeName.includes('consentes')) {
+      summaryContent.textContent = 'Long-term averages are currently only set up for Consentes House.';
+      return;
+    }
+
+    if (!year || !monthTotals){
+      summaryContent.textContent = 'Select a year to compare against long-term averages.';
+      return;
+    }
+
+    const lt = climatology.longTerm || {};
+    const ltaMonthly = Array.isArray(lt.monthlyAverage) ? lt.monthlyAverage : [];
+    const ltaAnnual = typeof lt.annualAverage === 'number' ? lt.annualAverage : null;
+
+    const thisYearTotal = monthTotals.reduce((sum,v)=> sum + (Number.isFinite(v)?v:0), 0);
+    let yearPct = null;
+    if (ltaAnnual && ltaAnnual > 0){
+      yearPct = (thisYearTotal / ltaAnnual) * 100;
+    }
+
+    const monthsLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    function fmt1(x){
+      if (x == null || !Number.isFinite(x)) return '–';
+      return Math.abs(x % 1) < 0.05 ? x.toFixed(0) : x.toFixed(1);
+    }
+    function fmtPct(x){
+      if (x == null || !Number.isFinite(x)) return '–';
+      return x.toFixed(0) + '%';
+    }
+
+    let html = '';
+    html += `<div class="muted small">Gauge averages source: <code>consentes-house-rain.json</code> (long-term).</div>`;
+    html += '<div class="summary-grid">';
+
+    // Annual tile
+    let annualClass = '';
+    if (yearPct != null){
+      if (yearPct < 80) annualClass = 'summary-bad';
+      else if (yearPct > 120) annualClass = 'summary-good';
+    }
+    html += `<div class="summary-item ${annualClass}">
+      <strong>${year} vs long-term</strong>
+      <div>This year: ${fmt1(thisYearTotal)} mm</div>
+      <div>Average: ${fmt1(ltaAnnual)} mm</div>
+      <div>Pct of avg: ${fmtPct(yearPct)}</div>
+    </div>`;
+
+    // First 2 months tiles
+    for (let i=0; i<3; i++){
+      const thisM = monthTotals[i] || 0;
+      const avgM = (Array.isArray(ltaMonthly) && i < ltaMonthly.length) ? (ltaMonthly[i] || 0) : 0;
+      let pct = null;
+      if (avgM && avgM > 0) pct = (thisM / avgM) * 100;
+      let cls = '';
+      if (pct != null){
+        if (pct < 80) cls = 'summary-bad';
+        else if (pct > 120) cls = 'summary-good';
+      }
+      html += `<div class="summary-item ${cls}">
+        <strong>${monthsLabels[i]}</strong>
+        <div>This year: ${fmt1(thisM)} mm</div>
+        <div>Average: ${fmt1(avgM)} mm</div>
+        <div>Pct of avg: ${fmtPct(pct)}</div>
+      </div>`;
+    }
+
+    html += '</div>';
+    summaryContent.innerHTML = html;
   }
 </script>
 </body>
