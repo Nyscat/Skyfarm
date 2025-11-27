@@ -281,6 +281,7 @@
             <option value="Trucking (sale)">Truck cattle (sale)</option>
             <option value="Mustering">Muster cattle</option>
             <option value="Move stock">Move cattle (within property)</option>
+            <option value="Transfer stock (Out)">Transfer cattle to another property</option>
             <option value="Cattle purchase">Buy cattle</option>
             <option value="Rainfall">Rainfall</option>
             <option value="Purchase inputs">Purchase – inputs</option>
@@ -303,6 +304,13 @@
         <div id="toPaddockWrap" class="hidden" style="min-width:240px">
           <label>To paddock</label>
           <select id="toPaddockSel" class="w220">
+            <option value="">(choose)</option>
+          </select>
+        </div>
+
+        <div id="transferPropWrap" class="hidden" style="min-width:240px">
+          <label>To property</label>
+          <select id="transferPropSel" class="w220">
             <option value="">(choose)</option>
           </select>
         </div>
@@ -500,6 +508,7 @@
     'Cows','PTIC cows','Heifers','Steers','Bulls',
     'Cows & calves','Weaners','Calves'
   ];
+  let ALL_PROPERTIES = [];
 
   // ---------- DOM refs ----------
   const propSel = $('#propSel');
@@ -509,6 +518,8 @@
   const paddockSel = $('#paddockSel');
   const toPaddockWrap = $('#toPaddockWrap');
   const toPaddockSel = $('#toPaddockSel');
+  const transferPropWrap = $('#transferPropWrap');
+  const transferPropSel = $('#transferPropSel');
   const rainMmInp = $('#rainMmInp');
   const gaugeSel = $('#gaugeSel');
   const notesInp = $('#notesInp');
@@ -607,9 +618,21 @@
       props.push({id:doc.id, name:d.name || '(Property)'});
     });
     props.sort((a,b)=>a.name.localeCompare(b.name));
+    ALL_PROPERTIES = props;
+
     propSel.innerHTML = props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     filterPropSel.innerHTML = '<option value="">(All properties)</option>' +
       props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  }
+
+  function refreshTransferPropertyOptions(currentPropertyId){
+    if (!ALL_PROPERTIES.length) return;
+    const html = '<option value="">(choose)</option>' +
+      ALL_PROPERTIES
+        .filter(p => p.id !== currentPropertyId)
+        .map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`)
+        .join('');
+    transferPropSel.innerHTML = html;
   }
 
   async function loadPaddocksForProperty(propertyId){
@@ -787,6 +810,27 @@
     await adjustLivestockLine(propertyId, toPaddock,   species, klass,  Math.abs(head));
   }
 
+  async function findYardNameForProperty(propertyId){
+    if (!propertyId) return null;
+    try{
+      const snap = await db.collection('paddocks')
+        .where('propertyId','==',propertyId)
+        .get();
+      const yards = [];
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        if (d.isYards){
+          yards.push(d.name || '(unnamed)');
+        }
+      });
+      yards.sort((a,b)=>String(a||'').localeCompare(String(b||'')));
+      return yards[0] || null;
+    }catch(e){
+      console.error('findYardNameForProperty failed', e);
+      return null;
+    }
+  }
+
   async function applyRainfallMirror(gaugeId, mm, dateISO){
     const v = Number(mm);
     if (!gaugeId || !Number.isFinite(v) || v<=0 || !dateISO) return;
@@ -814,6 +858,7 @@
     const needsStock = (
       act === 'Trucking (sale)' ||
       act === 'Move stock' ||
+      act === 'Transfer stock (Out)' ||
       act === 'Cattle purchase' ||
       act === 'Chemical (stock)' ||
       act === 'Mustering'
@@ -822,6 +867,9 @@
 
     const needsToPaddock = (act === 'Move stock');
     toPaddockWrap.classList.toggle('hidden', !needsToPaddock);
+
+    const needsTransferProp = (act === 'Transfer stock (Out)');
+    transferPropWrap.classList.toggle('hidden', !needsTransferProp);
 
     const usesChem =
       act === 'Spraying paddocks' ||
@@ -861,6 +909,11 @@
     const toPaddockId = toPadOpt?.value || '';
     const toPaddockName = toPadOpt?.dataset?.name || '';
 
+    const transferPropertyId = transferPropSel.value || null;
+    const transferPropertyName = transferPropertyId
+      ? (ALL_PROPERTIES.find(p=>p.id===transferPropertyId)?.name || '')
+      : null;
+
     const weather = weatherInp.value || '';
 
     const species = stockRow.classList.contains('hidden') ? null : (speciesSel.value || null);
@@ -894,6 +947,8 @@
       paddock: paddockName || null,
       toPaddockId: toPaddockId || null,
       toPaddock: toPaddockName || null,
+      transferPropertyId,
+      transferPropertyName,
       notes: notes || null,
       weather: weather || null,
 
@@ -916,7 +971,21 @@
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    return {payload, propertyId, activity, paddockName, toPaddockName, species, klass, head, chemId, chemQty:chemQtyNum, gaugeId, rainfallMm};
+    return {
+      payload,
+      propertyId,
+      activity,
+      paddockName,
+      toPaddockName,
+      transferPropertyId,
+      species,
+      klass,
+      head,
+      chemId,
+      chemQty:chemQtyNum,
+      gaugeId,
+      rainfallMm
+    };
   }
 
   // ---------- Save ----------
@@ -925,7 +994,21 @@
       alert('Choose a property.');
       return;
     }
-    const {payload, propertyId, activity, paddockName, toPaddockName, species, klass, head, chemId, chemQty, gaugeId, rainfallMm} = buildPayloadFromUI();
+    const {
+      payload,
+      propertyId,
+      activity,
+      paddockName,
+      toPaddockName,
+      transferPropertyId,
+      species,
+      klass,
+      head,
+      chemId,
+      chemQty,
+      gaugeId,
+      rainfallMm
+    } = buildPayloadFromUI();
 
     if (activity === 'Move stock'){
       if (!paddockName || !toPaddockName) {
@@ -943,6 +1026,12 @@
         return;
       }
     }
+    if (activity === 'Transfer stock (Out)'){
+      if (!paddockName || !transferPropertyId || !klass || !head){
+        alert('For transfer set FROM paddock, TO property, class and head.');
+        return;
+      }
+    }
     if (activity === 'Rainfall'){
       if (!gaugeId || !rainfallMm){
         alert('For Rainfall choose a gauge and enter mm.');
@@ -956,21 +1045,33 @@
 
       const sideEffects = [];
 
-      // Chemical use
+      // Chemical use / purchases
       if (chemId && chemQty){
         const chemDelta = (activity === 'Purchase inputs' && payload.purchaseType === 'Chemical') ? chemQty : -chemQty;
         sideEffects.push(adjustChemicalStock(chemId, chemDelta));
       }
 
-      // Livestock
+      // Livestock movements
       if (activity === 'Trucking (sale)' && paddockName && species && klass && head){
         sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
       }else if (activity === 'Cattle purchase' && paddockName && species && klass && head){
         sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, +head));
       }else if (activity === 'Move stock' && paddockName && toPaddockName && species && klass && head){
         sideEffects.push(moveLivestockWithinProperty(propertyId, paddockName, toPaddockName, species, klass, head));
+      }else if (activity === 'Transfer stock (Out)' && paddockName && transferPropertyId && species && klass && head){
+        // subtract from current paddock
+        sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
+        // add to yards on destination property
+        sideEffects.push((async ()=>{
+          const yardName = await findYardNameForProperty(transferPropertyId);
+          if (!yardName){
+            console.warn('No yard paddock found on destination property for transfer', {transferPropertyId});
+            return;
+          }
+          await adjustLivestockLine(transferPropertyId, yardName, species, klass, +head);
+        })());
       }
-      // Mustering: no stock change by design
+      // Mustering: no stock change
 
       // Rainfall mirror
       if (activity === 'Rainfall' && gaugeId && rainfallMm){
@@ -1075,6 +1176,7 @@
       await loadPaddocksForProperty(propSel.value);
       await loadGaugesForProperty(propSel.value);
       await loadChemicalsForProperty(propSel.value);
+      refreshTransferPropertyOptions(propSel.value);
     }
     onActivityChange();
 
@@ -1082,6 +1184,7 @@
       await loadPaddocksForProperty(propSel.value);
       await loadGaugesForProperty(propSel.value);
       await loadChemicalsForProperty(propSel.value);
+      refreshTransferPropertyOptions(propSel.value);
       await refreshStockContext();
     };
 
