@@ -496,7 +496,70 @@
       <div id="entriesCards" class="entries-cards"></div>
     </div>
   </div>
+/* Scroll wrapper for wide tables */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
+/* Card list for mobile */
+.entries-cards{
+  margin-top:8px;
+  display:none;            /* shown only on small screens via media query */
+  flex-direction:column;
+  gap:8px;
+}
+.entry-card{
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#f9fafb;
+  padding:8px 10px;
+}
+.ec-header{
+  display:flex;
+  justify-content:space-between;
+  font-size:.78rem;
+  font-weight:500;
+  margin-bottom:4px;
+}
+.ec-line{
+  font-size:.78rem;
+  margin-bottom:2px;
+}
+.ec-label{
+  font-weight:600;
+  color:#475569;
+  margin-right:4px;
+}
+.ec-activity{
+  font-weight:600;
+}
+.ec-notes{
+  color:var(--muted);
+}
+.ec-actions{
+  margin-top:4px;
+  text-align:right;
+}
+
+/* Breakpoints: show cards on phone, table on bigger screens */
+@media (max-width: 800px){
+  .table-desktop{display:none;}
+  .entries-cards{display:flex;}
+}
+
+/* Default (desktop/tablet): show table, hide cards */
+@media (min-width: 801px){
+  .table-desktop{display:block;}
+  .entries-cards{display:none;}
+}
+
+/* Print: always show table, hide cards */
+@media print{
+  .table-desktop{display:block !important;}
+  .entries-cards{display:none !important;}
+}
   <!-- Auth overlay -->
   <div id="authOverlay">
     <div id="authCard">
