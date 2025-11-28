@@ -467,25 +467,33 @@
         <span class="spacer"></span>
         <button id="printBtn" class="btn small" type="button">Print / PDF</button>
       </div>
-      <table>
-        <thead>
-        <tr>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Property</th>
-          <th>Paddock</th>
-          <th>Activity</th>
-          <th>Stock</th>
-          <th>Chemical / inputs</th>
-          <th>Rain (mm)</th>
-          <th>Notes</th>
-          <th class="no-print"></th>
-        </tr>
-        </thead>
-        <tbody id="entriesBody">
-        <tr><td colspan="10" class="muted small">Loading…</td></tr>
-        </tbody>
-      </table>
+            <!-- Desktop/tablet view -->
+      <div class="table-desktop">
+        <div class="table-scroll">
+          <table>
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Property</th>
+              <th>Paddock</th>
+              <th>Activity</th>
+              <th>Stock</th>
+              <th>Chemical / inputs</th>
+              <th>Rain (mm)</th>
+              <th>Notes</th>
+              <th class="no-print"></th>
+            </tr>
+            </thead>
+            <tbody id="entriesBody">
+            <tr><td colspan="10" class="muted small">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mobile card view -->
+      <div id="entriesCards" class="entries-cards"></div>
     </div>
   </div>
 
