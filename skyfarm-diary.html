@@ -666,6 +666,7 @@
   const filterPropSel = $('#filterPropSel');
   const filterYear = $('#filterYear');
   const entriesBody = $('#entriesBody');
+  const entriesCards = $('#entriesCards');
 
   const authOverlay = $('#authOverlay');
   const authWho = $('#authWho');
@@ -1346,8 +1347,11 @@
   }
 
   // ---------- Recent entries ----------
-  async function refreshEntries(){
+    async function refreshEntries(){
     entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Loading…</td></tr>';
+    if (entriesCards){
+      entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
+    }
     try{
       const snap = await db.collection('diaryEntries')
         .orderBy('date','desc')
@@ -1371,10 +1375,14 @@
 
       if (!filtered.length){
         entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
+        if (entriesCards){
+          entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
+        }
         return;
       }
 
-      entriesBody.innerHTML = filtered.map(r=>{
+      // Build table rows
+      const tableHtml = filtered.map(r=>{
         const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
 
         let inputs = '';
@@ -1407,9 +1415,55 @@
           <td class="no-print"><button type="button" class="btn small danger" data-del="${r.id}">Delete</button></td>
         </tr>`;
       }).join('');
+      entriesBody.innerHTML = tableHtml;
 
-      // wire delete buttons
-      entriesBody.querySelectorAll('button[data-del]').forEach(btn=>{
+      // Build mobile cards
+      if (entriesCards){
+        const cardsHtml = filtered.map(r=>{
+          const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
+
+          let inputs = '';
+          if (r.purchaseType){
+            inputs = r.purchaseType;
+            const bits = [];
+            if (r.chemicalId && r.chemicalQty) bits.push(`${r.chemicalQty} ${r.chemicalUnit||''} chem`);
+            if (r.seedId && r.seedQty)       bits.push(`${r.seedQty} ${r.seedUnit||''} seed`);
+            if (r.fodderId && r.fodderQty)   bits.push(`${r.fodderQty} ${r.fodderUnit||''} fodder`);
+            if (bits.length) inputs += ' (' + bits.join('; ') + ')';
+          }else{
+            if (r.chemicalId && r.chemicalQty) inputs = `${r.chemicalQty} ${r.chemicalUnit||''} chem`;
+            else if (r.seedId && r.seedQty)    inputs = `${r.seedQty} ${r.seedUnit||''} seed`;
+            else if (r.fodderId && r.fodderQty)inputs = `${r.fodderQty} ${r.fodderUnit||''} fodder`;
+          }
+
+          const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
+          const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
+
+          return `<div class="entry-card" data-id="${r.id}">
+            <div class="ec-header">
+              <div>${escapeHtml(r.date || '')}</div>
+              <div>${escapeHtml(r.time || '')}</div>
+            </div>
+            <div class="ec-line">
+              <span class="ec-label">Property</span>${escapeHtml(r.propertyName || '')}
+            </div>
+            ${r.paddock ? `<div class="ec-line"><span class="ec-label">Paddock</span>${escapeHtml(r.paddock)}</div>` : ''}
+            <div class="ec-line ec-activity">${escapeHtml(r.activity || '')}</div>
+            ${stock ? `<div class="ec-line"><span class="ec-label">Stock</span>${escapeHtml(stock)}</div>` : ''}
+            ${inputs ? `<div class="ec-line"><span class="ec-label">Inputs</span>${escapeHtml(inputs)}</div>` : ''}
+            ${rain ? `<div class="ec-line"><span class="ec-label">Rain</span>${escapeHtml(rain)} mm</div>` : ''}
+            ${notes ? `<div class="ec-line ec-notes">${escapeHtml(notes)}</div>` : ''}
+            <div class="ec-actions no-print">
+              <button type="button" class="btn small danger" data-del="${r.id}">Delete</button>
+            </div>
+          </div>`;
+        }).join('');
+        entriesCards.innerHTML = cardsHtml;
+      }
+
+      // Wire delete buttons for both table + cards
+      const delButtons = document.querySelectorAll('#entriesBody button[data-del], #entriesCards button[data-del]');
+      delButtons.forEach(btn=>{
         btn.onclick = async ()=>{
           const id = btn.dataset.del;
           if (!id) return;
@@ -1427,6 +1481,9 @@
     }catch(e){
       console.error(e);
       entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Error loading entries.</td></tr>';
+      if (entriesCards){
+        entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
+      }
     }
   }
 
