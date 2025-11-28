@@ -1471,7 +1471,9 @@
         const delHtml = canDeleteEntry(r)
           ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
           : '';
-
+const userLabel = r.createdByEmail
+  ? String(r.createdByEmail).split('@')[0]   // just the bit before @
+  : '';
         return `<tr data-id="${r.id}">
           <td class="nowrap">${escapeHtml(r.date||'')}</td>
           <td class="nowrap">${escapeHtml(r.time||'')}</td>
