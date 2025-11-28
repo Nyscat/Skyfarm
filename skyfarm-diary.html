@@ -359,7 +359,7 @@
         </div>
       </div>
 
-      <!-- Chemical / purchase -->
+      <!-- Chemical row -->
       <div id="chemRow" class="row hidden">
         <div>
           <label>Chemical</label>
@@ -381,6 +381,25 @@
         </div>
       </div>
 
+      <!-- Seed row -->
+      <div id="seedRow" class="row hidden">
+        <div>
+          <label>Seed</label>
+          <select id="seedSel" class="w220">
+            <option value="">(choose)</option>
+          </select>
+        </div>
+        <div>
+          <label>Seed quantity</label>
+          <input id="seedQty" type="number" min="0" step="0.01" class="w120"/>
+        </div>
+        <div>
+          <label>Unit</label>
+          <input id="seedUnit" class="w90" disabled/>
+        </div>
+      </div>
+
+      <!-- Purchase meta -->
       <div id="purchaseRow" class="row hidden">
         <div>
           <label>Purchase type</label>
@@ -536,6 +555,11 @@
   const chemUnit = $('#chemUnit');
   const chemHint = $('#chemHint');
 
+  const seedRow = $('#seedRow');
+  const seedSel = $('#seedSel');
+  const seedQty = $('#seedQty');
+  const seedUnit = $('#seedUnit');
+
   const purchaseRow = $('#purchaseRow');
   const purchaseTypeSel = $('#purchaseTypeSel');
   const purchaseSupplier = $('#purchaseSupplier');
@@ -689,6 +713,21 @@
       rows.map(c=>`<option value="${c.id}" data-unit="${escapeHtml(c.unit)}">${escapeHtml(c.name)} (${escapeHtml(c.unit)}) — ${c.qty}</option>`).join('');
   }
 
+  async function loadSeedsForProperty(propertyId){
+    seedSel.innerHTML = '<option value="">(none)</option>';
+    seedUnit.value = '';
+    if (!propertyId) return;
+    const snap = await db.collection('seeds').where('propertyId','==',propertyId).get();
+    const rows = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      rows.push({id:doc.id,name:d.name||'(seed)', unit:d.unit||'', qty:Number(d.quantity||0)});
+    });
+    rows.sort((a,b)=>a.name.localeCompare(b.name));
+    seedSel.innerHTML = '<option value="">(none)</option>' +
+      rows.map(s=>`<option value="${s.id}" data-unit="${escapeHtml(s.unit)}">${escapeHtml(s.name)} (${escapeHtml(s.unit)}) — ${s.qty}</option>`).join('');
+  }
+
   async function refreshStockContext(){
     const propertyId = propSel.value;
     const padName = paddockSel.selectedOptions[0]?.dataset?.name || '';
@@ -756,6 +795,26 @@
       });
     }catch(e){
       console.error('Chemical stock adjustment failed', e);
+    }
+  }
+
+  async function adjustSeedStock(seedId, deltaQty){
+    if (!seedId || !deltaQty) return;
+    const ref = db.collection('seeds').doc(seedId);
+    try{
+      await db.runTransaction(async tx=>{
+        const snap = await tx.get(ref);
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const current = Number(data.quantity || 0);
+        const next = current + deltaQty;
+        tx.update(ref,{
+          quantity: next,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    }catch(e){
+      console.error('Seed stock adjustment failed', e);
     }
   }
 
@@ -852,7 +911,22 @@
     }
   }
 
-  // ---------- Activity-specific UI ----------
+  // ---------- Activity / purchase visibility ----------
+  function updateInputRows(){
+    const act = activitySel.value;
+    const purchaseType = purchaseTypeSel.value;
+
+    const usesChemActivity =
+      act === 'Spraying paddocks' ||
+      act === 'Chemical (stock)' ||
+      act === 'Trucking (sale)';
+    const purchaseChem = (act === 'Purchase inputs' && purchaseType === 'Chemical');
+    const purchaseSeed = (act === 'Purchase inputs' && purchaseType === 'Seed');
+
+    chemRow.classList.toggle('hidden', !(usesChemActivity || purchaseChem));
+    seedRow.classList.toggle('hidden', !(act === 'Planting' || purchaseSeed));
+  }
+
   function onActivityChange(){
     const act = activitySel.value;
     const needsStock = (
@@ -871,18 +945,10 @@
     const needsTransferProp = (act === 'Transfer stock (Out)');
     transferPropWrap.classList.toggle('hidden', !needsTransferProp);
 
-    const usesChem =
-      act === 'Spraying paddocks' ||
-      act === 'Chemical (stock)' ||
-      act === 'Trucking (sale)';
-    chemRow.classList.toggle('hidden', !usesChem);
-    chemHint.textContent =
-      act === 'Spraying paddocks' ? 'paddock spray' :
-      act === 'Trucking (sale)' ? 'backline before trucking' :
-      act === 'Chemical (stock)' ? 'drench/vaccine' : 'usage';
-
     const isPurchase = (act === 'Purchase inputs');
     purchaseRow.classList.toggle('hidden', !isPurchase);
+
+    updateInputRows();
   }
 
   paddockSel.onchange = async ()=>{
@@ -891,7 +957,9 @@
   };
   speciesSel.onchange = refreshClassOptions;
   activitySel.onchange = onActivityChange;
+  purchaseTypeSel.onchange = updateInputRows;
   chemSel.onchange = ()=> chemUnit.value = chemSel.selectedOptions[0]?.dataset?.unit || '';
+  seedSel.onchange = ()=> seedUnit.value = seedSel.selectedOptions[0]?.dataset?.unit || '';
 
   // ---------- Build payload ----------
   function buildPayloadFromUI(){
@@ -931,6 +999,11 @@
     const chemQtyNum = chemQtyVal && chemQtyVal>0 ? chemQtyVal : null;
     const chemUnitVal = chemRow.classList.contains('hidden') ? null : (chemUnit.value || null);
 
+    const seedId = seedRow.classList.contains('hidden') ? null : (seedSel.value || null);
+    const seedQtyVal = seedRow.classList.contains('hidden') ? null : Number(seedQty.value || 0);
+    const seedQtyNum = seedQtyVal && seedQtyVal>0 ? seedQtyVal : null;
+    const seedUnitVal = seedRow.classList.contains('hidden') ? null : (seedUnit.value || null);
+
     const notes = notesInp.value || '';
 
     const purchaseType = purchaseRow.classList.contains('hidden') ? null : (purchaseTypeSel.value || null);
@@ -960,6 +1033,10 @@
       chemicalQty: chemQtyNum || null,
       chemicalUnit: chemUnitVal || null,
 
+      seedId: seedId || null,
+      seedQty: seedQtyNum || null,
+      seedUnit: seedUnitVal || null,
+
       rainfallMm,
       gaugeId,
       gaugeName,
@@ -983,6 +1060,8 @@
       head,
       chemId,
       chemQty:chemQtyNum,
+      seedId,
+      seedQty:seedQtyNum,
       gaugeId,
       rainfallMm
     };
@@ -1006,6 +1085,8 @@
       head,
       chemId,
       chemQty,
+      seedId,
+      seedQty,
       gaugeId,
       rainfallMm
     } = buildPayloadFromUI();
@@ -1038,6 +1119,10 @@
         return;
       }
     }
+    if (activity === 'Planting' && (!seedId || !seedQty)){
+      alert('For Planting choose a seed and quantity.');
+      return;
+    }
 
     try{
       setStatus('Saving…');
@@ -1049,6 +1134,13 @@
       if (chemId && chemQty){
         const chemDelta = (activity === 'Purchase inputs' && payload.purchaseType === 'Chemical') ? chemQty : -chemQty;
         sideEffects.push(adjustChemicalStock(chemId, chemDelta));
+      }
+
+      // Seed use / purchases
+      if (activity === 'Planting' && seedId && seedQty){
+        sideEffects.push(adjustSeedStock(seedId, -seedQty));
+      }else if (activity === 'Purchase inputs' && payload.purchaseType === 'Seed' && seedId && seedQty){
+        sideEffects.push(adjustSeedStock(seedId, +seedQty));
       }
 
       // Livestock movements
@@ -1121,9 +1213,19 @@
 
       entriesBody.innerHTML = filtered.map(r=>{
         const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
-        const chem = r.purchaseType
-          ? `${r.purchaseType}${r.chemicalId ? ' ('+(r.chemicalQty||'')+' '+(r.chemicalUnit||'')+')':''}`
-          : (r.chemicalId ? `${r.chemicalQty||''} ${r.chemicalUnit||''}` : '');
+
+        let inputs = '';
+        if (r.purchaseType){
+          inputs = r.purchaseType;
+          const bits = [];
+          if (r.chemicalId && r.chemicalQty) bits.push(`${r.chemicalQty} ${r.chemicalUnit||''} chem`);
+          if (r.seedId && r.seedQty)       bits.push(`${r.seedQty} ${r.seedUnit||''} seed`);
+          if (bits.length) inputs += ' (' + bits.join('; ') + ')';
+        }else{
+          if (r.chemicalId && r.chemicalQty) inputs = `${r.chemicalQty} ${r.chemicalUnit||''} chem`;
+          else if (r.seedId && r.seedQty)    inputs = `${r.seedQty} ${r.seedUnit||''} seed`;
+        }
+
         const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
         const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
@@ -1134,7 +1236,7 @@
           <td>${escapeHtml(r.paddock||'')}</td>
           <td>${escapeHtml(r.activity||'')}</td>
           <td>${escapeHtml(stock)}</td>
-          <td>${escapeHtml(chem)}</td>
+          <td>${escapeHtml(inputs)}</td>
           <td>${escapeHtml(rain)}</td>
           <td>${escapeHtml(notes)}</td>
           <td class="no-print"><button type="button" class="btn small danger" data-del="${r.id}">Delete</button></td>
@@ -1146,7 +1248,7 @@
         btn.onclick = async ()=>{
           const id = btn.dataset.del;
           if (!id) return;
-          const ok = confirm('Delete this diary entry? This does NOT undo stock/chemical/rainfall changes.');
+          const ok = confirm('Delete this diary entry? This does NOT undo stock/chemical/seed/rainfall changes.');
           if (!ok) return;
           try{
             await db.collection('diaryEntries').doc(id).delete();
@@ -1176,6 +1278,7 @@
       await loadPaddocksForProperty(propSel.value);
       await loadGaugesForProperty(propSel.value);
       await loadChemicalsForProperty(propSel.value);
+      await loadSeedsForProperty(propSel.value);
       refreshTransferPropertyOptions(propSel.value);
     }
     onActivityChange();
@@ -1184,6 +1287,7 @@
       await loadPaddocksForProperty(propSel.value);
       await loadGaugesForProperty(propSel.value);
       await loadChemicalsForProperty(propSel.value);
+      await loadSeedsForProperty(propSel.value);
       refreshTransferPropertyOptions(propSel.value);
       await refreshStockContext();
     };
@@ -1199,6 +1303,9 @@
       chemSel.selectedIndex = 0;
       chemQty.value = '';
       chemUnit.value = '';
+      seedSel.selectedIndex = 0;
+      seedQty.value = '';
+      seedUnit.value = '';
       purchaseSupplier.value = '';
       purchaseRef.value = '';
     };
