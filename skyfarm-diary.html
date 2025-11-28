@@ -615,6 +615,13 @@
   ];
   let ALL_PROPERTIES = [];
 
+  // Current user/role
+  let CURRENT_USER = null;
+  let CURRENT_UID = null;
+  let CURRENT_EMAIL = null;
+  let CURRENT_ROLE = 'worker';       // admin | manager | worker
+  let ALLOWED_PROPERTY_IDS = null;   // Set of propertyIds, or null = all
+
   // ---------- DOM refs ----------
   const propSel = $('#propSel');
   const dateInp = $('#dateInp');
@@ -689,6 +696,7 @@
   const closeOverlayBtn = $('#closeOverlayBtn');
 
   function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+
   signInBtn.onclick = async ()=>{
     const email = (siEmail.value || '').trim();
     const pass  = siPass.value || '';
@@ -710,12 +718,37 @@
   closeOverlayBtn.onclick = ()=> showOverlay(false);
   signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 
+  async function loadCurrentUserRole(user){
+    CURRENT_USER = user;
+    CURRENT_UID = user?.uid || null;
+    CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
+    CURRENT_ROLE = 'worker';
+    ALLOWED_PROPERTY_IDS = null;
+
+    if (!CURRENT_EMAIL) return;
+    const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
+    try{
+      const snap = await db.collection('users').doc(docId).get();
+      if (snap.exists){
+        const data = snap.data() || {};
+        CURRENT_ROLE = data.role || 'worker';
+        const allowed = data.allowedProperties || [];
+        if (Array.isArray(allowed) && allowed.length){
+          ALLOWED_PROPERTY_IDS = new Set(allowed);
+        }
+      }
+    }catch(e){
+      console.error('loadCurrentUserRole failed', e);
+    }
+  }
+
   auth.onAuthStateChanged(async user=>{
     if (user){
       authWho.textContent = user.email || 'Signed in';
       signOutBtn.classList.remove('hidden');
       showOverlay(false);
       try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+      await loadCurrentUserRole(user);
       await initAfterAuth();
     }else{
       authWho.textContent = 'Not signed in';
@@ -727,13 +760,24 @@
   // ---------- Load support data ----------
   async function loadProperties(){
     const snap = await db.collection('properties').get();
-    const props = [];
+    let props = [];
     snap.forEach(doc=>{
       const d = doc.data() || {};
       props.push({id:doc.id, name:d.name || '(Property)'});
     });
     props.sort((a,b)=>a.name.localeCompare(b.name));
+
+    if (ALLOWED_PROPERTY_IDS instanceof Set){
+      props = props.filter(p=>ALLOWED_PROPERTY_IDS.has(p.id));
+    }
+
     ALL_PROPERTIES = props;
+
+    if (!props.length){
+      propSel.innerHTML = '<option value="">(no properties available)</option>';
+      filterPropSel.innerHTML = '<option value="">(none)</option>';
+      return;
+    }
 
     propSel.innerHTML = props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     filterPropSel.innerHTML = '<option value="">(All properties)</option>' +
@@ -1145,6 +1189,10 @@
     const purchaseSupplierVal = purchaseRow.classList.contains('hidden') ? null : (purchaseSupplier.value || null);
     const purchaseRefVal = purchaseRow.classList.contains('hidden') ? null : (purchaseRef.value || null);
 
+    const user = auth.currentUser || CURRENT_USER;
+    const createdByUid   = user?.uid || CURRENT_UID || null;
+    const createdByEmail = (user?.email || CURRENT_EMAIL || null);
+
     const payload = {
       date,
       time,
@@ -1183,6 +1231,10 @@
       purchaseType,
       purchaseSupplier: purchaseSupplierVal || null,
       purchaseRef: purchaseRefVal || null,
+
+      createdByUid,
+      createdByEmail,
+      createdByRole: CURRENT_ROLE || null,
 
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1359,11 +1411,22 @@
       const yearFilter = parseInt(filterYear.value || '', 10) || null;
       const propFilter = filterPropSel.value || '';
 
+      const isWorker = CURRENT_ROLE === 'worker';
+      const workerUid = CURRENT_UID;
+      const workerEmail = (CURRENT_EMAIL || '').toLowerCase();
+
       const filtered = rows.filter(r=>{
         if (yearFilter){
           if (!r.date || String(r.date).slice(0,4) !== String(yearFilter)) return false;
         }
         if (propFilter && r.propertyId !== propFilter) return false;
+
+        if (isWorker){
+          const uidMatch = r.createdByUid && workerUid && r.createdByUid === workerUid;
+          const emailMatch = r.createdByEmail && workerEmail &&
+            String(r.createdByEmail).toLowerCase() === workerEmail;
+          return uidMatch || emailMatch;
+        }
         return true;
       });
 
@@ -1374,6 +1437,14 @@
         }
         return;
       }
+
+      const canDeleteEntry = (r)=>{
+        if (CURRENT_ROLE !== 'worker') return true;
+        const uidMatch = r.createdByUid && CURRENT_UID && r.createdByUid === CURRENT_UID;
+        const emailMatch = r.createdByEmail && CURRENT_EMAIL &&
+          String(r.createdByEmail).toLowerCase() === CURRENT_EMAIL;
+        return uidMatch || emailMatch;
+      };
 
       // Build table rows
       const tableHtml = filtered.map(r=>{
@@ -1396,6 +1467,10 @@
         const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
         const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
+        const delHtml = canDeleteEntry(r)
+          ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
+          : '';
+
         return `<tr data-id="${r.id}">
           <td class="nowrap">${escapeHtml(r.date||'')}</td>
           <td class="nowrap">${escapeHtml(r.time||'')}</td>
@@ -1406,7 +1481,7 @@
           <td>${escapeHtml(inputs)}</td>
           <td>${escapeHtml(rain)}</td>
           <td>${escapeHtml(notes)}</td>
-          <td class="no-print"><button type="button" class="btn small danger" data-del="${r.id}">Delete</button></td>
+          <td class="no-print">${delHtml}</td>
         </tr>`;
       }).join('');
       entriesBody.innerHTML = tableHtml;
@@ -1433,6 +1508,10 @@
           const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
           const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
+          const delHtml = canDeleteEntry(r)
+            ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
+            : '';
+
           return `<div class="entry-card" data-id="${r.id}">
             <div class="ec-header">
               <div>${escapeHtml(r.date || '')}</div>
@@ -1448,7 +1527,7 @@
             ${rain ? `<div class="ec-line"><span class="ec-label">Rain</span>${escapeHtml(rain)} mm</div>` : ''}
             ${notes ? `<div class="ec-line ec-notes">${escapeHtml(notes)}</div>` : ''}
             <div class="ec-actions no-print">
-              <button type="button" class="btn small danger" data-del="${r.id}">Delete</button>
+              ${delHtml}
             </div>
           </div>`;
         }).join('');
@@ -1489,8 +1568,7 @@
     filterYear.value = now.getFullYear();
 
     await loadProperties();
-    if (propSel.options.length){
-      propSel.selectedIndex = 0;
+    if (propSel.options.length && propSel.value){
       await loadPaddocksForProperty(propSel.value);
       await loadGaugesForProperty(propSel.value);
       await loadChemicalsForProperty(propSel.value);
@@ -1498,6 +1576,7 @@
       await loadFodderForProperty(propSel.value);
       refreshTransferPropertyOptions(propSel.value);
     }
+
     onActivityChange();
 
     propSel.onchange = async ()=>{
