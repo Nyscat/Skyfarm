@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SkyFarm — Fodder</title>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6fbf8;
+      --card:#ffffff;
+      --line:#e2e8f0;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --accent:#047857;
+      --danger:#b91c1c;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      -webkit-font-smoothing:antialiased;
+    }
+    a{color:#0f766e;text-decoration:none;}
+    a:hover{text-decoration:underline;}
+
+    /* Header */
+    #sf-header{
+      position:sticky;
+      top:0;
+      z-index:40;
+      background:rgba(255,255,255,.96);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid rgba(148,163,184,.4);
+    }
+    #sf-header .bar{
+      max-width:1200px;
+      margin:0 auto;
+      padding:8px 14px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    #sf-header .brand{
+      font-weight:600;
+      font-size:1rem;
+      padding:4px 10px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);
+      color:#ecfdf3;
+      box-shadow:0 10px 20px rgba(15,23,42,.25);
+    }
+    #sf-header nav a{
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:.85rem;
+      color:#0f172a;
+      text-decoration:none;
+    }
+    #sf-header nav a[aria-current="page"]{
+      background:#e0f2fe;
+      font-weight:500;
+    }
+    .nav-db{position:relative;}
+    .spacer{flex:1;}
+    .muted{color:var(--muted);}
+    .small{font-size:.8rem;}
+    .status-warn{color:var(--danger);}
+
+    .btn{
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      padding:6px 12px;
+      font-size:.82rem;
+      background:#fff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .btn.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#ecfdf3;
+    }
+    .btn.danger{
+      border-color:#ef4444;
+      color:#ef4444;
+      background:#fff;
+    }
+    .btn.small{
+      padding:4px 10px;
+      font-size:.78rem;
+    }
+    .btn[disabled]{opacity:.5;cursor:default;}
+
+    .db-menu{
+      position:absolute;
+      top:100%;
+      right:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      min-width:180px;
+      padding:4px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.12);
+      z-index:20;
+    }
+    .db-menu a{
+      display:block;
+      padding:6px 12px;
+      font-size:.9rem;
+      color:var(--ink);
+      text-decoration:none;
+    }
+    .db-menu a:hover{background:#f1f5f9;}
+    .hidden{display:none;}
+
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:12px;
+    }
+    h1{margin:10px 0;font-size:1.5rem;}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      margin:10px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.04);
+    }
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      margin:6px 0;
+    }
+    label{
+      display:block;
+      font-size:.8rem;
+      color:#475569;
+      margin-bottom:3px;
+    }
+    input,select,textarea{
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:6px 8px;
+      font-size:.85rem;
+      font-family:inherit;
+      background:#fff;
+    }
+    textarea{resize:vertical;min-height:40px;}
+    input:focus,select:focus,textarea:focus{
+      outline:none;
+      border-color:#2563eb;
+      box-shadow:0 0 0 1px rgba(37,99,235,.2);
+    }
+
+    .w90{width:90px;}
+    .w120{width:120px;}
+    .w160{width:160px;}
+    .w220{width:220px;}
+    .pill{
+      display:inline-block;
+      padding:2px 7px;
+      border-radius:999px;
+      font-size:.75rem;
+      background:#e5f3ff;
+      border:1px solid #bfdbfe;
+      margin-right:4px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:.8rem;
+    }
+    th,td{
+      border-bottom:1px solid #e5e7eb;
+      padding:6px 6px;
+      text-align:left;
+      vertical-align:top;
+    }
+    th{background:#f9fafb;color:#374151;}
+    tr:nth-child(even) td{background:#f9fafb;}
+    .nowrap{white-space:nowrap;}
+
+    /* Auth overlay */
+    #authOverlay{
+      position:fixed;
+      inset:0;
+      background:radial-gradient(circle at top,#020617 0,rgba(15,23,42,.94) 40%,rgba(15,23,42,.97) 100%);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:50;
+    }
+    #authCard{
+      width:min(520px,92vw);
+      background:#fff;
+      border-radius:16px;
+      border:1px solid var(--line);
+      padding:20px;
+    }
+    #authCard h2{margin:0 0 8px;}
+
+    @media(max-width:800px){
+      .row{flex-direction:column;align-items:flex-start;}
+      .w220,.w160,.w120,.w90{width:100%;}
+      #sf-header .bar{flex-wrap:wrap;}
+    }
+    @media print{
+      #sf-header,.no-print{display:none!important;}
+      body{background:#fff;}
+      .wrap{padding:8px;}
+      .card{box-shadow:none;border:none;margin:6px 0;}
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div id="sf-header">
+    <div class="bar">
+      <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+      <nav>
+        <a href="skyfarm-diary.html">Diary</a>
+        <a href="skyfarm-map.html">Map</a>
+        <a href="skyfarm-rain.html">Rain</a>
+      </nav>
+      <div class="nav-db">
+        <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
+        <div id="dbMenu" class="db-menu hidden">
+          <a href="skyfarm-livestock.html">Livestock</a>
+          <a href="skyfarm-chemical.html">Chemicals</a>
+          <a href="skyfarm-seeds.html">Seeds</a>
+          <a href="skyfarm-fodder.html" aria-current="page">Fodder</a>
+          <a href="skyfarm-barcode.html">Barcode scanner</a>
+          <a href="skyfarm-users.html">Users & roles</a>
+        </div>
+      </div>
+      <span class="spacer"></span>
+      <span id="authWho" class="muted small">Checking sign in…</span>
+      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <h1>Fodder and supplements</h1>
+
+    <!-- Form -->
+    <div class="card no-print">
+      <div class="row">
+        <div>
+          <label>Property</label>
+          <select id="propSel" class="w220"></select>
+        </div>
+        <span class="spacer"></span>
+        <div id="status" class="muted small">Ready</div>
+      </div>
+
+      <div class="row">
+        <div style="min-width:260px">
+          <label>Fodder name</label>
+          <input id="fodderName" class="w220" placeholder="Uramol 100 kg block, Cottonseed loose lick"/>
+        </div>
+        <div>
+          <label>Category</label>
+          <select id="fodderCategory" class="w160">
+            <option value="Block lick">Block lick</option>
+            <option value="Loose lick">Loose lick</option>
+            <option value="Grain">Grain</option>
+            <option value="Hay or roughage">Hay or roughage</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label>Unit</label>
+          <select id="fodderUnit" class="w120">
+            <option value="blocks">blocks</option>
+            <option value="kg">kg</option>
+            <option value="t">t</option>
+          </select>
+        </div>
+        <div id="blockSizeWrap">
+          <label>Block size (kg)</label>
+          <input id="blockSizeKg" type="number" min="0" step="1" class="w90" value="100"/>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Quantity on hand</label>
+          <input id="quantity" type="number" min="0" step="0.01" class="w120" placeholder="eg 12"/>
+        </div>
+        <div>
+          <label>Notes</label>
+          <input id="notes" class="w220" placeholder="eg In shed near feedlot"/>
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="saveBtn" class="btn primary" type="button">Save fodder</button>
+        <button id="resetBtn" class="btn" type="button">Reset</button>
+        <span id="saveMsg" class="muted small"></span>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="card">
+      <div class="row no-print">
+        <strong>Fodder inventory</strong>
+        <span class="spacer"></span>
+        <button id="refreshBtn" class="btn small" type="button">Refresh</button>
+        <button id="printBtn" class="btn small" type="button">Print / PDF</button>
+      </div>
+      <table>
+        <thead>
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Unit</th>
+          <th>Block size (kg)</th>
+          <th>Quantity</th>
+          <th>Total kg (approx)</th>
+          <th>Notes</th>
+          <th class="no-print">Actions</th>
+        </tr>
+        </thead>
+        <tbody id="fodderBody">
+        <tr><td colspan="8" class="muted small">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Auth overlay -->
+  <div id="authOverlay">
+    <div id="authCard">
+      <h2>Sign in to SkyFarm</h2>
+      <p class="small muted">Email and password only. Anonymous sign in is disabled.</p>
+      <div class="row">
+        <div style="flex:1;min-width:240px">
+          <label>Email</label>
+          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label>Password</label>
+          <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
+        </div>
+      </div>
+      <div class="row">
+        <button id="signInBtn" class="btn primary" type="button">Sign in</button>
+        <span id="authMsg" class="muted small"></span>
+        <span class="spacer"></span>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Firebase init
+  const firebaseConfig = {
+    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+    authDomain: "consentes-pastoral.firebaseapp.com",
+    projectId: "consentes-pastoral",
+    appId: "1:494858780013:web:d87497b370c82eeab06e64"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+
+  // Helpers
+  const $  = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"
+  }[c]));
+  function setStatus(msg, warn){
+    const el = $("#status");
+    el.textContent = msg || "";
+    el.classList.toggle("status-warn", !!warn);
+  }
+  function setSaveMsg(msg, ms){
+    const el = $("#saveMsg");
+    el.textContent = msg || "";
+    if (ms){
+      setTimeout(()=>{ if (el.textContent === msg) el.textContent = ""; }, ms);
+    }
+  }
+
+  // DOM refs
+  const propSel = $("#propSel");
+  const statusEl = $("#status");
+  const fodderName = $("#fodderName");
+  const fodderCategory = $("#fodderCategory");
+  const fodderUnit = $("#fodderUnit");
+  const blockSizeWrap = $("#blockSizeWrap");
+  const blockSizeKg = $("#blockSizeKg");
+  const quantity = $("#quantity");
+  const notes = $("#notes");
+  const fodderBody = $("#fodderBody");
+
+  const saveBtn = $("#saveBtn");
+  const resetBtn = $("#resetBtn");
+  const refreshBtn = $("#refreshBtn");
+  const printBtn = $("#printBtn");
+
+  const authOverlay = $("#authOverlay");
+  const authWho = $("#authWho");
+  const signOutBtn = $("#signOutBtn");
+  const dbMenuBtn = $("#dbMenuBtn");
+  const dbMenu = $("#dbMenu");
+  const siEmail = $("#siEmail");
+  const siPass = $("#siPass");
+  const signInBtn = $("#signInBtn");
+  const authMsg = $("#authMsg");
+  const closeOverlayBtn = $("#closeOverlayBtn");
+
+  let editingId = null;
+
+  // Header menu
+  if (dbMenuBtn && dbMenu){
+    dbMenuBtn.onclick = e => {
+      e.stopPropagation();
+      dbMenu.classList.toggle("hidden");
+    };
+    document.addEventListener("click", e=>{
+      if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn){
+        dbMenu.classList.add("hidden");
+      }
+    });
+  }
+
+  // Auth
+  function showOverlay(show){ authOverlay.style.display = show ? "flex" : "none"; }
+
+  signInBtn.onclick = async ()=>{
+    const email = (siEmail.value || "").trim();
+    const pass  = siPass.value || "";
+    if (!email || !pass){
+      authMsg.textContent = "Enter email and password.";
+      return;
+    }
+    authMsg.textContent = "Signing in…";
+    try{
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      await auth.signInWithEmailAndPassword(email, pass);
+      authMsg.textContent = "Signed in.";
+      showOverlay(false);
+    }catch(e){
+      console.error(e);
+      authMsg.textContent = e.message || "Sign in failed.";
+    }
+  };
+  closeOverlayBtn.onclick = ()=> showOverlay(false);
+  signOutBtn.onclick = async ()=>{
+    try{
+      await auth.signOut();
+      location.reload();
+    }catch(e){}
+  };
+
+  auth.onAuthStateChanged(async user=>{
+    if (user){
+      authWho.textContent = user.email || "Signed in";
+      signOutBtn.classList.remove("hidden");
+      showOverlay(false);
+      try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+      await initAfterAuth();
+    }else{
+      authWho.textContent = "Not signed in";
+      signOutBtn.classList.add("hidden");
+      showOverlay(true);
+    }
+  });
+
+  // Load properties
+  async function loadProperties(){
+    const snap = await db.collection("properties").get();
+    const rows = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      rows.push({id:doc.id, name:d.name || "(Property)"});
+    });
+    rows.sort((a,b)=>a.name.localeCompare(b.name));
+    propSel.innerHTML = rows.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
+  }
+
+  // Load fodder for property
+  async function loadFodder(){
+    const propertyId = propSel.value;
+    if (!propertyId){
+      fodderBody.innerHTML = '<tr><td colspan="8" class="muted small">Choose a property.</td></tr>';
+      return;
+    }
+    fodderBody.innerHTML = '<tr><td colspan="8" class="muted small">Loading…</td></tr>';
+    try{
+      const snap = await db.collection("fodder")
+        .where("propertyId","==",propertyId)
+        .orderBy("name")
+        .get();
+      const rows = [];
+      snap.forEach(doc=>{
+        rows.push({id:doc.id, ...(doc.data() || {})});
+      });
+      if (!rows.length){
+        fodderBody.innerHTML = '<tr><td colspan="8" class="muted small">No fodder recorded for this property.</td></tr>';
+        return;
+      }
+      fodderBody.innerHTML = rows.map(r=>{
+        const unit = r.unit || "";
+        const qty = Number(r.quantity || 0);
+        const blockSize = Number(r.blockSizeKg || 0);
+        let totalKg = "";
+        if (unit === "blocks" && blockSize > 0){
+          totalKg = (qty * blockSize).toFixed(1);
+        }else if (unit === "kg"){
+          totalKg = qty.toFixed(1);
+        }else if (unit === "t"){
+          totalKg = (qty * 1000).toFixed(1);
+        }
+
+        return `<tr data-id="${r.id}">
+          <td>${escapeHtml(r.name || "")}</td>
+          <td>${escapeHtml(r.category || "")}</td>
+          <td>${escapeHtml(unit)}</td>
+          <td>${blockSize ? escapeHtml(String(blockSize)) : ""}</td>
+          <td>${escapeHtml(String(qty))}</td>
+          <td>${escapeHtml(totalKg)}</td>
+          <td>${escapeHtml(r.notes || "")}</td>
+          <td class="no-print">
+            <button type="button" class="btn small" data-edit="${r.id}">Edit</button>
+            <button type="button" class="btn small danger" data-del="${r.id}">Delete</button>
+          </td>
+        </tr>`;
+      }).join("");
+
+      // wire edit and delete
+      fodderBody.querySelectorAll("button[data-edit]").forEach(btn=>{
+        btn.onclick = ()=>{
+          const id = btn.dataset.edit;
+          const tr = fodderBody.querySelector(`tr[data-id="${id}"]`);
+          if (!tr) return;
+          const cells = tr.children;
+          const name = cells[0].textContent || "";
+          const category = cells[1].textContent || "";
+          const unit = cells[2].textContent || "";
+          const blockSizeText = cells[3].textContent || "";
+          const qtyText = cells[4].textContent || "";
+          const notesText = cells[6].textContent || "";
+
+          editingId = id;
+          fodderName.value = name;
+          fodderCategory.value = category || "Block lick";
+          fodderUnit.value = unit || "blocks";
+          blockSizeKg.value = blockSizeText || "";
+          quantity.value = qtyText || "";
+          notes.value = notesText || "";
+
+          updateBlockSizeVisibility();
+          setSaveMsg("Editing existing fodder. Save to update.", 3000);
+        };
+      });
+
+      fodderBody.querySelectorAll("button[data-del]").forEach(btn=>{
+        btn.onclick = async ()=>{
+          const id = btn.dataset.del;
+          if (!id) return;
+          const ok = confirm("Delete this fodder item? This does not touch diary history.");
+          if (!ok) return;
+          try{
+            await db.collection("fodder").doc(id).delete();
+            if (editingId === id){
+              clearForm();
+            }
+            await loadFodder();
+          }catch(e){
+            console.error(e);
+            alert("Delete failed. Check console.");
+          }
+        };
+      });
+
+    }catch(e){
+      console.error(e);
+      fodderBody.innerHTML = '<tr><td colspan="8" class="muted small">Error loading fodder.</td></tr>';
+    }
+  }
+
+  function updateBlockSizeVisibility(){
+    const unit = fodderUnit.value;
+    blockSizeWrap.style.display = (unit === "blocks") ? "block" : "none";
+  }
+
+  function clearForm(){
+    editingId = null;
+    fodderName.value = "";
+    fodderCategory.value = "Block lick";
+    fodderUnit.value = "blocks";
+    blockSizeKg.value = "100";
+    quantity.value = "";
+    notes.value = "";
+    updateBlockSizeVisibility();
+    setSaveMsg("", 0);
+  }
+
+  async function saveFodder(){
+    const propertyId = propSel.value;
+    if (!propertyId){
+      alert("Choose a property first.");
+      return;
+    }
+    const name = (fodderName.value || "").trim();
+    const category = fodderCategory.value || "Block lick";
+    const unit = fodderUnit.value || "blocks";
+    const qtyVal = Number(quantity.value || 0);
+    const blockSizeVal = Number(blockSizeKg.value || 0);
+    const noteVal = (notes.value || "").trim();
+
+    if (!name){
+      alert("Enter a fodder name.");
+      return;
+    }
+    if (!Number.isFinite(qtyVal) || qtyVal < 0){
+      alert("Quantity must be zero or more.");
+      return;
+    }
+    if (unit === "blocks" && (!Number.isFinite(blockSizeVal) || blockSizeVal <= 0)){
+      alert("Block size in kg must be greater than zero for block products.");
+      return;
+    }
+
+    const payload = {
+      propertyId,
+      name,
+      category,
+      unit,
+      quantity: qtyVal,
+      blockSizeKg: unit === "blocks" ? blockSizeVal : null,
+      notes: noteVal || null,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (!editingId){
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    }
+
+    try{
+      setStatus("Saving…");
+      if (editingId){
+        await db.collection("fodder").doc(editingId).set(payload, {merge:true});
+      }else{
+        await db.collection("fodder").add(payload);
+      }
+      setStatus("Saved");
+      setSaveMsg("Saved.", 1500);
+      clearForm();
+      await loadFodder();
+    }catch(e){
+      console.error(e);
+      setStatus("Save failed", true);
+      setSaveMsg("Save failed.", 3000);
+    }
+  }
+
+  async function initAfterAuth(){
+    await loadProperties();
+    if (propSel.options.length){
+      propSel.selectedIndex = 0;
+    }
+    await loadFodder();
+
+    propSel.onchange = loadFodder;
+    fodderUnit.onchange = updateBlockSizeVisibility;
+    updateBlockSizeVisibility();
+
+    saveBtn.onclick = saveFodder;
+    resetBtn.onclick = clearForm;
+    refreshBtn.onclick = loadFodder;
+    printBtn.onclick = ()=>window.print();
+
+    setStatus("Ready");
+  }
+
+  window.addEventListener("load", ()=>{
+    setStatus("Ready");
+  });
+</script>
+</body>
+</html>
