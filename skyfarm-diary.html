@@ -117,7 +117,7 @@
       display:block;
       padding:6px 12px;
       font-size:.9rem;
-      color:var(--ink);
+      color:#0f172a;
       text-decoration:none;
     }
     .db-menu a:hover{background:#f1f5f9;}
@@ -195,7 +195,6 @@
     tr:nth-child(even) td{background:#f9fafb;}
     .nowrap{white-space:nowrap;}
 
-    /* Scroll wrapper for wide tables */
     .table-scroll{
       width:100%;
       overflow-x:auto;
@@ -242,7 +241,6 @@
       text-align:right;
     }
 
-    /* Breakpoints: cards on phone, table on bigger screens */
     @media (max-width:800px){
       .table-desktop{display:none;}
       .entries-cards{display:flex;}
@@ -434,10 +432,6 @@
           <label>Unit</label>
           <input id="chemUnit" class="w90" disabled/>
         </div>
-        <div>
-          <label>&nbsp;</label>
-          <span id="chemHint" class="pill">usage</span>
-        </div>
       </div>
 
       <!-- Seed row -->
@@ -510,12 +504,25 @@
       <div class="row no-print">
         <strong>Recent entries</strong>
         <div>
-          <label class="small">Property filter</label>
-          <select id="filterPropSel" class="w220"></select>
+          <label class="small">Property</label>
+          <select id="filterPropSel" class="w160"></select>
         </div>
         <div>
           <label class="small">Year</label>
           <input id="filterYear" type="number" class="w90" min="2000" max="2100"/>
+        </div>
+        <div>
+          <label class="small">User</label>
+          <select id="filterUserSel" class="w160"></select>
+        </div>
+        <div>
+          <label class="small">Sort</label>
+          <select id="sortSel" class="w160">
+            <option value="dateDesc">Newest first</option>
+            <option value="dateAsc">Oldest first</option>
+            <option value="userAsc">User A–Z</option>
+            <option value="userDesc">User Z–A</option>
+          </select>
         </div>
         <div>
           <label class="small">&nbsp;</label>
@@ -545,7 +552,7 @@
             </tr>
             </thead>
             <tbody id="entriesBody">
-            <tr><td colspan="10" class="muted small">Loading…</td></tr>
+            <tr><td colspan="11" class="muted small">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -560,7 +567,7 @@
   <div id="authOverlay">
     <div id="authCard">
       <h2>Sign in to SkyFarm</h2>
-      <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
+      <p class="small muted">Email &amp; password only.</p>
       <div class="row">
         <div style="flex:1;min-width:240px">
           <label>Email</label>
@@ -623,7 +630,7 @@
   let CURRENT_ROLE = 'worker';       // admin | manager | worker
   let ALLOWED_PROPERTY_IDS = null;   // Set of propertyIds, or null = all
 
-  // ---------- DOM refs ----------
+  // DOM refs
   const propSel = $('#propSel');
   const dateInp = $('#dateInp');
   const timeInp = $('#timeInp');
@@ -667,6 +674,8 @@
 
   const filterPropSel = $('#filterPropSel');
   const filterYear = $('#filterYear');
+  const filterUserSel = $('#filterUserSel');
+  const sortSel = $('#sortSel');
   const entriesBody = $('#entriesBody');
   const entriesCards = $('#entriesCards');
 
@@ -676,7 +685,7 @@
   const dbMenuBtn = $('#dbMenuBtn');
   const dbMenu = $('#dbMenu');
 
-  // ---------- Header menu ----------
+  // Header DB menu
   if (dbMenuBtn && dbMenu){
     dbMenuBtn.onclick = e => {
       e.stopPropagation();
@@ -689,7 +698,7 @@
     });
   }
 
-  // ---------- Auth ----------
+  // Auth
   const siEmail = $('#siEmail');
   const siPass = $('#siPass');
   const signInBtn = $('#signInBtn');
@@ -758,7 +767,7 @@
     }
   });
 
-  // ---------- Load support data ----------
+  // Load support data
   async function loadProperties(){
     const snap = await db.collection('properties').get();
     let props = [];
@@ -928,7 +937,7 @@
     $('#classOptions').innerHTML = list.map(c=>`<option value="${escapeHtml(c)}"></option>`).join('');
   }
 
-  // ---------- Side effects ----------
+  // Side-effect helpers
   async function adjustChemicalStock(chemId, deltaQty){
     if (!chemId || !deltaQty) return;
     const ref = db.collection('chemicals').doc(chemId);
@@ -1082,7 +1091,7 @@
     }
   }
 
-  // ---------- Activity / purchase visibility ----------
+  // Activity / purchase visibility
   function updateInputRows(){
     const act = activitySel.value;
     const purchaseType = purchaseTypeSel.value;
@@ -1136,7 +1145,7 @@
   seedSel.onchange   = ()=> seedUnit.value   = seedSel.selectedOptions[0]?.dataset?.unit   || '';
   fodderSel.onchange = ()=> fodderUnit.value = fodderSel.selectedOptions[0]?.dataset?.unit || '';
 
-  // ---------- Build payload ----------
+  // Build payload
   function buildPayloadFromUI(){
     const propertyId = propSel.value;
     const propertyName = propSel.selectedOptions[0]?.textContent || '';
@@ -1261,7 +1270,7 @@
     };
   }
 
-  // ---------- Save ----------
+  // Save
   async function saveEntry(){
     if (!propSel.value){
       alert('Choose a property.');
@@ -1393,9 +1402,9 @@
     }
   }
 
-  // ---------- Recent entries (table + cards) ----------
+  // Recent entries (table + cards)
   async function refreshEntries(){
-    entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Loading…</td></tr>';
+    entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">Loading…</td></tr>';
     if (entriesCards){
       entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
     }
@@ -1409,30 +1418,96 @@
         rows.push({id:doc.id, ...(doc.data()||{})});
       });
 
+      // Build user filter options (for admins/managers)
+      const existingSelection = filterUserSel.value || '';
+      const userSet = new Set();
+      rows.forEach(r=>{
+        if (r.createdByEmail){
+          const label = String(r.createdByEmail).split('@')[0];
+          if (label) userSet.add(label);
+        }
+      });
+      const userList = Array.from(userSet).sort((a,b)=>a.localeCompare(b));
+      if (CURRENT_ROLE === 'worker'){
+        // Worker: hide user filter, they only see their own stuff anyway
+        filterUserSel.parentElement.style.display = 'none';
+      }else{
+        filterUserSel.parentElement.style.display = '';
+        let optionsHtml = '<option value="">All users</option>';
+        optionsHtml += userList.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
+        filterUserSel.innerHTML = optionsHtml;
+        if (existingSelection && userList.includes(existingSelection)){
+          filterUserSel.value = existingSelection;
+        }
+      }
+
       const yearFilter = parseInt(filterYear.value || '', 10) || null;
       const propFilter = filterPropSel.value || '';
+      const selectedUser = (filterUserSel.value || '').trim();
 
       const isWorker = CURRENT_ROLE === 'worker';
       const workerUid = CURRENT_UID;
       const workerEmail = (CURRENT_EMAIL || '').toLowerCase();
 
-      const filtered = rows.filter(r=>{
+      let filtered = rows.filter(r=>{
         if (yearFilter){
           if (!r.date || String(r.date).slice(0,4) !== String(yearFilter)) return false;
         }
         if (propFilter && r.propertyId !== propFilter) return false;
 
+        // role-based
         if (isWorker){
           const uidMatch = r.createdByUid && workerUid && r.createdByUid === workerUid;
           const emailMatch = r.createdByEmail && workerEmail &&
             String(r.createdByEmail).toLowerCase() === workerEmail;
-          return uidMatch || emailMatch;
+          if (!(uidMatch || emailMatch)) return false;
         }
+
+        // user filter (only for managers/admins)
+        if (!isWorker && selectedUser){
+          const label = r.createdByEmail ? String(r.createdByEmail).split('@')[0] : '';
+          if (label !== selectedUser) return false;
+        }
+
         return true;
       });
 
+      // Sort
+      const sortMode = sortSel.value || 'dateDesc';
+      filtered.sort((a,b)=>{
+        const dateA = String(a.date || '');
+        const dateB = String(b.date || '');
+        const timeA = String(a.time || '');
+        const timeB = String(b.time || '');
+        const userA = a.createdByEmail ? String(a.createdByEmail).split('@')[0] : '';
+        const userB = b.createdByEmail ? String(b.createdByEmail).split('@')[0] : '';
+
+        if (sortMode === 'dateAsc'){
+          if (dateA !== dateB) return dateA.localeCompare(dateB);
+          return timeA.localeCompare(timeB);
+        }
+        if (sortMode === 'dateDesc'){
+          if (dateA !== dateB) return dateB.localeCompare(dateA);
+          return timeB.localeCompare(timeA);
+        }
+        if (sortMode === 'userAsc'){
+          const cmp = userA.localeCompare(userB);
+          if (cmp !== 0) return cmp;
+          // tie-break by newest first
+          if (dateA !== dateB) return dateB.localeCompare(dateA);
+          return timeB.localeCompare(timeA);
+        }
+        if (sortMode === 'userDesc'){
+          const cmp = userB.localeCompare(userA);
+          if (cmp !== 0) return cmp;
+          if (dateA !== dateB) return dateB.localeCompare(dateA);
+          return timeB.localeCompare(timeA);
+        }
+        return 0;
+      });
+
       if (!filtered.length){
-        entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
+        entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">No entries.</td></tr>';
         if (entriesCards){
           entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
         }
@@ -1468,12 +1543,14 @@
         const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
         const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
+        const userLabel = r.createdByEmail
+          ? String(r.createdByEmail).split('@')[0]
+          : '';
+
         const delHtml = canDeleteEntry(r)
           ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
           : '';
-const userLabel = r.createdByEmail
-  ? String(r.createdByEmail).split('@')[0]   // just the bit before @
-  : '';
+
         return `<tr data-id="${r.id}">
           <td class="nowrap">${escapeHtml(r.date||'')}</td>
           <td class="nowrap">${escapeHtml(r.time||'')}</td>
@@ -1512,6 +1589,10 @@ const userLabel = r.createdByEmail
           const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
           const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
+          const userLabel = r.createdByEmail
+            ? String(r.createdByEmail).split('@')[0]
+            : '';
+
           const delHtml = canDeleteEntry(r)
             ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
             : '';
@@ -1524,6 +1605,7 @@ const userLabel = r.createdByEmail
             <div class="ec-line">
               <span class="ec-label">Property</span>${escapeHtml(r.propertyName || '')}
             </div>
+            ${userLabel ? `<div class="ec-line"><span class="ec-label">User</span>${escapeHtml(userLabel)}</div>` : ''}
             ${r.paddock ? `<div class="ec-line"><span class="ec-label">Paddock</span>${escapeHtml(r.paddock)}</div>` : ''}
             <div class="ec-line ec-activity">${escapeHtml(r.activity || '')}</div>
             ${stock ? `<div class="ec-line"><span class="ec-label">Stock</span>${escapeHtml(stock)}</div>` : ''}
@@ -1557,14 +1639,14 @@ const userLabel = r.createdByEmail
       });
     }catch(e){
       console.error(e);
-      entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Error loading entries.</td></tr>';
+      entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">Error loading entries.</td></tr>';
       if (entriesCards){
         entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
       }
     }
   }
 
-  // ---------- Init after auth ----------
+  // Init after auth
   async function initAfterAuth(){
     dateInp.value = todayISO();
     const now = new Date();
@@ -1615,11 +1697,15 @@ const userLabel = r.createdByEmail
     };
     $('#refreshBtn').onclick = refreshEntries;
     $('#printBtn').onclick = ()=>window.print();
+    sortSel.onchange = refreshEntries;
+    filterUserSel.onchange = refreshEntries;
+    filterPropSel.onchange = refreshEntries;
+    filterYear.onchange = refreshEntries;
 
     await refreshEntries();
   }
 
-  // ---------- Kick off ----------
+  // Kick off
   window.addEventListener('load', ()=>{
     setStatus('Ready');
   });
