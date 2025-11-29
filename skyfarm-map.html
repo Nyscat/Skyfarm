@@ -117,10 +117,18 @@
       gap:16px;
       align-items:start;
     }
+
+    /* This is the critical bit for mobile: force a real height */
     #map{
-      height:560px;
-      border-radius:12px;
       width:100%;
+      height:560px;       /* desktop / large screens */
+      min-height:320px;
+      background:#e5e7eb; /* light grey so you can tell if tiles fail */
+      border-radius:12px;
+    }
+
+    .map-panel{
+      padding:0;
     }
 
     /* Auth overlay */
@@ -142,15 +150,15 @@
     }
     #authCard h2{margin:0 0 10px;}
 
-    /* --- Mobile: stack map & panel, give map real height --- */
+    /* --- Mobile: stack map & panel --- */
     @media (max-width:800px){
       .map-layout{
         display:flex;
         flex-direction:column;
       }
       #map{
-        height:60vh;          /* 60% of screen height */
-        min-height:320px;     /* never tiny */
+        height:65vh;      /* 65% of viewport height */
+        min-height:350px; /* never tiny */
       }
     }
   </style>
@@ -201,7 +209,7 @@
   </div>
 
   <div class="map-layout">
-    <div class="panel" style="padding:0;">
+    <div class="panel map-panel">
       <div id="map"></div>
     </div>
 
@@ -302,31 +310,23 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution:'&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-/* Keep Leaflet happy when screen size changes */
-window.addEventListener('resize', () => {
+/* Force Leaflet to recalc size in a few situations (iOS is fussy) */
+function ensureMapSize(){
   try{ map.invalidateSize(); }catch(e){}
+}
+window.addEventListener('resize', ensureMapSize);
+window.addEventListener('orientationchange', ensureMapSize);
+window.addEventListener('load', ()=> setTimeout(ensureMapSize, 300));
+document.addEventListener('visibilitychange', ()=>{
+  if (!document.hidden) setTimeout(ensureMapSize, 300);
 });
 
-function featureStyle(feature){
-  const t = feature?.geometry?.type;
-  if (t === 'Polygon' || t === 'MultiPolygon'){
-    return { color:'#00897B', weight:2, fillOpacity:0.25 };
-  }
-  return { color:'#64748b', weight:1, fillOpacity:0 };
-}
-
 /* ---------- Constants & sources ---------- */
-/* Known property IDs (from your other pages) */
 const KNOWN_PROPERTIES = {
   "Consentes": "s7PlDM9wrEpxuJ6DGIab",
   "Mt Myrtle": "TRuxtRBx2zJlwZnRGYKJ",
   "Gerawin":   "P0dQ0H2FWHeqqxejflZs"
 };
-
-/* Map files:
-   - Index 0: consentes_station.json (contains Consentes + Gerawin paddocks)
-   - Index 1: mt_myrtle.json (Mt Myrtle paddocks)
-*/
 const CLOUD_URLS = [
   "https://storage.googleapis.com/consentes-maps/consentes_station.json",
   "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
@@ -335,23 +335,17 @@ const LOCAL_FALLBACKS = [
   "maps/consentes_station.json",
   "maps/mt_myrtle.json"
 ];
-
 const ACTIVE_PROPERTY_KEY = 'sf.map.activePropertyId';
 
-/* ---------- Firestore-backed indexes ---------- */
-// propertyMeta: id -> { name, bounds: L.LatLngBounds | null }
-const propertyMeta  = new Map();
-// paddockIndex: paddockName -> { propertyId, propertyName }
-const paddockIndex  = new Map();
-// livestockIndex: `${propertyId}|${paddockName}` -> { total, byClass }
+const propertyMeta   = new Map();
+const paddockIndex   = new Map();
 const livestockIndex = new Map();
-// diaryCache: same key -> [{date, activity, notes}, ...]
 const diaryCache     = new Map();
 
-let allBounds      = null; // overall map bounds
+let allBounds      = null;
 let firestoreReady = false;
 
-/* ---------- Load properties & paddocks ---------- */
+/* ---------- Firestore-backed indexes ---------- */
 async function loadProperties(){
   propertyMeta.clear();
   const snap = await db.collection('properties').get();
@@ -360,8 +354,6 @@ async function loadProperties(){
     const name = d.name || '(Property)';
     propertyMeta.set(doc.id, { name, bounds:null });
   });
-
-  // Make sure known IDs that might not yet be in properties are still represented for dropdown
   for (const [name,id] of Object.entries(KNOWN_PROPERTIES)){
     if (!propertyMeta.has(id)) propertyMeta.set(id, { name, bounds:null });
   }
@@ -383,7 +375,6 @@ async function loadPaddocksIndex(){
   });
 }
 
-/* ---------- Livestock index ---------- */
 async function loadLivestockIndex(){
   livestockIndex.clear();
   const snap = await db.collection('livestock').get();
@@ -480,7 +471,6 @@ async function handlePaddockClick(mapIndex, feature){
     ? String(feature.properties.title).trim()
     : 'Paddock';
 
-  // Work out which property this paddock belongs to.
   let pid = null;
   let propertyName = '';
 
@@ -489,7 +479,6 @@ async function handlePaddockClick(mapIndex, feature){
     pid = idx.propertyId;
     propertyName = idx.propertyName;
   }else{
-    // Fallback if we can't find the paddock in Firestore:
     if (mapIndex === 0){
       pid = KNOWN_PROPERTIES["Consentes"];
       propertyName = "Consentes / Gerawin";
@@ -529,7 +518,7 @@ async function handlePaddockClick(mapIndex, feature){
   renderPaddockInfo(propertyName, paddockName, stockRec, diaryList);
 }
 
-/* ---------- GeoJSON fetch with local fallback ---------- */
+/* ---------- GeoJSON fetch with fallback ---------- */
 async function fetchWithFallback(primaryUrl, fallbackUrl){
   try{
     const r = await fetch(primaryUrl, {cache:'no-store'});
@@ -542,9 +531,8 @@ async function fetchWithFallback(primaryUrl, fallbackUrl){
   }
 }
 
-/* ---------- Build property dropdown & zoom ---------- */
+/* ---------- Property dropdown & zoom ---------- */
 function rebuildPropertyDropdown(){
-  // Build list of properties that actually have paddock bounds
   const entries = [];
   propertyMeta.forEach((meta,id)=>{
     if (meta.bounds) entries.push({id,name:meta.name});
@@ -603,9 +591,7 @@ auth.onAuthStateChanged(async user=>{
       setStatus('Loading map…');
       await loadMapLayers();
       setStatus('Map ready. Click a paddock to see livestock and diary.');
-
-      // ensure Leaflet recalculates once everything is drawn
-      try{ map.invalidateSize(); }catch(e){}
+      ensureMapSize();
     }catch(e){
       firestoreReady = false;
       setStatus('Error loading data for map.');
@@ -620,9 +606,16 @@ auth.onAuthStateChanged(async user=>{
   }
 });
 
-/* ---------- Main map layer load ---------- */
+/* ---------- Map layers ---------- */
+function featureStyle(feature){
+  const t = feature?.geometry?.type;
+  if (t === 'Polygon' || t === 'MultiPolygon'){
+    return { color:'#00897B', weight:2, fillOpacity:0.25 };
+  }
+  return { color:'#64748b', weight:1, fillOpacity:0 };
+}
+
 async function loadMapLayers(){
-  const boundsList = [];
   allBounds = null;
 
   for (let i=0;i<CLOUD_URLS.length;i++){
@@ -637,7 +630,6 @@ async function loadMapLayers(){
           const isPaddock = t === 'Polygon' || t === 'MultiPolygon';
 
           if (isPaddock){
-            // Work out which property this paddock belongs to, to build per-property bounds.
             const title = (feature.properties && feature.properties.title) ? String(feature.properties.title).trim() : '';
             let pid = null;
 
@@ -645,32 +637,22 @@ async function loadMapLayers(){
             if (idx){
               pid = idx.propertyId;
             }else{
-              // Fallback by map file if we can't match paddock name:
-              if (i === 0){
-                // consentes_station.json has Consentes + Gerawin; we can't split them reliably here,
-                // so we just let the click handler work it out via paddockIndex later.
-                // Bounds for zoom are set only when we know the property.
-              }else if (i === 1){
+              if (i === 1){
                 pid = KNOWN_PROPERTIES["Mt Myrtle"];
               }
             }
 
             const b = (typeof lyr.getBounds === 'function') ? lyr.getBounds() : null;
             if (b && b.isValid && b.isValid()){
-              // overall bounds
               if (!allBounds) allBounds = b; else allBounds.extend(b);
-
-              // per-property bounds if we know the property
               if (pid && propertyMeta.has(pid)){
                 const meta = propertyMeta.get(pid);
                 if (!meta.bounds) meta.bounds = b; else meta.bounds.extend(b);
               }
-              boundsList.push(b);
             }
 
             lyr.on('click', ()=> handlePaddockClick(i, feature));
           } else if (feature.properties && feature.properties.title){
-            // Non-paddock features: show a tooltip with the name
             lyr.bindTooltip(String(feature.properties.title), {direction:'top'});
           }
         }
@@ -690,7 +672,10 @@ async function loadMapLayers(){
   rebuildPropertyDropdown();
   if (!allBounds){
     setStatus('No features drawn');
+  }else{
+    map.fitBounds(allBounds, {padding:[20,20]});
   }
+  ensureMapSize();
 }
 </script>
 </body>
