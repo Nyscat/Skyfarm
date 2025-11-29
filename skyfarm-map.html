@@ -110,6 +110,19 @@
     .primary{background:var(--brand);color:#fff;border-color:var(--brand);}
     .danger{background:#ef4444;color:#fff;border-color:#ef4444;}
 
+    /* Map layout */
+    .map-layout{
+      display:grid;
+      grid-template-columns:1fr 360px;
+      gap:16px;
+      align-items:start;
+    }
+    #map{
+      height:560px;
+      border-radius:12px;
+      width:100%;
+    }
+
     /* Auth overlay */
     #authOverlay{
       position:fixed;
@@ -128,6 +141,18 @@
       padding:20px;
     }
     #authCard h2{margin:0 0 10px;}
+
+    /* --- Mobile: stack map & panel, give map real height --- */
+    @media (max-width:800px){
+      .map-layout{
+        display:flex;
+        flex-direction:column;
+      }
+      #map{
+        height:60vh;          /* 60% of screen height */
+        min-height:320px;     /* never tiny */
+      }
+    }
   </style>
 </head>
 <body>
@@ -142,16 +167,16 @@
       <a href="skyfarm-rain.html">Rain</a>
     </nav>
     <div class="nav-db">
-  <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
-  <div id="dbMenu" class="db-menu hidden">
-    <a href="skyfarm-livestock.html">Livestock</a>
-    <a href="skyfarm-chemical.html">Chemicals</a>
-    <a href="skyfarm-seeds.html">Seeds</a>
-    <a href="skyfarm-fodder.html">Fodder</a>
-    <a href="skyfarm-barcode.html">Barcode scanner</a>
-    <a href="skyfarm-users.html">Users &amp; roles</a>
-  </div>
-</div>
+      <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
+      <div id="dbMenu" class="db-menu hidden">
+        <a href="skyfarm-livestock.html">Livestock</a>
+        <a href="skyfarm-chemical.html">Chemicals</a>
+        <a href="skyfarm-seeds.html">Seeds</a>
+        <a href="skyfarm-fodder.html">Fodder</a>
+        <a href="skyfarm-barcode.html">Barcode scanner</a>
+        <a href="skyfarm-users.html">Users &amp; roles</a>
+      </div>
+    </div>
     <span class="spacer"></span>
     <span id="authWho" class="muted">Connecting…</span>
     <button id="signOutBtn" class="danger hidden">Sign out</button>
@@ -175,9 +200,9 @@
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
+  <div class="map-layout">
     <div class="panel" style="padding:0;">
-      <div id="map" style="height:560px;border-radius:12px;"></div>
+      <div id="map"></div>
     </div>
 
     <aside class="panel">
@@ -276,6 +301,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom:19,
   attribution:'&copy; OpenStreetMap contributors'
 }).addTo(map);
+
+/* Keep Leaflet happy when screen size changes */
+window.addEventListener('resize', () => {
+  try{ map.invalidateSize(); }catch(e){}
+});
 
 function featureStyle(feature){
   const t = feature?.geometry?.type;
@@ -573,6 +603,9 @@ auth.onAuthStateChanged(async user=>{
       setStatus('Loading map…');
       await loadMapLayers();
       setStatus('Map ready. Click a paddock to see livestock and diary.');
+
+      // ensure Leaflet recalculates once everything is drawn
+      try{ map.invalidateSize(); }catch(e){}
     }catch(e){
       firestoreReady = false;
       setStatus('Error loading data for map.');
