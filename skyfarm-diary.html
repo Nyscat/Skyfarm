@@ -120,7 +120,7 @@
       color:#0f172a;
       text-decoration:none;
     }
-    .db-menu a:hover{background:#f1f5f9;}
+    .db-menu a:hover{background:#f1f59;}
     .hidden{display:none;}
 
     .wrap{
@@ -622,7 +622,8 @@
     'Cows & calves','Weaners','Calves'
   ];
   let ALL_PROPERTIES = [];
-let USERS = {};  // email -> {name, role}
+  let USERS = {};  // email -> {firstName, fullName}
+
   // Current user/role
   let CURRENT_USER = null;
   let CURRENT_UID = null;
@@ -767,7 +768,7 @@ let USERS = {};  // email -> {name, role}
     }
   });
 
-  // Load support data
+  // Load properties
   async function loadProperties(){
     const snap = await db.collection('properties').get();
     let props = [];
@@ -920,7 +921,6 @@ let USERS = {};  // email -> {name, role}
   async function refreshClassOptions(){
     const propertyId = propSel.value;
     const padName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-    const species = speciesSel.value || 'Cattle';
     const classes = new Set(SUGGESTED_CLASSES);
     if (propertyId && padName){
       try{
@@ -1418,18 +1418,22 @@ let USERS = {};  // email -> {name, role}
         rows.push({id:doc.id, ...(doc.data()||{})});
       });
 
-      // Build user filter options (for admins/managers)
+      // Build user filter options
       const existingSelection = filterUserSel.value || '';
       const userSet = new Set();
       rows.forEach(r=>{
         if (r.createdByEmail){
-          const label = String(r.createdByEmail).split('@')[0];
+          const email = String(r.createdByEmail).toLowerCase();
+          const u = USERS[email];
+          const label = u && u.firstName ? u.firstName : email.split('@')[0];
           if (label) userSet.add(label);
         }
       });
       const userList = Array.from(userSet).sort((a,b)=>a.localeCompare(b));
-      if (CURRENT_ROLE === 'worker'){
-        // Worker: hide user filter, they only see their own stuff anyway
+
+      const isWorker = CURRENT_ROLE === 'worker';
+      if (isWorker){
+        // worker can't filter by user; they only see themselves
         filterUserSel.parentElement.style.display = 'none';
       }else{
         filterUserSel.parentElement.style.display = '';
@@ -1445,7 +1449,6 @@ let USERS = {};  // email -> {name, role}
       const propFilter = filterPropSel.value || '';
       const selectedUser = (filterUserSel.value || '').trim();
 
-      const isWorker = CURRENT_ROLE === 'worker';
       const workerUid = CURRENT_UID;
       const workerEmail = (CURRENT_EMAIL || '').toLowerCase();
 
@@ -1455,7 +1458,7 @@ let USERS = {};  // email -> {name, role}
         }
         if (propFilter && r.propertyId !== propFilter) return false;
 
-        // role-based
+        // role-based visibility
         if (isWorker){
           const uidMatch = r.createdByUid && workerUid && r.createdByUid === workerUid;
           const emailMatch = r.createdByEmail && workerEmail &&
@@ -1463,9 +1466,10 @@ let USERS = {};  // email -> {name, role}
           if (!(uidMatch || emailMatch)) return false;
         }
 
-        // user filter (only for managers/admins)
         if (!isWorker && selectedUser){
-          const label = r.createdByEmail ? String(r.createdByEmail).split('@')[0] : '';
+          const email = (r.createdByEmail || '').toLowerCase();
+          const u = USERS[email];
+          const label = u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
           if (label !== selectedUser) return false;
         }
 
@@ -1479,8 +1483,14 @@ let USERS = {};  // email -> {name, role}
         const dateB = String(b.date || '');
         const timeA = String(a.time || '');
         const timeB = String(b.time || '');
-        const userA = a.createdByEmail ? String(a.createdByEmail).split('@')[0] : '';
-        const userB = b.createdByEmail ? String(b.createdByEmail).split('@')[0] : '';
+
+        const getUserName = (r)=>{
+          const email = (r.createdByEmail || '').toLowerCase();
+          const u = USERS[email];
+          return u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
+        };
+        const userA = getUserName(a);
+        const userB = getUserName(b);
 
         if (sortMode === 'dateAsc'){
           if (dateA !== dateB) return dateA.localeCompare(dateB);
@@ -1493,7 +1503,6 @@ let USERS = {};  // email -> {name, role}
         if (sortMode === 'userAsc'){
           const cmp = userA.localeCompare(userB);
           if (cmp !== 0) return cmp;
-          // tie-break by newest first
           if (dateA !== dateB) return dateB.localeCompare(dateA);
           return timeB.localeCompare(timeA);
         }
@@ -1522,6 +1531,14 @@ let USERS = {};  // email -> {name, role}
         return uidMatch || emailMatch;
       };
 
+      const userLabelFor = r=>{
+        if (!r.createdByEmail) return '';
+        const email = String(r.createdByEmail).toLowerCase();
+        const u = USERS[email];
+        if (u && u.firstName) return u.firstName;
+        return email.split('@')[0];
+      };
+
       // Build table rows
       const tableHtml = filtered.map(r=>{
         const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
@@ -1543,11 +1560,7 @@ let USERS = {};  // email -> {name, role}
         const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
         const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
-        let userLabel = '';
-if (r.createdByEmail) {
-  const email = String(r.createdByEmail).toLowerCase();
-  userLabel = USERS[email]?.name || email.split("@")[0];
-}
+        const userLabel = userLabelFor(r);
 
         const delHtml = canDeleteEntry(r)
           ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
@@ -1591,11 +1604,7 @@ if (r.createdByEmail) {
           const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
           const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
-          let userLabel = '';
-if (r.createdByEmail) {
-  const email = String(r.createdByEmail).toLowerCase();
-  userLabel = USERS[email]?.name || email.split("@")[0];
-}
+          const userLabel = userLabelFor(r);
 
           const delHtml = canDeleteEntry(r)
             ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
@@ -1624,7 +1633,7 @@ if (r.createdByEmail) {
         entriesCards.innerHTML = cardsHtml;
       }
 
-      // Wire delete buttons for both table + cards
+      // Wire delete buttons
       const delButtons = document.querySelectorAll('#entriesBody button[data-del], #entriesCards button[data-del]');
       delButtons.forEach(btn=>{
         btn.onclick = async ()=>{
@@ -1656,17 +1665,27 @@ if (r.createdByEmail) {
     const now = new Date();
     timeInp.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     filterYear.value = now.getFullYear();
-// Load all user display names
-const usersSnap = await db.collection("users").get();
-USERS = {};
-usersSnap.forEach(doc => {
-  const d = doc.data() || {};
-  const email = (doc.id || "").replace(/_/g, ".").toLowerCase();
-  USERS[email] = {
-    name: d.name || null,
-    role: d.role || null
-  };
-});
+
+    // Load users for name lookup (doc id is email with special chars replaced)
+    try{
+      const usersSnap = await db.collection('users').get();
+      USERS = {};
+      usersSnap.forEach(doc=>{
+        const d = doc.data() || {};
+        const docId = doc.id || '';
+        const emailGuess = docId.replace(/_/g,'.').toLowerCase();
+        const fullName = (d.name || '').trim();
+        const firstName = fullName ? fullName.split(' ')[0] : (emailGuess.split('@')[0] || '');
+        USERS[emailGuess] = {
+          fullName: fullName || null,
+          firstName
+        };
+      });
+    }catch(e){
+      console.error('Loading users for names failed', e);
+      USERS = {};
+    }
+
     await loadProperties();
     if (propSel.options.length && propSel.value){
       await loadPaddocksForProperty(propSel.value);
