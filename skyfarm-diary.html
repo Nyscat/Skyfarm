@@ -622,7 +622,7 @@
     'Cows & calves','Weaners','Calves'
   ];
   let ALL_PROPERTIES = [];
-
+let USERS = {};  // email -> {name, role}
   // Current user/role
   let CURRENT_USER = null;
   let CURRENT_UID = null;
@@ -1543,9 +1543,11 @@
         const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
         const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
-        const userLabel = r.createdByEmail
-          ? String(r.createdByEmail).split('@')[0]
-          : '';
+        let userLabel = '';
+if (r.createdByEmail) {
+  const email = String(r.createdByEmail).toLowerCase();
+  userLabel = USERS[email]?.name || email.split("@")[0];
+}
 
         const delHtml = canDeleteEntry(r)
           ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
@@ -1589,9 +1591,11 @@
           const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
           const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
-          const userLabel = r.createdByEmail
-            ? String(r.createdByEmail).split('@')[0]
-            : '';
+          let userLabel = '';
+if (r.createdByEmail) {
+  const email = String(r.createdByEmail).toLowerCase();
+  userLabel = USERS[email]?.name || email.split("@")[0];
+}
 
           const delHtml = canDeleteEntry(r)
             ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
@@ -1652,7 +1656,17 @@
     const now = new Date();
     timeInp.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     filterYear.value = now.getFullYear();
-
+// Load all user display names
+const usersSnap = await db.collection("users").get();
+USERS = {};
+usersSnap.forEach(doc => {
+  const d = doc.data() || {};
+  const email = (doc.id || "").replace(/_/g, ".").toLowerCase();
+  USERS[email] = {
+    name: d.name || null,
+    role: d.role || null
+  };
+});
     await loadProperties();
     if (propSel.options.length && propSel.value){
       await loadPaddocksForProperty(propSel.value);
