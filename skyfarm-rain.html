@@ -20,11 +20,8 @@
       --muted:#64748b;
       --line:#e5e7eb;
       --brand:#0B7A6E;
-      --brand-soft:#ecfdf3;
       --accent:#047857;
-      --accent-soft:#ecfdf3;
       --danger:#b91c1c;
-      --danger-soft:#fef2f2;
       --focus:#2563eb;
     }
 
@@ -32,168 +29,112 @@
     body{
       margin:0;
       padding:0;
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,-system-ui,"Segoe UI",sans-serif;
-      background:radial-gradient(circle at top, #e0f2fe 0, #f6fbf8 42%, #f6fbf8 100%);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+      background:radial-gradient(circle at top,#e0f2fe 0,#f6fbf8 40%,#f6fbf8 100%);
       color:var(--ink);
       -webkit-font-smoothing:antialiased;
     }
     a{text-decoration:none;color:inherit;}
     button{cursor:pointer;}
 
+    /* Header */
     #sf-header{position:sticky;top:0;z-index:20;}
     #sf-header .bar{
       display:flex;
+      flex-wrap:wrap;
       align-items:center;
-      gap:12px;
-      padding:10px 14px;
+      gap:10px;
+      padding:8px 12px;
       background:#fff;
       border-bottom:1px solid var(--line);
-      flex-wrap:wrap;
     }
     #sf-header .brand{
+      font-weight:700;
+      color:var(--brand);
       display:flex;
       align-items:center;
-      gap:8px;
-      color:var(--brand);
-      font-weight:700;
+      gap:6px;
     }
     #sf-header nav a{
       margin-right:10px;
       font-weight:600;
       color:var(--brand);
+      font-size:.9rem;
     }
-    #sf-header nav a[aria-current="page"]{
-      text-decoration:underline;
-    }
+    #sf-header nav a[aria-current="page"]{text-decoration:underline;}
     .spacer{flex:1;}
     .muted{color:var(--muted);}
     .small{font-size:.8rem;}
     .hidden{display:none;}
 
+    /* DB menu */
     .nav-db{position:relative;}
     .nav-db button{
-      background:#fff;
-      border-radius:999px;
-      padding:5px 10px;
-      border:1px solid var(--line);
       font-size:.85rem;
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
     }
     .db-menu{
       position:absolute;
       top:100%;
       left:0;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:4px 0;
       margin-top:4px;
+      background:#fff;
+      border-radius:12px;
+      border:1px solid var(--line);
+      box-shadow:0 10px 25px rgba(15,23,42,.16);
+      padding:4px 0;
       min-width:180px;
-      box-shadow:0 10px 30px rgba(15,23,42,.12);
       z-index:30;
     }
     .db-menu a{
       display:block;
-      padding:6px 12px;
+      padding:6px 10px;
       font-size:.85rem;
     }
     .db-menu a:hover{background:#f1f5f9;}
 
+    /* Layout */
     .wrap{
       max-width:1100px;
       margin:0 auto;
-      padding:12px 14px 40px;
+      padding:12px 12px 40px;
     }
-    h1{margin:12px 0;font-size:1.5rem;}
+    h1{margin:12px 0;font-size:1.45rem;}
 
     .card{
       background:var(--card);
-      border:1px solid var(--line);
       border-radius:12px;
+      border:1px solid var(--line);
       padding:12px;
-      margin:12px 0;
+      margin:10px 0;
     }
-    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-    label{font-size:.85rem;color:#475569;display:block;margin-bottom:4px;}
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:8px;
+    }
+    label{
+      font-size:.82rem;
+      color:#475569;
+      display:block;
+      margin-bottom:3px;
+    }
     select,input,button{
-      padding:6px 10px;
+      font-family:inherit;
+      font-size:.9rem;
       border-radius:10px;
       border:1px solid #cbd5e1;
+      padding:6px 9px;
       background:#fff;
-      font-size:.9rem;
     }
     select:focus,input:focus,button:focus{
       outline:none;
       border-color:var(--focus);
       box-shadow:0 0 0 1px rgba(37,99,235,.2);
-    }
-
-    #status{font-size:.8rem;}
-    .status-warn{color:var(--danger);}
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:4px;
-      font-size:.78rem;
-    }
-    th,td{
-      border:1px solid #e5e7eb;
-      padding:4px 5px;
-      text-align:right;
-    }
-    td.rain-cell-editable{
-      cursor:pointer;
-      background:#f8fafc;
-    }
-    th{
-      background:#f9fafb;
-      font-weight:600;
-      color:#4b5563;
-    }
-    td:first-child,th:first-child{
-      text-align:left;
-      position:sticky;
-      left:0;
-      background:#f9fafb;
-      z-index:1;
-    }
-    tr:nth-child(even) td:first-child{background:#f3f4f6;}
-
-    .total-row td{
-      font-weight:600;
-      background:#eff6ff;
-    }
-    .cum-row td{
-      background:#ecfdf3;
-    }
-
-    .summary{
-      margin-top:12px;
-      border-radius:12px;
-      border:1px dashed #cbd5e1;
-      padding:10px 12px;
-      background:#f9fafb;
-    }
-    .summary-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:10px;
-      margin-top:8px;
-    }
-    .summary-item{
-      border-radius:10px;
-      padding:8px 10px;
-      background:#fff;
-      border:1px solid #e5e7eb;
-      font-size:.8rem;
-    }
-    .summary-good{
-      border-color:#16a34a;
-      background:#f0fdf4;
-    }
-    .summary-bad{
-      border-color:#f97316;
-      background:#fff7ed;
     }
 
     .btn{
@@ -214,6 +155,79 @@
       color:#fff;
     }
 
+    #status{font-size:.8rem;}
+    .status-warn{color:var(--danger);}
+
+    /* Table */
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:4px;
+      font-size:.76rem;
+    }
+    th,td{
+      border:1px solid #e5e7eb;
+      padding:4px 5px;
+      text-align:right;
+    }
+    th{
+      background:#f9fafb;
+      font-weight:600;
+      color:#4b5563;
+    }
+    td:first-child,th:first-child{
+      text-align:left;
+      position:sticky;
+      left:0;
+      background:#f9fafb;
+      z-index:1;
+    }
+    tr:nth-child(even) td:first-child{background:#f3f4f6;}
+
+    td.rain-cell-editable{
+      cursor:pointer;
+      background:#f8fafc;
+    }
+
+    .total-row td{
+      font-weight:600;
+      background:#eff6ff;
+    }
+    .cum-row td{
+      background:#ecfdf3;
+    }
+
+    /* Summary panel */
+    .summary{
+      margin-top:12px;
+      border-radius:12px;
+      border:1px dashed #cbd5e1;
+      padding:10px 12px;
+      background:#f9fafb;
+    }
+    .summary-grid{
+      margin-top:8px;
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:8px;
+    }
+    .summary-item{
+      border-radius:10px;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      padding:7px 9px;
+      font-size:.78rem;
+    }
+    .summary-good{
+      border-color:#16a34a;
+      background:#f0fdf4;
+    }
+    .summary-bad{
+      border-color:#f97316;
+      background:#fff7ed;
+    }
+
+    /* Auth overlay */
     #authOverlay{
       position:fixed;
       inset:0;
@@ -234,13 +248,14 @@
     #authCard h2{margin:0 0 6px;font-size:1.1rem;}
 
     @media (max-width:640px){
-      .wrap{padding-inline:10px;}
-      table{font-size:.72rem;}
+      .wrap{padding-inline:9px;}
+      table{font-size:.7rem;}
     }
   </style>
 </head>
 <body>
 
+<!-- Header -->
 <div id="sf-header">
   <div class="bar">
     <a href="skyfarm-diary.html" class="brand">🌱 SkyFarm</a>
@@ -269,6 +284,7 @@
 <div class="wrap">
   <h1>Rainfall</h1>
 
+  <!-- Gauge / year selector -->
   <div class="card">
     <div class="row">
       <div>
@@ -281,36 +297,34 @@
         <label>Year</label>
         <select id="yearSel"></select>
       </div>
-      <button id="reloadBtn" class="btn">Reload</button>
-      <button id="printBtn" class="btn primary">Print / PDF</button>
-      <span class="muted" id="status" style="margin-left:auto">Loading…</span>
+      <button id="reloadBtn" class="btn" type="button">Reload</button>
+      <button id="printBtn" class="btn primary" type="button">Print / PDF</button>
+      <span class="spacer"></span>
+      <span id="status" class="muted small">Loading…</span>
     </div>
-    <div class="muted small" id="gaugeInfo"></div>
+    <div id="gaugeInfo" class="muted small" style="margin-top:4px;"></div>
   </div>
 
-  <!-- Hidden import card (only shows with ?import=1 and when signed in) -->
-  <div id="importCard" class="card" style="margin-top:12px;display:none;">
+  <!-- Hidden historic import card, only if ?import=1 and signed in -->
+  <div id="importCard" class="card" style="display:none;">
+    <h2 style="margin-top:0;font-size:1rem;">Historic rainfall import</h2>
+    <p class="muted small">
+      Admin only. Select <strong>Consentes House - Rainfall.xlsx</strong> then import into the selected gauge.
+    </p>
     <div class="row">
       <div>
-        <h2 style="margin-top:0;">Historic rainfall import</h2>
-        <p class="small muted">
-          Admin only. Select the <strong>Consentes House - Rainfall.xlsx</strong> workbook and click import.
-        </p>
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <label for="importFile">Workbook</label>
+        <label>Workbook</label>
         <input id="importFile" type="file" accept=".xlsx,.xls" />
       </div>
       <div>
         <label>&nbsp;</label>
         <button id="runImportBtn" class="btn primary" type="button">Import to Firestore</button>
       </div>
-      <div class="small muted" id="importStatus"></div>
+      <span id="importStatus" class="muted small"></span>
     </div>
   </div>
 
+  <!-- Main table -->
   <div class="card">
     <div style="overflow-x:auto;">
       <table>
@@ -322,9 +336,10 @@
     </div>
   </div>
 
+  <!-- Summary / climatology -->
   <div id="summary" class="summary">
-    <div class="small muted">
-      Monthly vs long-term rainfall for the selected gauge and year.
+    <div class="muted small">
+      Monthly and long-term rainfall for the selected gauge and year.
     </div>
     <div id="summaryContent" class="summary-grid small">
       <div>Loading climatology…</div>
@@ -336,10 +351,10 @@
 <div id="authOverlay">
   <div id="authCard">
     <h2>Sign in to SkyFarm</h2>
-    <p class="muted small" style="margin-bottom:10px;">
-      Email &amp; password only. Rain editing and imports require a signed-in user.
+    <p class="muted small" style="margin-bottom:8px;">
+      Email &amp; password only. Editing rain and importing history require sign-in.
     </p>
-    <div class="row" style="margin-bottom:8px;">
+    <div class="row" style="margin-bottom:6px;">
       <div style="flex:1;min-width:220px;">
         <label>Email</label>
         <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com" />
@@ -358,6 +373,7 @@
 </div>
 
 <script>
+  // ---------- Firebase init ----------
   const firebaseConfig = {
     apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
     authDomain: "consentes-pastoral.firebaseapp.com",
@@ -365,33 +381,33 @@
     appId: "1:494858780013:web:d87497b370c82eeab06e64"
   };
   firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  const db   = firebase.firestore();
   const auth = firebase.auth();
 
-  const $ = sel => document.querySelector(sel);
+  const $ = s => document.querySelector(s);
 
-  const statusEl = $('#status');
-  const rainHead = $('#rainHead');
-  const rainBody = $('#rainBody');
-  const summaryContent = $('#summaryContent');
-  const gaugeInfo = $('#gaugeInfo');
+  const statusEl        = $('#status');
+  const rainHead        = $('#rainHead');
+  const rainBody        = $('#rainBody');
+  const summaryContent  = $('#summaryContent');
+  const gaugeInfo       = $('#gaugeInfo');
 
-  const authOverlay = $('#authOverlay');
-  const authWho = $('#authWho');
-  const signOutBtn = $('#signOutBtn');
-  const signInBtn = $('#signInBtn');
+  const authOverlay     = $('#authOverlay');
+  const authWho         = $('#authWho');
+  const signOutBtn      = $('#signOutBtn');
+  const signInBtn       = $('#signInBtn');
   const closeOverlayBtn = $('#closeOverlayBtn');
 
-  const gaugeSel = $('#gaugeSel');
-  const yearSel = $('#yearSel');
+  const gaugeSel  = $('#gaugeSel');
+  const yearSel   = $('#yearSel');
   const reloadBtn = $('#reloadBtn');
-  const printBtn = $('#printBtn');
+  const printBtn  = $('#printBtn');
 
-  const importCard = $('#importCard');
-  const importFile = $('#importFile');
-  const importBtn = $('#runImportBtn');
+  const importCard   = $('#importCard');
+  const importFile   = $('#importFile');
+  const importBtn    = $('#runImportBtn');
   const importStatus = $('#importStatus');
-  const showImport = new URLSearchParams(location.search).get('import') === '1';
+  const showImport   = new URLSearchParams(location.search).get('import') === '1';
 
   const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
   const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
@@ -399,22 +415,18 @@
   let propertiesById = new Map();
   let gauges = [];
   let currentGauge = null;
-  let climatology = null; // from consentes-house-rain.json
-  let allowEditRain = false; // true when a user is signed in
-  let currentYear = null;    // currently displayed year in table
+  let currentYear  = null;
+  let allowEditRain = false;
+  let climatology   = null;  // loaded from consentes-house-rain.json
 
   function setStatus(msg, warn){
     statusEl.textContent = msg || '';
     statusEl.classList.toggle('status-warn', !!warn);
   }
+  function setImportStatus(msg){ if (importStatus) importStatus.textContent = msg || ''; }
   function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
 
-  function setImportStatus(msg){
-    if (!importStatus) return;
-    importStatus.textContent = msg || '';
-  }
-
-  /* Header DB menu */
+  // DB menu
   (function(){
     const btn = $('#dbMenuBtn');
     const menu = $('#dbMenu');
@@ -427,10 +439,10 @@
     });
   })();
 
-  // Auth sign-in/sign-out
+  // Auth events
   signInBtn.onclick = async ()=>{
     const email = $('#siEmail').value.trim();
-    const pass = $('#siPass').value;
+    const pass  = $('#siPass').value;
     const msgEl = $('#authMsg');
     if (!email || !pass){
       msgEl.textContent = 'Enter email and password.';
@@ -466,8 +478,8 @@
       allowEditRain = false;
       authWho.textContent = 'Not signed in';
       signOutBtn.classList.add('hidden');
-      showOverlay(true);
       if (importCard) importCard.style.display = 'none';
+      showOverlay(true);
       setStatus('Please sign in', true);
     }
   });
@@ -486,7 +498,8 @@
     propertiesById.clear();
     const snap = await db.collection('properties').get();
     snap.forEach(doc=>{
-      propertiesById.set(doc.id, (doc.data() || {}).name || '(Property)');
+      const d = doc.data() || {};
+      propertiesById.set(doc.id, d.name || '(Property)');
     });
   }
 
@@ -502,6 +515,7 @@
         propertyId: d.propertyId || null
       });
     });
+
     gauges.sort((a,b)=>{
       const pa = propertiesById.get(a.propertyId) || '';
       const pb = propertiesById.get(b.propertyId) || '';
@@ -531,12 +545,10 @@
         currentGauge = found;
       }
     }
-
     if (!currentGauge && gauges.length){
       currentGauge = gauges[0];
       gaugeSel.value = currentGauge.id;
     }
-
     updateGaugeInfo();
   }
 
@@ -552,10 +564,11 @@
       opt.textContent = String(y);
       yearSel.appendChild(opt);
     }
-
     const savedYear = parseInt(localStorage.getItem(ACTIVE_YEAR_KEY) || '',10);
     if (savedYear && savedYear >= minYear && savedYear <= thisYear){
       yearSel.value = savedYear;
+    }else{
+      yearSel.value = thisYear;
     }
   }
 
@@ -572,9 +585,7 @@
 
   function makeEmptyYear(){
     const days = [];
-    for (let d=0; d<31; d++){
-      days.push(new Array(12).fill(null));
-    }
+    for (let d=0; d<31; d++) days.push(new Array(12).fill(null));
     return days;
   }
 
@@ -583,9 +594,9 @@
     if (typeof raw !== 'string') return null;
     const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!m) return null;
-    const year = parseInt(m[1],10);
+    const year  = parseInt(m[1],10);
     const month = parseInt(m[2],10);
-    const day = parseInt(m[3],10);
+    const day   = parseInt(m[3],10);
     if (!year || !month || !day) return null;
     return { year, month, day };
   }
@@ -596,15 +607,13 @@
     return Number.isFinite(n) ? n : 0;
   }
 
-
   async function updateRainDoc(gaugeId, year, month, day, mm){
-    const dayStr = String(day).padStart(2,'0');
+    const dayStr   = String(day).padStart(2,'0');
     const monthStr = String(month).padStart(2,'0');
     const docId = `${year}-${monthStr}-${dayStr}`;
     const ref = db.collection('gauges').doc(gaugeId).collection('daily').doc(docId);
 
     if (mm == null){
-      // Delete the doc to represent "no data" for that day.
       try{
         await ref.delete();
       }catch(e){
@@ -618,7 +627,7 @@
         dateISO: docId,
         source: 'manualEdit',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge:true });
+      }, {merge:true});
     }
   }
 
@@ -657,7 +666,7 @@
 
       const stats = renderTable(grid);
       setStatus('Loaded');
-      updateSummary(year, stats.monthTotals);
+      updateSummary(year, stats);
     }catch(e){
       console.error(e);
       rainBody.innerHTML = '<tr><td colspan="13">Error loading rainfall.</td></tr>';
@@ -673,12 +682,11 @@
     headHtml += '</tr>';
     rainHead.innerHTML = headHtml;
 
-    const monthTotals = new Array(12).fill(0);
-    const monthRainDays = new Array(12).fill(0);
+    const monthTotals    = new Array(12).fill(0);
+    const monthRainDays  = new Array(12).fill(0); // this year only, >= 0.1 mm
 
     function fmt(v){
-      if (v == null) return '';
-      if (!Number.isFinite(v)) return '';
+      if (v == null || !Number.isFinite(v)) return '';
       const n = Number(v);
       return (Math.abs(n % 1) < 0.001) ? n.toFixed(0) : n.toFixed(1);
     }
@@ -697,17 +705,19 @@
         }
         const mmText = fmt(v);
         const cls = canEdit ? ' class="rain-cell-editable"' : '';
-        const dayAttr = day;
+        const dayAttr   = day;
         const monthAttr = m + 1;
         bodyHtml += `<td data-day="${dayAttr}" data-month="${monthAttr}"${cls}>${mmText}</td>`;
       }
       bodyHtml += '</tr>';
     }
 
+    // Monthly totals row
     bodyHtml += '<tr class="total-row"><td>Total rain (mm)</td>';
     for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(monthTotals[m])}</td>`;
     bodyHtml += '</tr>';
 
+    // Cumulative row
     const cum = new Array(12).fill(0);
     for (let m=0; m<12; m++){
       cum[m] = (m === 0 ? monthTotals[m] : cum[m-1] + monthTotals[m]);
@@ -716,7 +726,8 @@
     for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(cum[m])}</td>`;
     bodyHtml += '</tr>';
 
-    bodyHtml += '<tr><td>Total rain days</td>';
+    // Rain days row (this year)
+    bodyHtml += '<tr><td>Rain days (>=0.1 mm)</td>';
     for (let m=0; m<12; m++) bodyHtml += `<td>${monthRainDays[m] || ''}</td>`;
     bodyHtml += '</tr>';
 
@@ -724,12 +735,12 @@
 
     if (canEdit){
       const gaugeId = currentGauge.id;
-      const year = currentYear;
+      const year    = currentYear;
       const cells = rainBody.querySelectorAll('td.rain-cell-editable');
       cells.forEach(td=>{
         td.addEventListener('click', async ()=>{
-          const day = parseInt(td.dataset.day, 10);
-          const month = parseInt(td.dataset.month, 10);
+          const day   = parseInt(td.dataset.day,10);
+          const month = parseInt(td.dataset.month,10);
           if (!day || !month) return;
           const existing = td.textContent.trim();
           const label = `${day}/${month}/${year}`;
@@ -759,92 +770,140 @@
     return { monthTotals, monthRainDays };
   }
 
+  // Load climatology JSON
   async function loadClimatology(){
     try{
       const resp = await fetch('consentes-house-rain.json', {cache:'no-store'});
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       climatology = await resp.json();
-      if (!climatology || !climatology.longTerm){
-        summaryContent.textContent = 'Averages file is present but empty. You can fill it later.';
-      }
     }catch(e){
       console.error('Failed to load consentes-house-rain.json', e);
-      summaryContent.textContent = 'Long-term averages file not found or unreadable.';
+      climatology = null;
+      if (summaryContent){
+        summaryContent.textContent = 'Long-term averages file not found or unreadable.';
+      }
     }
   }
 
-  function updateSummary(year, monthTotals){
-    if (!summaryContent) return;
+  function updateSummary(year, stats){
+    if (!summaryContent){
+      return;
+    }
+    const monthTotalsThisYear   = stats?.monthTotals   || [];
+    const rainDaysThisYear      = stats?.monthRainDays || [];
+
     if (!currentGauge){
       summaryContent.textContent = 'Select a gauge and year to see summary.';
       return;
     }
-
-    const gaugeName = (currentGauge.name || '').toLowerCase();
-    if (!climatology){
-      summaryContent.textContent = 'Loading long-term averages…';
+    if (!climatology || !climatology.longTerm){
+      summaryContent.textContent = 'Long-term averages not available. Create consentes-house-rain.json.';
       return;
     }
 
-    let lt = null;
-    if (gaugeName.includes('consentes') || gaugeName.includes('house')){
-      lt = climatology.longTerm || null;
-    }else{
-      lt = climatology.longTerm || null;
-    }
-    if (!lt){
-      summaryContent.textContent = 'No long-term averages found.';
-      return;
-    }
+    const lt = climatology.longTerm;
+    const ltaMonthly   = Array.isArray(lt.monthly)          ? lt.monthly          : [];
+    const ltaRainDays  = Array.isArray(lt.monthlyRainDays)  ? lt.monthlyRainDays  : null;
+    const ltaMedian    = Array.isArray(lt.monthlyMedian)    ? lt.monthlyMedian    : null;
+    const ltaP10       = Array.isArray(lt.monthlyP10)       ? lt.monthlyP10       : null;
+    const ltaP90       = Array.isArray(lt.monthlyP90)       ? lt.monthlyP90       : null;
+    const seasons      = lt.seasons || lt.seasonal || null;
+    const ltaAnnual    = (typeof lt.annual === 'number') ? lt.annual : null;
+    const rainDayThreshold = (typeof lt.rainDayThresholdMm === 'number') ? lt.rainDayThresholdMm : null;
+    const yearsList    = Array.isArray(lt.years) ? lt.years : null;
 
-    const ltaMonthly = lt.monthly || [];
-    const ltaAnnual = lt.annual || null;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     function fmt1(v){
       if (v == null || !Number.isFinite(v)) return '—';
-      return v.toFixed(1);
+      return Number(v).toFixed(1);
+    }
+    function fmt0(v){
+      if (v == null || !Number.isFinite(v)) return '—';
+      return String(Math.round(Number(v)));
     }
     function fmtPct(v){
       if (v == null || !Number.isFinite(v)) return '—';
-      return v.toFixed(0) + '%';
+      return Number(v).toFixed(0) + '%';
     }
 
-    const thisYearTotal = monthTotals.reduce((a,b)=>a + (b || 0), 0);
-    const yearPct = (ltaAnnual && Number.isFinite(ltaAnnual) && ltaAnnual > 0)
-      ? (thisYearTotal / ltaAnnual * 100)
-      : null;
+    const thisYearTotal = monthTotalsThisYear.reduce((a,b)=>a+(b||0),0);
+    const yearPct = (ltaAnnual && ltaAnnual>0) ? (thisYearTotal / ltaAnnual * 100) : null;
 
     let html = '';
+
+    // Overall year card
     html += `<div class="summary-item">
-      <strong>${year} totals</strong>
-      <div>Total: ${fmt1(thisYearTotal)} mm</div>
+      <strong>${year} total</strong>
+      <div>This year: ${fmt1(thisYearTotal)} mm</div>
       <div>Long-term annual: ${fmt1(ltaAnnual)} mm</div>
-      <div>Difference: ${fmt1(thisYearTotal - (ltaAnnual || 0))} mm</div>
+      <div>Year vs avg: ${fmtPct(yearPct)}</div>
+      ${yearsList ? `<div class="muted small">Base period: ${yearsList[0]}–${yearsList[yearsList.length-1]} (${yearsList.length} yrs)</div>` : ''}
     </div>`;
 
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    // Seasonal cards if provided in JSON
+    if (seasons && typeof seasons === 'object'){
+      Object.keys(seasons).forEach(name=>{
+        const s = seasons[name] || {};
+        const mean   = typeof s.mean   === 'number' ? s.mean   : null;
+        const median = typeof s.median === 'number' ? s.median : null;
+        const p10    = typeof s.p10    === 'number' ? s.p10    : null;
+        const p90    = typeof s.p90    === 'number' ? s.p90    : null;
+
+        html += `<div class="summary-item">
+          <strong>${name}</strong>
+          <div>Mean: ${fmt1(mean)} mm</div>
+          <div>Median: ${fmt1(median)} mm</div>
+          <div>P10 dry: ${fmt1(p10)} mm</div>
+          <div>P90 wet: ${fmt1(p90)} mm</div>
+        </div>`;
+      });
+    }
+
+    // Monthly cards
     for (let m=0; m<12; m++){
-      const thisM = monthTotals[m] || 0;
-      const avgM = ltaMonthly[m] || 0;
-      const pct = (avgM > 0) ? (thisM / avgM * 100) : null;
+      const thisM   = monthTotalsThisYear[m] || 0;
+      const avgM    = (typeof ltaMonthly[m] === 'number') ? ltaMonthly[m] : null;
+      const pct     = (avgM && avgM>0) ? (thisM / avgM * 100) : null;
+
+      const rainDaysAvg = ltaRainDays && typeof ltaRainDays[m] === 'number'
+        ? ltaRainDays[m]
+        : null;
+      const medianM = ltaMedian && typeof ltaMedian[m] === 'number'
+        ? ltaMedian[m]
+        : null;
+      const p10M    = ltaP10 && typeof ltaP10[m] === 'number'
+        ? ltaP10[m]
+        : null;
+      const p90M    = ltaP90 && typeof ltaP90[m] === 'number'
+        ? ltaP90[m]
+        : null;
+
+      const thisRainDays = rainDaysThisYear[m] || 0;
+
       let cls = '';
       if (pct != null){
         if (pct < 60) cls = 'summary-bad';
         else if (pct > 140) cls = 'summary-good';
       }
+
       html += `<div class="summary-item ${cls}">
         <strong>${months[m]}</strong>
         <div>This year: ${fmt1(thisM)} mm</div>
         <div>Average: ${fmt1(avgM)} mm</div>
         <div>Pct of avg: ${fmtPct(pct)}</div>
+        <div>Rain days this year: ${fmt0(thisRainDays)}</div>
+        <div>Avg rain days: ${rainDaysAvg != null ? rainDaysAvg.toFixed(1) : '—'}${rainDayThreshold!=null ? ` (≥${rainDayThreshold} mm)` : ''}</div>
+        ${medianM!=null ? `<div>Median: ${fmt1(medianM)} mm</div>` : ''}
+        ${p10M!=null    ? `<div>P10 dry: ${fmt1(p10M)} mm</div>`   : ''}
+        ${p90M!=null    ? `<div>P90 wet: ${fmt1(p90M)} mm</div>`   : ''}
       </div>`;
     }
 
-    html += `<div class="muted small">Gauge averages source: <code>consentes-house-rain.json</code> (long-term).</div>`;
     summaryContent.innerHTML = html;
   }
 
-  // Reload + print
+  // Reload / print
   reloadBtn.onclick = async ()=>{
     if (!gaugeSel.value) return;
     const year = parseInt(yearSel.value,10);
@@ -855,15 +914,11 @@
     updateGaugeInfo();
     await loadRain();
   };
-
   gaugeSel.onchange = ()=> reloadBtn.click();
-  yearSel.onchange = ()=> reloadBtn.click();
+  yearSel.onchange  = ()=> reloadBtn.click();
+  printBtn.onclick  = ()=> window.print();
 
-  printBtn.onclick = ()=>{
-    window.print();
-  };
-
-  // Import handling
+  // Import workbook → Firestore
   if (importBtn){
     importBtn.onclick = async ()=>{
       const file = importFile.files[0];
@@ -894,25 +949,25 @@
 
   async function importWorkbookRows(gaugeId, rows){
     const headerRow = rows[0] || [];
-    const yearIndex = headerRow.findIndex(c=>String(c).toLowerCase().includes('year'));
+    const yearIndex  = headerRow.findIndex(c=>String(c).toLowerCase().includes('year'));
     const monthIndex = headerRow.findIndex(c=>String(c).toLowerCase().includes('month'));
-    const dayIndex = headerRow.findIndex(c=>String(c).toLowerCase().includes('day'));
-    const mmIndex = headerRow.findIndex(c=>String(c).toLowerCase().includes('rain'));
+    const dayIndex   = headerRow.findIndex(c=>String(c).toLowerCase().includes('day'));
+    const mmIndex    = headerRow.findIndex(c=>String(c).toLowerCase().includes('rain'));
 
     if (yearIndex < 0 || monthIndex < 0 || dayIndex < 0 || mmIndex < 0){
       throw new Error('Could not find Year / Month / Day / Rain columns in header row.');
     }
 
-    let imported = 0;
-    const batch = db.batch();
     const baseRef = db.collection('gauges').doc(gaugeId).collection('daily');
+    let batch = db.batch();
+    let imported = 0;
 
     for (let i=1; i<rows.length; i++){
       const r = rows[i] || [];
-      const year = Number(r[yearIndex]);
+      const year  = Number(r[yearIndex]);
       const month = Number(r[monthIndex]);
-      const day = Number(r[dayIndex]);
-      const mm = Number(r[mmIndex]);
+      const day   = Number(r[dayIndex]);
+      const mm    = Number(r[mmIndex]);
       if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(mm)) continue;
       if (year < 1900 || year > 3000) continue;
       if (month < 1 || month > 12) continue;
@@ -922,17 +977,17 @@
       const mStr = String(month).padStart(2,'0');
       const docId = `${year}-${mStr}-${dStr}`;
       const ref = baseRef.doc(docId);
-      batch.set(ref, {
+      batch.set(ref,{
         mm,
         dateISO: docId,
         source: 'excelImport'
       }, {merge:true});
       imported++;
-      if (imported > 0 && imported % 400 === 0){
+      if (imported % 400 === 0){
         await batch.commit();
+        batch = db.batch();
       }
     }
-
     if (imported > 0){
       await batch.commit();
     }
