@@ -14,19 +14,16 @@
     :root{
       --bg:#f6fbf8;
       --card:#ffffff;
+      --line:#e2e8f0;
       --ink:#0f172a;
-      --muted:#6b7280;
-      --brand:#0f766e;
-      --brand-soft:#d1fae5;
+      --muted:#64748b;
+      --accent:#047857;
       --danger:#b91c1c;
-      --border:#e5e7eb;
-      --radius:10px;
     }
     *{box-sizing:border-box;}
-    html,body{
+    body{
       margin:0;
-      padding:0;
-      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
       background:var(--bg);
       color:var(--ink);
       -webkit-font-smoothing:antialiased;
@@ -41,1050 +38,1068 @@
       z-index:40;
       background:rgba(255,255,255,.96);
       backdrop-filter:blur(18px);
-      border-bottom:1px solid #e5e7eb;
+      border-bottom:1px solid rgba(148,163,184,.4);
     }
-    #sf-header-inner{
+    #sf-header .bar{
       max-width:1200px;
       margin:0 auto;
-      padding:10px 16px;
+      padding:8px 14px;
       display:flex;
       align-items:center;
-      gap:12px;
+      gap:10px;
     }
-    #sf-header-logo{
+    #sf-header .brand{
       font-weight:600;
-      letter-spacing:.04em;
-      font-size:.95rem;
-      display:flex;
-      align-items:center;
-      gap:6px;
-    }
-    #sf-header-logo span.logo-dot{
-      display:inline-block;
-      width:9px;
-      height:9px;
+      font-size:1rem;
+      padding:4px 10px;
       border-radius:999px;
-      background:var(--brand);
+      background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);
+      color:#ecfdf3;
+      box-shadow:0 10px 20px rgba(15,23,42,.25);
     }
-    #sf-header-nav{
-      margin-left:auto;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .nav-link{
+    #sf-header nav a{
+      padding:4px 10px;
+      border-radius:999px;
       font-size:.85rem;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid transparent;
-      color:#4b5563;
+      color:#0f172a;
       text-decoration:none;
-      white-space:nowrap;
     }
-    .nav-link:hover{
-      background:#f3f4f6;
-    }
-    .nav-link.active{
-      border-color:#0f766e;
-      background:#ecfdf5;
-      color:#0f766e;
+    #sf-header nav a[aria-current="page"]{
+      background:#e0f2fe;
       font-weight:500;
     }
+    .nav-db{position:relative;}
+    .spacer{flex:1;}
+    .muted{color:var(--muted);}
+    .small{font-size:.8rem;}
+    .status-warn{color:var(--danger);}
 
-    /* Layout */
-    #page{
-      max-width:1200px;
-      margin:12px auto 40px;
-      padding:0 16px 24px;
+    .btn{
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      padding:6px 12px;
+      font-size:.82rem;
+      background:#fff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
     }
+    .btn.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#ecfdf3;
+    }
+    .btn.danger{
+      border-color:#ef4444;
+      color:#ef4444;
+      background:#fff;
+    }
+    .btn.small{
+      padding:4px 10px;
+      font-size:.78rem;
+    }
+    .btn[disabled]{opacity:.5;cursor:default;}
 
-    .page-title{
-      display:flex;
-      align-items:flex-end;
-      gap:10px;
-      margin-bottom:4px;
+    .db-menu{
+      position:absolute;
+      top:100%;
+      right:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      min-width:180px;
+      padding:4px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.12);
+      z-index:20;
     }
-    .page-title h1{
-      font-size:1.55rem;
-      margin:12px 0 2px;
-    }
-    .page-title span.tagline{
+    .db-menu a{
+      display:block;
+      padding:6px 12px;
       font-size:.9rem;
-      color:var(--muted);
+      color:#0f172a;
+      text-decoration:none;
     }
-    .page-sub{
-      font-size:.85rem;
-      color:var(--muted);
-      margin-bottom:16px;
-    }
+    .db-menu a:hover{background:#f1f59;}
+    .hidden{display:none;}
 
-    .layout{
-      display:grid;
-      grid-template-columns:minmax(0, 320px) minmax(0, 1.5fr);
-      gap:18px;
-      align-items:flex-start;
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:12px;
     }
-    @media (max-width:900px){
-      .layout{
-        grid-template-columns:minmax(0,1fr);
-      }
-    }
+    h1{margin:10px 0;font-size:1.5rem;}
 
-    /* Cards */
     .card{
       background:var(--card);
-      border-radius:var(--radius);
-      border:1px solid #e5e7eb;
-      box-shadow:0 10px 25px rgba(15,23,42,.06);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      margin:10px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.04);
     }
-    .card-header{
-      padding:10px 14px 0;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-    }
-    .card-header h2{
-      font-size:.98rem;
-      text-transform:uppercase;
-      letter-spacing:.08em;
-      font-weight:600;
-      color:#374151;
-      margin:0;
-    }
-    .card-header small{
-      font-size:.8rem;
-      color:var(--muted);
-    }
-    .card-body{
-      padding:10px 14px 14px;
-    }
-    .card-body.compact-top{
-      padding-top:4px;
-    }
-
-    /* Form styles */
     .row{
       display:flex;
       flex-wrap:wrap;
-      gap:8px 10px;
-      margin-bottom:8px;
-      align-items:flex-end;
+      gap:10px;
+      align-items:center;
+      margin:6px 0;
     }
-    .row > *{
-      flex:1 1 120px;
-      min-width:120px;
-    }
-    .row.cols-3 > *{flex-basis:33%;}
-    .row.cols-4 > *{flex-basis:24%;}
-    .row.cols-2 > *{flex-basis:48%;}
-    .row.cols-auto > *{flex:0 0 auto;}
-    @media (max-width:700px){
-      .row.cols-3 > *,
-      .row.cols-4 > *,
-      .row.cols-2 > *{
-        flex-basis:100%;
-      }
-    }
-
     label{
       display:block;
-      font-size:.78rem;
-      font-weight:500;
-      color:#4b5563;
-      margin-bottom:2px;
+      font-size:.8rem;
+      color:#475569;
+      margin-bottom:3px;
     }
-    input[type="text"],
-    input[type="number"],
-    input[type="date"],
-    select,
-    textarea{
-      width:100%;
-      border-radius:7px;
-      border:1px solid #d1d5db;
-      padding:6px 7px;
+    input,select,textarea{
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:6px 8px;
       font-size:.85rem;
       font-family:inherit;
-      color:var(--ink);
       background:#fff;
     }
-    input:focus, select:focus, textarea:focus{
-      outline:2px solid #0f766e33;
-      border-color:#0f766e;
-    }
-    textarea{
-      min-height:46px;
-      resize:vertical;
+    textarea{resize:vertical;min-height:40px;}
+    input:focus,select:focus,textarea:focus{
+      outline:none;
+      border-color:#2563eb;
+      box-shadow:0 0 0 1px rgba(37,99,235,.2);
     }
 
-    .muted{
-      color:var(--muted);
-    }
-    .small{
-      font-size:.8rem;
-    }
-    .nowrap{
-      white-space:nowrap;
-    }
-
-    /* Buttons */
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:999px;
-      border:1px solid transparent;
-      background:#0f766e;
-      color:#fff;
-      padding:6px 10px;
-      font-size:.8rem;
-      font-weight:500;
-      cursor:pointer;
-      gap:5px;
-      white-space:nowrap;
-    }
-    .btn.small{
-      padding:4px 9px;
-      font-size:.78rem;
-    }
-    .btn.secondary{
-      background:#fff;
-      color:#374151;
-      border-color:#d1d5db;
-    }
-    .btn.secondary:hover{
-      background:#f3f4f6;
-    }
-    .btn.danger{
-      background:#b91c1c;
-    }
-    .btn:disabled{
-      opacity:.6;
-      cursor:default;
-    }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      border-radius:999px;
-      padding:2px 6px;
-      font-size:.75rem;
-      border:1px solid #d1d5db;
-      color:#4b5563;
-      gap:4px;
-    }
-    .badge-dot{
-      width:7px;
-      height:7px;
-      border-radius:999px;
-      background:#10b981;
-    }
-
-    .pill-select{
-      display:flex;
-      flex-wrap:wrap;
-      gap:4px;
-    }
-    .pill-option{
-      border-radius:999px;
+    .w90{width:90px;}
+    .w120{width:120px;}
+    .w160{width:160px;}
+    .w220{width:220px;}
+    .pill{
+      display:inline-block;
       padding:2px 7px;
-      font-size:.76rem;
-      border:1px solid #d1d5db;
-      cursor:pointer;
-      background:#fff;
-      color:#4b5563;
-    }
-    .pill-option.active{
-      background:#ecfdf5;
-      border-color:#0f766e;
-      color:#0f766e;
-      font-weight:500;
-    }
-
-    /* Status */
-    #statusBar{
-      margin-top:6px;
-      font-size:.8rem;
-      color:#6b7280;
-    }
-    #statusBar strong{
-      font-weight:600;
-      color:#111827;
-    }
-
-    /* Filters / controls */
-    .filters-row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      align-items:flex-end;
-      margin-bottom:8px;
-    }
-    .filters-row > *{
-      flex:1 1 150px;
-      min-width:130px;
-    }
-    .filters-row .right{
-      margin-left:auto;
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-    @media (max-width:900px){
-      .filters-row{
-        flex-direction:column;
-        align-items:flex-start;
-      }
-      .filters-row .right{
-        margin-left:0;
-        width:100%;
-        justify-content:flex-start;
-      }
-    }
-
-    .chip{
-      display:inline-flex;
-      align-items:center;
       border-radius:999px;
-      padding:2px 8px;
-      border:1px solid #e5e7eb;
-      font-size:.78rem;
-      gap:4px;
-      color:#4b5563;
-      background:#f9fafb;
-    }
-    .chip strong{
-      font-weight:500;
-      color:#111827;
+      font-size:.75rem;
+      background:#e5f3ff;
+      border:1px solid #bfdbfe;
+      margin-right:4px;
     }
 
-    /* Table */
-    .table-desktop{
-      display:block;
-    }
-    .table-mobile{
-      display:none;
-    }
-    @media (max-width:760px){
-      .table-desktop{display:none;}
-      .table-mobile{display:block;}
-    }
-
-    .table-scroll{
-      overflow:auto;
-      border-radius:var(--radius);
-      border:1px solid #e5e7eb;
-      background:#fff;
-      box-shadow:0 12px 30px rgba(15,23,42,.07);
-    }
     table{
       width:100%;
-      border-collapse:separate;
-      border-spacing:0;
+      border-collapse:collapse;
       font-size:.8rem;
     }
-    thead{
-      background:#f9fafb;
-      position:sticky;
-      top:0;
-      z-index:10;
-    }
-    thead th{
-      text-align:left;
-      font-weight:500;
-      color:#4b5563;
-      padding:7px 8px;
+    th,td{
       border-bottom:1px solid #e5e7eb;
-      white-space:nowrap;
-      font-size:.78rem;
-    }
-    tbody td{
-      padding:6px 8px;
-      border-bottom:1px solid #f3f4f6;
+      padding:6px 6px;
+      text-align:left;
       vertical-align:top;
     }
-    tbody tr:nth-child(even){
-      background:#fcfcfd;
-    }
-    tbody tr:hover{
-      background:#f3f4ff;
+    th{background:#f9fafb;color:#374151;}
+    tr:nth-child(even) td{background:#f9fafb;}
+    .nowrap{white-space:nowrap;}
+
+    .table-scroll{
+      width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
     }
 
-    .table-scroll::-webkit-scrollbar{
-      height:8px;
+    /* Card list for mobile */
+    .entries-cards{
+      margin-top:8px;
+      display:none;
+      flex-direction:column;
+      gap:8px;
     }
-    .table-scroll::-webkit-scrollbar-thumb{
-      background:#cbd5f5;
-      border-radius:999px;
-    }
-
-    .tag{
-      display:inline-block;
-      padding:1px 6px;
-      border-radius:999px;
-      font-size:.72rem;
-      border:1px solid #d1d5db;
-      color:#374151;
-      background:#f9fafb;
-    }
-
     .entry-card{
-      border-radius:var(--radius);
-      border:1px solid #e5e7eb;
-      padding:9px 10px;
-      margin-bottom:8px;
-      background:#fff;
-      box-shadow:0 6px 18px rgba(15,23,42,.05);
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#f9fafb;
+      padding:8px 10px;
     }
     .ec-header{
       display:flex;
       justify-content:space-between;
-      align-items:center;
-      margin-bottom:4px;
-      font-size:.85rem;
+      font-size:.78rem;
       font-weight:500;
+      margin-bottom:4px;
     }
     .ec-line{
-      display:flex;
-      font-size:.8rem;
+      font-size:.78rem;
       margin-bottom:2px;
     }
     .ec-label{
-      width:90px;
-      flex:0 0 auto;
-      font-weight:500;
-      color:#4b5563;
+      font-weight:600;
+      color:#475569;
+      margin-right:4px;
+    }
+    .ec-activity{
+      font-weight:600;
+    }
+    .ec-notes{
+      color:var(--muted);
+    }
+    .ec-actions{
+      margin-top:4px;
+      text-align:right;
     }
 
-    .pill-sort{
-      display:inline-flex;
-      border-radius:999px;
-      border:1px solid #d1d5db;
-      overflow:hidden;
+    @media (max-width:800px){
+      .table-desktop{display:none;}
+      .entries-cards{display:flex;}
+      .row{flex-direction:column;align-items:flex-start;}
+      .w220,.w160,.w120,.w90{width:100%;}
+      #sf-header .bar{flex-wrap:wrap;}
     }
-    .pill-sort button{
-      border:none;
-      background:none;
-      padding:3px 8px;
-      font-size:.78rem;
-      cursor:pointer;
-      color:#4b5563;
-    }
-    .pill-sort button.active{
-      background:#ecfdf5;
-      color:#0f766e;
-      font-weight:500;
+    @media (min-width:801px){
+      .table-desktop{display:block;}
+      .entries-cards{display:none;}
     }
 
-    .badge-role{
-      border-radius:999px;
-      padding:2px 7px;
-      font-size:.72rem;
-      border:1px solid #e5e7eb;
-      color:#4b5563;
-      background:#f9fafb;
-    }
-
-    .sr-only{
-      position:absolute;
-      width:1px;
-      height:1px;
-      padding:0;
-      margin:-1px;
-      overflow:hidden;
-      clip:rect(0,0,0,0);
-      border:0;
-    }
-
-    .hidden{display:none !important;}
-
-    .no-print{}
-    @media print{
-      body{
-        background:#fff;
-      }
-      #sf-header,
-      #statusBar,
-      .no-print,
-      #newEntryCard,
-      .filters-row,
-      #printBtn{
-        display:none !important;
-      }
-      #page{
-        margin:0;
-        padding:0;
-      }
-      .table-scroll{
-        box-shadow:none;
-        border:none;
-      }
-      table{
-        font-size:.78rem;
-      }
-      thead th{
-        position:static;
-      }
-    }
-
-    .pill-badge{
-      display:inline-flex;
+    /* Auth overlay */
+    #authOverlay{
+      position:fixed;
+      inset:0;
+      background:radial-gradient(circle at top,#020617 0,rgba(15,23,42,.94) 40%,rgba(15,23,42,.97) 100%);
+      display:none;
       align-items:center;
-      gap:4px;
-      padding:2px 6px;
-      border-radius:999px;
-      border:1px solid #e5e7eb;
-      font-size:.76rem;
-      color:#4b5563;
-      background:#f9fafb;
+      justify-content:center;
+      z-index:50;
     }
-
-    .w80{max-width:80px;}
-    .w100{max-width:100px;}
-    .w120{max-width:120px;}
-    .w150{max-width:150px;}
-    .w180{max-width:180px;}
-    .w220{max-width:220px;}
-    .w260{max-width:260px;}
-
-    .login-container{
-      max-width:360px;
-      margin:40px auto;
+    #authCard{
+      width:min(520px,92vw);
       background:#fff;
-      padding:18px 18px 16px;
-      border-radius:var(--radius);
-      border:1px solid #e5e7eb;
-      box-shadow:0 18px 45px rgba(15,23,42,.12);
+      border-radius:16px;
+      border:1px solid var(--line);
+      padding:20px;
     }
-    .login-container h1{
-      margin:0 0 4px;
-      font-size:1.45rem;
-    }
-    .login-container p{
-      margin:0 0 12px;
-      font-size:.9rem;
-      color:#6b7280;
-    }
-    .login-container label{
-      margin-top:6px;
-    }
-    .login-footer{
-      margin-top:14px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:8px;
-      font-size:.8rem;
-      color:#6b7280;
-    }
+    #authCard h2{margin:0 0 8px;}
 
-    .alert{
-      border-radius:8px;
-      padding:6px 8px;
-      font-size:.8rem;
-      margin-bottom:8px;
+    @media print{
+      #sf-header,.no-print{display:none!important;}
+      body{background:#fff;}
+      .wrap{padding:8px;}
+      .card{box-shadow:none;border:none;margin:6px 0;}
+      .table-desktop{display:block!important;}
+      .entries-cards{display:none!important;}
     }
-    .alert.error{
-      background:#fef2f2;
-      border:1px solid #fecaca;
-      color:#7f1d1d;
-    }
-    .alert.info{
-      background:#eff6ff;
-      border:1px solid #bfdbfe;
-      color:#1d4ed8;
-    }
-
-    .spacer{flex:1;}
   </style>
 </head>
 <body>
-<header id="sf-header">
-  <div id="sf-header-inner">
-    <div id="sf-header-logo">
-      <span class="logo-dot"></span>
-      <span>SkyFarm</span>
+  <!-- Header -->
+  <div id="sf-header">
+    <div class="bar">
+      <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+      <nav>
+        <a href="skyfarm-diary.html" aria-current="page">Diary</a>
+        <a href="skyfarm-map.html">Map</a>
+        <a href="skyfarm-rain.html">Rain</a>
+      </nav>
+      <div class="nav-db">
+        <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
+        <div id="dbMenu" class="db-menu hidden">
+          <a href="skyfarm-livestock.html">Livestock</a>
+          <a href="skyfarm-chemical.html">Chemicals</a>
+          <a href="skyfarm-seeds.html">Seeds</a>
+          <a href="skyfarm-fodder.html">Fodder</a>
+          <a href="skyfarm-barcode.html">Barcode scanner</a>
+          <a href="skyfarm-users.html">Users &amp; roles</a>
+        </div>
+      </div>
+      <span class="spacer"></span>
+      <span id="authWho" class="muted small">Checking sign-in…</span>
+      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
     </div>
-    <nav id="sf-header-nav">
-      <a href="skyfarm-index.html" class="nav-link">Map</a>
-      <a href="skyfarm-rainfall.html" class="nav-link">Rainfall</a>
-      <a href="skyfarm-livestock.html" class="nav-link">Livestock</a>
-      <a href="skyfarm-chemicals.html" class="nav-link">Chemicals</a>
-      <a href="skyfarm-fodder.html" class="nav-link">Fodder</a>
-      <a href="skyfarm-diary.html" class="nav-link active">Diary</a>
-      <a href="skyfarm-users.html" class="nav-link">Users & roles</a>
-    </nav>
   </div>
-</header>
 
-<main id="page">
-  <div class="page-title">
+  <div class="wrap">
     <h1>Diary</h1>
-    <span class="tagline">Daily activities, rainfall, inputs and stock movements.</span>
-  </div>
-  <div class="page-sub">
-    Entries feed into your rainfall, livestock, chemicals and fodder records.
-  </div>
 
-  <div class="layout" id="appRoot">
-
-    <!-- New entry + status -->
-    <section id="newEntryCard" class="card no-print">
-      <div class="card-header">
-        <h2>New entry</h2>
-        <small id="userChip" class="muted small"></small>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div>
-            <label>Property</label>
-            <select id="propSel" class="w220"></select>
-          </div>
-          <div>
-            <label>Date</label>
-            <input id="dateInp" type="date" class="w160"/>
-          </div>
-          <div class="hidden">
-            <label>Time</label>
-            <input id="timeInp" type="time" class="w120"/>
-          </div>
-          <div>
-            <label>Activity</label>
-            <select id="activitySel" class="w220">
-              <option value="Ploughing">Plough paddock</option>
-              <option value="Planting">Plant paddock</option>
-              <option value="Spraying paddocks">Spraying paddocks</option>
-              <option value="Chemical (stock)">Chemical (stock)</option>
-              <option value="Trucking (sale)">Trucking (sale)</option>
-              <option value="Mustering">Mustering</option>
-              <option value="Move stock">Move stock</option>
-              <option value="Feeding (fodder)">Feeding (fodder)</option>
-              <option value="Rainfall">Rainfall</option>
-              <option value="Purchase inputs">Purchase inputs</option>
-              <option value="General">General</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row">
-          <div id="paddockRow">
-            <label>Paddock / yards</label>
-            <select id="paddockSel"></select>
-          </div>
-          <div id="toPaddockWrap" class="hidden">
-            <label>Move to paddock</label>
-            <select id="toPaddockSel"></select>
-          </div>
-          <div id="transferRow" class="hidden">
-            <label>Transfer to property</label>
-            <select id="transferPropertySel"></select>
-          </div>
-        </div>
-
-        <div id="stockRow" class="row hidden">
-          <div>
-            <label>Species</label>
-            <select id="speciesSel" class="w150">
-              <option value="">(choose)</option>
-              <option value="Cattle">Cattle</option>
-              <option value="Sheep">Sheep</option>
-            </select>
-          </div>
-          <div>
-            <label>Class</label>
-            <input id="classInp" type="text" placeholder="e.g. Weaner heifers" class="w220"/>
-          </div>
-          <div>
-            <label>Head</label>
-            <input id="headInp" type="number" min="0" step="1" class="w100"/>
-          </div>
-        </div>
-
-        <div id="chemRow" class="row hidden">
-          <div>
-            <label>Chemical / product</label>
-            <select id="chemSel" class="w220"></select>
-          </div>
-          <div>
-            <label>Rate</label>
-            <input id="chemRateInp" type="text" placeholder="e.g. 1.5 L/ha" class="w150"/>
-          </div>
-          <div>
-            <label>Total used</label>
-            <input id="chemTotalInp" type="text" placeholder="e.g. 120 L" class="w150"/>
-          </div>
-        </div>
-
-        <div id="seedRow" class="row hidden">
-          <div>
-            <label>Seed</label>
-            <select id="seedSel" class="w220"></select>
-          </div>
-          <div>
-            <label>Rate</label>
-            <input id="seedRateInp" type="text" placeholder="e.g. 4 kg/ha" class="w150"/>
-          </div>
-          <div>
-            <label>Total used</label>
-            <input id="seedTotalInp" type="text" placeholder="e.g. 240 kg" class="w150"/>
-          </div>
-        </div>
-
-        <div id="fodderRow" class="row hidden">
-          <div>
-            <label>Fodder</label>
-            <select id="fodderSel" class="w220"></select>
-          </div>
-          <div>
-            <label>Amount</label>
-            <input id="fodderAmtInp" type="text" placeholder="e.g. 5 bales" class="w150"/>
-          </div>
-        </div>
-
-        <div id="purchaseRow" class="row hidden">
-          <div>
-            <label>Purchase type</label>
-            <select id="purchaseTypeSel" class="w150">
-              <option value="">(choose)</option>
-              <option value="Chemical">Chemical</option>
-              <option value="Seed">Seed</option>
-              <option value="Fodder">Fodder</option>
-            </select>
-          </div>
-          <div>
-            <label>Supplier</label>
-            <input id="supplierInp" type="text" placeholder="e.g. CRT, Nutrien" class="w180"/>
-          </div>
-          <div>
-            <label>Invoice / ref</label>
-            <input id="invoiceInp" type="text" class="w150"/>
-          </div>
-        </div>
-
-        <div id="rainRow" class="row hidden">
-          <div>
-            <label>Gauge</label>
-            <select id="gaugeSel" class="w220"></select>
-          </div>
-          <div>
-            <label>Rain (mm)</label>
-            <input id="rainMmInp" type="number" min="0" step="0.2" class="w100"/>
-          </div>
-          <div class="muted small">
-            Rainfall recorded to 9am for previous 24 hours.
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>Notes / weather</label>
-            <textarea id="notesInp" placeholder="Notes, weather, job details…" class="w260"></textarea>
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <button id="saveBtn" class="btn">
-              <span>Save entry</span>
-            </button>
-          </div>
-          <div class="spacer"></div>
-          <div id="statusBar" class="muted small"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Entries list -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Entries</h2>
+    <!-- Entry form -->
+    <div class="card no-print">
+      <div class="row">
         <div>
-          <button id="printBtn" class="btn secondary small no-print">Print</button>
+          <label>Property</label>
+          <select id="propSel" class="w220"></select>
+        </div>
+        <div>
+          <label>Date</label>
+          <input id="dateInp" type="date" class="w160"/>
+        </div>
+        <div>
+          <label>Time</label>
+          <input id="timeInp" type="time" class="w120"/>
+        </div>
+        <div>
+          <label>Activity</label>
+          <select id="activitySel" class="w220">
+            <option value="Ploughing">Plough paddock</option>
+            <option value="Planting">Plant paddock</option>
+            <option value="Spraying paddocks">Spray paddock</option>
+            <option value="Chemical (stock)">Chemical (stock)</option>
+            <option value="Trucking (sale)">Truck cattle (sale)</option>
+            <option value="Mustering">Muster cattle</option>
+            <option value="Move stock">Move cattle (within property)</option>
+            <option value="Transfer stock (Out)">Transfer cattle to another property</option>
+            <option value="Cattle purchase">Buy cattle</option>
+            <option value="Feeding (fodder)">Feeding (fodder / lick)</option>
+            <option value="Rainfall">Rainfall</option>
+            <option value="Purchase inputs">Purchase – inputs</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+        <span class="spacer"></span>
+        <div id="status" class="muted small">Ready</div>
+      </div>
+
+      <div class="row">
+        <div style="min-width:240px">
+          <label>Paddock</label>
+          <select id="paddockSel" class="w220">
+            <option value="">(choose)</option>
+          </select>
+          <div class="small muted">Yards appear at the top.</div>
+        </div>
+
+        <div id="toPaddockWrap" class="hidden" style="min-width:240px">
+          <label>To paddock</label>
+          <select id="toPaddockSel" class="w220">
+            <option value="">(choose)</option>
+          </select>
+        </div>
+
+        <div id="transferPropWrap" class="hidden" style="min-width:240px">
+          <label>To property</label>
+          <select id="transferPropSel" class="w220">
+            <option value="">(choose)</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Rainfall (mm to 9am)</label>
+          <input id="rainMmInp" type="number" min="0" step="0.1" class="w120"/>
+        </div>
+        <div>
+          <label>Gauge</label>
+          <select id="gaugeSel" class="w220">
+            <option value="">(none)</option>
+          </select>
         </div>
       </div>
-      <div class="card-body compact-top">
 
-        <div class="filters-row no-print">
-          <div>
-            <label>Property filter</label>
-            <select id="filterPropertySel"></select>
-          </div>
-          <div>
-            <label>Activity filter</label>
-            <select id="filterActivitySel"></select>
-          </div>
-          <div>
-            <label>Rainfall / stock</label>
-            <select id="filterTypeSel">
-              <option value="">All entries</option>
-              <option value="Rainfall">Rainfall only</option>
-              <option value="Stock">Livestock only</option>
-            </select>
-          </div>
-          <div>
-            <label>User filter</label>
-            <select id="filterUserSel">
-              <option value="">All users</option>
-            </select>
-          </div>
-          <div class="right">
-            <div>
-              <label>Sort</label>
-              <div class="pill-sort">
-                <button type="button" data-sort="newest" class="active" id="sortNewestBtn">Newest</button>
-                <button type="button" data-sort="oldest" id="sortOldestBtn">Oldest</button>
-              </div>
-            </div>
-          </div>
+      <div class="row">
+        <div style="flex:1;min-width:260px">
+          <label>Notes / description</label>
+          <textarea id="notesInp" placeholder="What happened?"></textarea>
         </div>
-
-        <!-- Desktop table -->
-        <div class="table-desktop">
-          <div class="table-scroll">
-            <table>
-              <thead>
-              <tr>
-                <th>Date</th>
-                <th>Property</th>
-                <th>Paddock</th>
-                <th>Activity</th>
-                <th>Stock</th>
-                <th>Chemical / inputs</th>
-                <th>Rain (mm)</th>
-                <th>Notes</th>
-                <th>User</th>
-                <th class="no-print"></th>
-              </tr>
-              </thead>
-              <tbody id="entriesBody">
-              <tr><td colspan="10" class="muted small">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div style="min-width:220px">
+          <label>Weather (optional)</label>
+          <input id="weatherInp" placeholder="Hot & windy, storm, etc"/>
         </div>
-
-        <!-- Mobile cards -->
-        <div class="table-mobile">
-          <div id="entriesCards"></div>
-        </div>
-
       </div>
-    </section>
-  </div>
-</main>
 
-<div id="loginRoot" class="hidden">
-  <div class="login-container">
-    <h1>SkyFarm sign in</h1>
-    <p>Sign in to view and update diary entries.</p>
+      <!-- Stock section -->
+      <div id="stockRow" class="row hidden">
+        <div>
+          <label>Species</label>
+          <select id="speciesSel" class="w160">
+            <option value="Cattle">Cattle</option>
+            <option value="Sheep">Sheep</option>
+            <option value="Goats">Goats</option>
+          </select>
+        </div>
+        <div>
+          <label>Class</label>
+          <input id="classInp" list="classOptions" class="w160" placeholder="Weaners, PTIC cows…"/>
+          <datalist id="classOptions"></datalist>
+        </div>
+        <div>
+          <label>Head</label>
+          <input id="headInp" type="number" min="0" step="1" class="w90"/>
+        </div>
+      </div>
 
-    <div id="loginError" class="alert error hidden"></div>
-    <div id="loginInfo" class="alert info hidden"></div>
+      <!-- Chemical row -->
+      <div id="chemRow" class="row hidden">
+        <div>
+          <label>Chemical</label>
+          <select id="chemSel" class="w220">
+            <option value="">(choose)</option>
+          </select>
+        </div>
+        <div>
+          <label>Quantity</label>
+          <input id="chemQty" type="number" min="0" step="0.01" class="w120"/>
+        </div>
+        <div>
+          <label>Unit</label>
+          <input id="chemUnit" class="w90" disabled/>
+        </div>
+      </div>
 
-    <label>Email
-      <input id="siEmail" type="email" autocomplete="email"/>
-    </label>
-    <label>Password
-      <input id="siPass" type="password" autocomplete="current-password"/>
-    </label>
+      <!-- Seed row -->
+      <div id="seedRow" class="row hidden">
+        <div>
+          <label>Seed</label>
+          <select id="seedSel" class="w220">
+            <option value="">(choose)</option>
+          </select>
+        </div>
+        <div>
+          <label>Seed quantity</label>
+          <input id="seedQty" type="number" min="0" step="0.01" class="w120"/>
+        </div>
+        <div>
+          <label>Unit</label>
+          <input id="seedUnit" class="w90" disabled/>
+        </div>
+      </div>
 
-    <div class="row" style="margin-top:10px;">
-      <button id="signInBtn" class="btn"><span>Sign in</span></button>
-      <button id="signOutBtn" class="btn secondary hidden"><span>Sign out</span></button>
+      <!-- Fodder row -->
+      <div id="fodderRow" class="row hidden">
+        <div>
+          <label>Fodder</label>
+          <select id="fodderSel" class="w220">
+            <option value="">(choose)</option>
+          </select>
+        </div>
+        <div>
+          <label>Fodder quantity</label>
+          <input id="fodderQty" type="number" min="0" step="0.01" class="w120"/>
+        </div>
+        <div>
+          <label>Unit</label>
+          <input id="fodderUnit" class="w90" disabled/>
+        </div>
+      </div>
+
+      <!-- Purchase meta -->
+      <div id="purchaseRow" class="row hidden">
+        <div>
+          <label>Purchase type</label>
+          <select id="purchaseTypeSel" class="w160">
+            <option value="Chemical">Chemical</option>
+            <option value="Seed">Seed</option>
+            <option value="Fodder">Fodder</option>
+          </select>
+        </div>
+        <div>
+          <label>Supplier / source</label>
+          <input id="purchaseSupplier" class="w220" placeholder="CRT, Landmark…"/>
+        </div>
+        <div>
+          <label>Invoice / ref</label>
+          <input id="purchaseRef" class="w160" placeholder="Invoice #"/>
+        </div>
+      </div>
+
+      <div id="stockContext" class="row small" style="color:#374151;"></div>
+
+      <div class="row">
+        <button id="saveBtn" class="btn primary" type="button">Save entry</button>
+        <button id="resetBtn" class="btn" type="button">Reset</button>
+        <span id="saveMsg" class="muted small"></span>
+      </div>
     </div>
 
-    <div class="login-footer">
-      <span class="muted small">Access is managed by your SkyFarm admin.</span>
-      <span class="small">Need help? Contact your admin.</span>
+    <!-- Recent entries -->
+    <div class="card">
+      <div class="row no-print">
+        <strong>Recent entries</strong>
+        <div>
+          <label class="small">Property</label>
+          <select id="filterPropSel" class="w160"></select>
+        </div>
+        <div>
+          <label class="small">Year</label>
+          <input id="filterYear" type="number" class="w90" min="2000" max="2100"/>
+        </div>
+        <div>
+          <label class="small">User</label>
+          <select id="filterUserSel" class="w160"></select>
+        </div>
+        <div>
+          <label class="small">Sort</label>
+          <select id="sortSel" class="w160">
+            <option value="dateDesc">Newest first</option>
+            <option value="dateAsc">Oldest first</option>
+            <option value="userAsc">User A–Z</option>
+            <option value="userDesc">User Z–A</option>
+          </select>
+        </div>
+        <div>
+          <label class="small">&nbsp;</label>
+          <button id="refreshBtn" class="btn small" type="button">Refresh</button>
+        </div>
+        <span class="spacer"></span>
+        <button id="printBtn" class="btn small" type="button">Print / PDF</button>
+      </div>
+
+      <!-- Desktop/tablet view -->
+      <div class="table-desktop">
+        <div class="table-scroll">
+          <table>
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Property</th>
+              <th>Paddock</th>
+              <th>Activity</th>
+              <th>Stock</th>
+              <th>Chemical / inputs</th>
+              <th>Rain (mm)</th>
+              <th>Notes</th>
+              <th>User</th>
+              <th class="no-print"></th>
+            </tr>
+            </thead>
+            <tbody id="entriesBody">
+            <tr><td colspan="11" class="muted small">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mobile card view -->
+      <div id="entriesCards" class="entries-cards"></div>
     </div>
   </div>
-</div>
+
+  <!-- Auth overlay -->
+  <div id="authOverlay">
+    <div id="authCard">
+      <h2>Sign in to SkyFarm</h2>
+      <p class="small muted">Email &amp; password only.</p>
+      <div class="row">
+        <div style="flex:1;min-width:240px">
+          <label>Email</label>
+          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label>Password</label>
+          <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
+        </div>
+      </div>
+      <div class="row">
+        <button id="signInBtn" class="btn primary" type="button">Sign in</button>
+        <span id="authMsg" class="muted small"></span>
+        <span class="spacer"></span>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
 
 <script>
   // ---------- Firebase init ----------
   const firebaseConfig = {
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-  authDomain: "consentes-pastoral.firebaseapp.com",
-  projectId: "consentes-pastoral",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64"
-};
+    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+    authDomain: "consentes-pastoral.firebaseapp.com",
+    projectId: "consentes-pastoral",
+    appId: "1:494858780013:web:d87497b370c82eeab06e64"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+  // ---------- Helpers ----------
+  const $  = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const todayISO = () => new Date().toISOString().slice(0,10);
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function setStatus(msg, warn){
+    const el = $('#status');
+    el.textContent = msg || '';
+    el.classList.toggle('status-warn', !!warn);
+  }
+  function setSaveMsg(msg, ms){
+    const el = $('#saveMsg');
+    el.textContent = msg || '';
+    if (ms){
+      setTimeout(()=>{ if (el.textContent===msg) el.textContent=''; }, ms);
+    }
+  }
 
+  const SUGGESTED_CLASSES = [
+    'Cows','PTIC cows','Heifers','Steers','Bulls',
+    'Cows & calves','Weaners','Calves'
+  ];
+  let ALL_PROPERTIES = [];
+  let USERS = {};  // email -> {firstName, fullName}
 
-  // ---------- DOM refs ----------
-  const appRoot = document.getElementById('appRoot');
-  const loginRoot = document.getElementById('loginRoot');
+  // Current user/role
+  let CURRENT_USER = null;
+  let CURRENT_UID = null;
+  let CURRENT_EMAIL = null;
+  let CURRENT_ROLE = 'worker';       // admin | manager | worker
+  let ALLOWED_PROPERTY_IDS = null;   // Set of propertyIds, or null = all
 
-  const propSel = document.getElementById('propSel');
-  const dateInp = document.getElementById('dateInp');
-  const timeInp = document.getElementById('timeInp');
-  const activitySel = document.getElementById('activitySel');
-  const paddockSel = document.getElementById('paddockSel');
-  const toPaddockSel = document.getElementById('toPaddockSel');
-  const transferPropertySel = document.getElementById('transferPropertySel');
+  // DOM refs
+  const propSel = $('#propSel');
+  const dateInp = $('#dateInp');
+  const timeInp = $('#timeInp');
+  const activitySel = $('#activitySel');
+  const paddockSel = $('#paddockSel');
+  const toPaddockWrap = $('#toPaddockWrap');
+  const toPaddockSel = $('#toPaddockSel');
+  const transferPropWrap = $('#transferPropWrap');
+  const transferPropSel = $('#transferPropSel');
+  const rainMmInp = $('#rainMmInp');
+  const gaugeSel = $('#gaugeSel');
+  const notesInp = $('#notesInp');
+  const weatherInp = $('#weatherInp');
 
-  const paddockRow = document.getElementById('paddockRow');
-  const toPaddockWrap = document.getElementById('toPaddockWrap');
-  const transferRow = document.getElementById('transferRow');
+  const stockRow = $('#stockRow');
+  const speciesSel = $('#speciesSel');
+  const classInp = $('#classInp');
+  const headInp = $('#headInp');
 
-  const stockRow = document.getElementById('stockRow');
-  const chemRow = document.getElementById('chemRow');
-  const seedRow = document.getElementById('seedRow');
-  const fodderRow = document.getElementById('fodderRow');
-  const purchaseRow = document.getElementById('purchaseRow');
-  const rainRow = document.getElementById('rainRow');
+  const chemRow = $('#chemRow');
+  const chemSel = $('#chemSel');
+  const chemQty = $('#chemQty');
+  const chemUnit = $('#chemUnit');
 
-  const speciesSel = document.getElementById('speciesSel');
-  const classInp = document.getElementById('classInp');
-  const headInp = document.getElementById('headInp');
+  const seedRow = $('#seedRow');
+  const seedSel = $('#seedSel');
+  const seedQty = $('#seedQty');
+  const seedUnit = $('#seedUnit');
 
-  const chemSel = document.getElementById('chemSel');
-  const chemRateInp = document.getElementById('chemRateInp');
-  const chemTotalInp = document.getElementById('chemTotalInp');
+  const fodderRow = $('#fodderRow');
+  const fodderSel = $('#fodderSel');
+  const fodderQty = $('#fodderQty');
+  const fodderUnit = $('#fodderUnit');
 
-  const seedSel = document.getElementById('seedSel');
-  const seedRateInp = document.getElementById('seedRateInp');
-  const seedTotalInp = document.getElementById('seedTotalInp');
+  const purchaseRow = $('#purchaseRow');
+  const purchaseTypeSel = $('#purchaseTypeSel');
+  const purchaseSupplier = $('#purchaseSupplier');
+  const purchaseRef = $('#purchaseRef');
 
-  const fodderSel = document.getElementById('fodderSel');
-  const fodderAmtInp = document.getElementById('fodderAmtInp');
+  const stockContext = $('#stockContext');
 
-  const purchaseTypeSel = document.getElementById('purchaseTypeSel');
-  const supplierInp = document.getElementById('supplierInp');
-  const invoiceInp = document.getElementById('invoiceInp');
+  const filterPropSel = $('#filterPropSel');
+  const filterYear = $('#filterYear');
+  const filterUserSel = $('#filterUserSel');
+  const sortSel = $('#sortSel');
+  const entriesBody = $('#entriesBody');
+  const entriesCards = $('#entriesCards');
 
-  const gaugeSel = document.getElementById('gaugeSel');
-  const rainMmInp = document.getElementById('rainMmInp');
-  const notesInp = document.getElementById('notesInp');
+  const authOverlay = $('#authOverlay');
+  const authWho = $('#authWho');
+  const signOutBtn = $('#signOutBtn');
+  const dbMenuBtn = $('#dbMenuBtn');
+  const dbMenu = $('#dbMenu');
 
-  const saveBtn = document.getElementById('saveBtn');
-  const statusBar = document.getElementById('statusBar');
-  const userChip = document.getElementById('userChip');
+  // Header DB menu
+  if (dbMenuBtn && dbMenu){
+    dbMenuBtn.onclick = e => {
+      e.stopPropagation();
+      dbMenu.classList.toggle('hidden');
+    };
+    document.addEventListener('click', e=>{
+      if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn){
+        dbMenu.classList.add('hidden');
+      }
+    });
+  }
 
-  const entriesBody = document.getElementById('entriesBody');
-  const entriesCards = document.getElementById('entriesCards');
+  // Auth
+  const siEmail = $('#siEmail');
+  const siPass = $('#siPass');
+  const signInBtn = $('#signInBtn');
+  const authMsg = $('#authMsg');
+  const closeOverlayBtn = $('#closeOverlayBtn');
 
-  const filterPropertySel = document.getElementById('filterPropertySel');
-  const filterActivitySel = document.getElementById('filterActivitySel');
-  const filterUserSel = document.getElementById('filterUserSel');
-  const filterTypeSel = document.getElementById('filterTypeSel');
-  const sortNewestBtn = document.getElementById('sortNewestBtn');
-  const sortOldestBtn = document.getElementById('sortOldestBtn');
-  const printBtn = document.getElementById('printBtn');
+  function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
 
-  const siEmail = document.getElementById('siEmail');
-  const siPass = document.getElementById('siPass');
-  const signInBtn = document.getElementById('signInBtn');
-  const signOutBtn = document.getElementById('signOutBtn');
-  const loginError = document.getElementById('loginError');
-  const loginInfo = document.getElementById('loginInfo');
-
-  const USERS = {};
-  let PROPERTIES = [];
-  let PADDOCKS_BY_PROPERTY = {};
-  let CHEMICALS = [];
-  let SEEDS = [];
-  let FODDER = [];
-  let RAIN_GAUGES = [];
-
-  let currentUser = null;
-  let entries = [];
-  let sortDir = 'newest';
-
-  function setStatus(msg, isError){
-    if (!msg){
-      statusBar.textContent = '';
-      statusBar.classList.remove('muted');
+  signInBtn.onclick = async ()=>{
+    const email = (siEmail.value || '').trim();
+    const pass  = siPass.value || '';
+    if (!email || !pass){
+      authMsg.textContent = 'Enter email and password.';
       return;
     }
-    statusBar.textContent = msg;
-    if (isError){
-      statusBar.classList.remove('muted');
-      statusBar.style.color = '#b91c1c';
-    }else{
-      statusBar.classList.add('muted');
-      statusBar.style.color = '';
+    authMsg.textContent = 'Signing in…';
+    try{
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      await auth.signInWithEmailAndPassword(email, pass);
+      authMsg.textContent = 'Signed in.';
+      showOverlay(false);
+    }catch(e){
+      console.error(e);
+      authMsg.textContent = e.message || 'Sign-in failed.';
+    }
+  };
+  closeOverlayBtn.onclick = ()=> showOverlay(false);
+  signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+  async function loadCurrentUserRole(user){
+    CURRENT_USER = user;
+    CURRENT_UID = user?.uid || null;
+    CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
+    CURRENT_ROLE = 'worker';
+    ALLOWED_PROPERTY_IDS = null;
+
+    if (!CURRENT_EMAIL) return;
+    const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
+    try{
+      const snap = await db.collection('users').doc(docId).get();
+      if (snap.exists){
+        const data = snap.data() || {};
+        CURRENT_ROLE = data.role || 'worker';
+        const allowed = data.allowedProperties || [];
+        if (Array.isArray(allowed) && allowed.length){
+          ALLOWED_PROPERTY_IDS = new Set(allowed);
+        }
+      }
+    }catch(e){
+      console.error('loadCurrentUserRole failed', e);
     }
   }
 
-  function escapeHtml(str){
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&#39;');
-  }
-
-  function formatDate(d){
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const da = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${da}`;
-  }
-
-  function initDateTime(){
-    const now = new Date();
-    dateInp.value = formatDate(now);
-    const hh = String(now.getHours()).padStart(2,'0');
-    const mm = String(now.getMinutes()).padStart(2,'0');
-    timeInp.value = `${hh}:${mm}`;
-  }
-
-  function onActivityChange(){
-    const act = activitySel.value;
-
-    if (act === 'Rainfall'){
-      paddockRow.classList.add('hidden');
-      rainRow.classList.remove('hidden');
+  auth.onAuthStateChanged(async user=>{
+    if (user){
+      authWho.textContent = user.email || 'Signed in';
+      signOutBtn.classList.remove('hidden');
+      showOverlay(false);
+      try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+      await loadCurrentUserRole(user);
+      await initAfterAuth();
     }else{
-      paddockRow.classList.remove('hidden');
-      rainRow.classList.add('hidden');
+      authWho.textContent = 'Not signed in';
+      signOutBtn.classList.add('hidden');
+      showOverlay(true);
+    }
+  });
+
+  // Load properties
+  async function loadProperties(){
+    const snap = await db.collection('properties').get();
+    let props = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      props.push({id:doc.id, name:d.name || '(Property)'});
+    });
+    props.sort((a,b)=>a.name.localeCompare(b.name));
+
+    if (ALLOWED_PROPERTY_IDS instanceof Set){
+      props = props.filter(p=>ALLOWED_PROPERTY_IDS.has(p.id));
     }
 
-    if (act === 'Move stock'){
-      toPaddockWrap.classList.remove('hidden');
-    }else{
-      toPaddockWrap.classList.add('hidden');
+    ALL_PROPERTIES = props;
+
+    if (!props.length){
+      propSel.innerHTML = '<option value="">(no properties available)</option>';
+      filterPropSel.innerHTML = '<option value="">(none)</option>';
+      return;
     }
 
-    if (act === 'Trucking (sale)'){
-      transferRow.classList.remove('hidden');
-    }else{
-      transferRow.classList.add('hidden');
+    propSel.innerHTML = props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    filterPropSel.innerHTML = '<option value="">(All properties)</option>' +
+      props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  }
+
+  function refreshTransferPropertyOptions(currentPropertyId){
+    if (!ALL_PROPERTIES.length) return;
+    const html = '<option value="">(choose)</option>' +
+      ALL_PROPERTIES
+        .filter(p => p.id !== currentPropertyId)
+        .map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`)
+        .join('');
+    transferPropSel.innerHTML = html;
+  }
+
+  async function loadPaddocksForProperty(propertyId){
+    paddockSel.innerHTML = '<option value="">(loading…)</option>';
+    toPaddockSel.innerHTML = '<option value="">(loading…)</option>';
+    if (!propertyId){
+      paddockSel.innerHTML = '<option value="">(choose property)</option>';
+      toPaddockSel.innerHTML = '<option value="">(choose property)</option>';
+      return;
     }
-
-    const usesStockActivity =
-      act === 'Move stock' ||
-      act === 'Trucking (sale)' ||
-      act === 'Mustering' ||
-      act === 'Feeding (fodder)';
-
-    stockRow.classList.toggle('hidden', !usesStockActivity && act !== 'Purchase inputs');
-
-    purchaseRow.classList.toggle('hidden', act !== 'Purchase inputs');
-
-    updateInputRows();
+    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
+    const pads = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      pads.push({id:doc.id, name:d.name || '(paddock)', isYards: !!d.isYards});
+    });
+    pads.sort((a,b)=>{
+      if (a.isYards !== b.isYards) return a.isYards ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    const html = '<option value="">(choose)</option>' +
+      pads.map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name)}">${escapeHtml(p.name)}${p.isYards?' — Yards':''}</option>`).join('');
+    paddockSel.innerHTML = html;
+    toPaddockSel.innerHTML = html;
   }
 
-  function onPurchaseTypeChange(){
-    updateInputRows();
+  async function loadGaugesForProperty(propertyId){
+    gaugeSel.innerHTML = '<option value="">(none)</option>';
+    if (!propertyId) return;
+    const snap = await db.collection('gauges').where('propertyId','==',propertyId).get();
+    const gs = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      if (d.active === false) return;
+      gs.push({id:doc.id, name:d.name || '(Gauge)'});
+    });
+    gs.sort((a,b)=>a.name.localeCompare(b.name));
+    gaugeSel.innerHTML = '<option value="">(none)</option>' +
+      gs.map(g=>`<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
   }
 
+  async function loadChemicalsForProperty(propertyId){
+    chemSel.innerHTML = '<option value="">(none)</option>';
+    chemUnit.value = '';
+    if (!propertyId) return;
+    const snap = await db.collection('chemicals').where('propertyId','==',propertyId).get();
+    const rows = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      rows.push({id:doc.id,name:d.name||'(chemical)', unit:d.unit||'', qty:Number(d.quantity||0)});
+    });
+    rows.sort((a,b)=>a.name.localeCompare(b.name));
+    chemSel.innerHTML = '<option value="">(none)</option>' +
+      rows.map(c=>`<option value="${c.id}" data-unit="${escapeHtml(c.unit)}">${escapeHtml(c.name)} (${escapeHtml(c.unit)}) — ${c.qty}</option>`).join('');
+  }
+
+  async function loadSeedsForProperty(propertyId){
+    seedSel.innerHTML = '<option value="">(none)</option>';
+    seedUnit.value = '';
+    if (!propertyId) return;
+    const snap = await db.collection('seeds').where('propertyId','==',propertyId).get();
+    const rows = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      rows.push({id:doc.id,name:d.name||'(seed)', unit:d.unit||'', qty:Number(d.quantity||0)});
+    });
+    rows.sort((a,b)=>a.name.localeCompare(b.name));
+    seedSel.innerHTML = '<option value="">(none)</option>' +
+      rows.map(s=>`<option value="${s.id}" data-unit="${escapeHtml(s.unit)}">${escapeHtml(s.name)} (${escapeHtml(s.unit)}) — ${s.qty}</option>`).join('');
+  }
+
+  async function loadFodderForProperty(propertyId){
+    fodderSel.innerHTML = '<option value="">(none)</option>';
+    fodderUnit.value = '';
+    if (!propertyId) return;
+    const snap = await db.collection('fodder').where('propertyId','==',propertyId).get();
+    const rows = [];
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      rows.push({id:doc.id,name:d.name||'(fodder)', unit:d.unit||'', qty:Number(d.quantity||0)});
+    });
+    rows.sort((a,b)=>a.name.localeCompare(b.name));
+    fodderSel.innerHTML = '<option value="">(none)</option>' +
+      rows.map(f=>`<option value="${f.id}" data-unit="${escapeHtml(f.unit)}">${escapeHtml(f.name)} (${escapeHtml(f.unit)}) — ${f.qty}</option>`).join('');
+  }
+
+  async function refreshStockContext(){
+    const propertyId = propSel.value;
+    const padName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+    if (!propertyId || !padName){
+      stockContext.innerHTML = '';
+      return;
+    }
+    try{
+      const snap = await db.collection('livestock')
+        .where('propertyId','==',propertyId)
+        .get();
+      const mobs = [];
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        if (d.location === padName){
+          mobs.push({species:d.species||'Cattle', klass:d.class||'', count:Number(d.count||0)});
+        }
+      });
+      if (!mobs.length){
+        stockContext.innerHTML = '<span class="muted small">No livestock recorded in this paddock.</span>';
+      }else{
+        stockContext.innerHTML = mobs.map(m=>`<span class="pill">${escapeHtml(m.species)} — ${escapeHtml(m.klass)}: ${m.count}</span>`).join('');
+      }
+    }catch(e){
+      console.error(e);
+      stockContext.innerHTML = '<span class="muted small">Error loading paddock stock.</span>';
+    }
+  }
+
+  async function refreshClassOptions(){
+    const propertyId = propSel.value;
+    const padName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+    const classes = new Set(SUGGESTED_CLASSES);
+    if (propertyId && padName){
+      try{
+        const snap = await db.collection('livestock').where('propertyId','==',propertyId).get();
+        snap.forEach(doc=>{
+          const d = doc.data() || {};
+          if (d.location === padName && d.species){
+            classes.add(String(d.class||'').trim());
+          }
+        });
+      }catch(e){}
+    }
+    const list = Array.from(classes).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+    $('#classOptions').innerHTML = list.map(c=>`<option value="${escapeHtml(c)}"></option>`).join('');
+  }
+
+  // Side-effect helpers
+  async function adjustChemicalStock(chemId, deltaQty){
+    if (!chemId || !deltaQty) return;
+    const ref = db.collection('chemicals').doc(chemId);
+    try{
+      await db.runTransaction(async tx=>{
+        const snap = await tx.get(ref);
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const current = Number(data.quantity || 0);
+        const next = current + deltaQty;
+        tx.update(ref,{
+          quantity: next,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    }catch(e){
+      console.error('Chemical stock adjustment failed', e);
+    }
+  }
+
+  async function adjustSeedStock(seedId, deltaQty){
+    if (!seedId || !deltaQty) return;
+    const ref = db.collection('seeds').doc(seedId);
+    try{
+      await db.runTransaction(async tx=>{
+        const snap = await tx.get(ref);
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const current = Number(data.quantity || 0);
+        const next = current + deltaQty;
+        tx.update(ref,{
+          quantity: next,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    }catch(e){
+      console.error('Seed stock adjustment failed', e);
+    }
+  }
+
+  async function adjustFodderStock(fodderId, deltaQty){
+    if (!fodderId || !deltaQty) return;
+    const ref = db.collection('fodder').doc(fodderId);
+    try{
+      await db.runTransaction(async tx=>{
+        const snap = await tx.get(ref);
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        const current = Number(data.quantity || 0);
+        const next = current + deltaQty;
+        tx.update(ref,{
+          quantity: next,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    }catch(e){
+      console.error('Fodder stock adjustment failed', e);
+    }
+  }
+
+  async function adjustLivestockLine(propertyId, paddockName, species, klass, deltaHead){
+    if (!propertyId || !paddockName || !species || !klass || !deltaHead) return;
+    const head = Math.round(deltaHead);
+    if (!head) return;
+
+    try{
+      const snap = await db.collection('livestock').where('propertyId','==',propertyId).get();
+      let targetDoc = null;
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        if (d.location === paddockName &&
+            String(d.species||'').toLowerCase() === String(species).toLowerCase() &&
+            String(d.class||'') === String(klass)){
+          targetDoc = {ref:doc.ref,data:d};
+        }
+      });
+
+      if (targetDoc){
+        await db.runTransaction(async tx=>{
+          const s = await tx.get(targetDoc.ref);
+          if (!s.exists) return;
+          const d = s.data() || {};
+          const current = Number(d.count || 0);
+          const next = Math.max(0, current + head);
+          tx.update(targetDoc.ref,{
+            count: next,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+      }else if (head > 0){
+        await db.collection('livestock').add({
+          propertyId,
+          location:paddockName,
+          species,
+          class:klass,
+          count:head,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+    }catch(e){
+      console.error('adjustLivestockLine failed', e);
+    }
+  }
+
+  async function moveLivestockWithinProperty(propertyId, fromPaddock, toPaddock, species, klass, head){
+    if (!propertyId || !fromPaddock || !toPaddock || !species || !klass || !head) return;
+    await adjustLivestockLine(propertyId, fromPaddock, species, klass, -Math.abs(head));
+    await adjustLivestockLine(propertyId, toPaddock,   species, klass,  Math.abs(head));
+  }
+
+  async function findYardNameForProperty(propertyId){
+    if (!propertyId) return null;
+    try{
+      const snap = await db.collection('paddocks')
+        .where('propertyId','==',propertyId)
+        .get();
+      const yards = [];
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        if (d.isYards){
+          yards.push(d.name || '(unnamed)');
+        }
+      });
+      yards.sort((a,b)=>String(a||'').localeCompare(String(b||'')));
+      return yards[0] || null;
+    }catch(e){
+      console.error('findYardNameForProperty failed', e);
+      return null;
+    }
+  }
+
+  async function applyRainfallMirror(gaugeId, mm, dateISO){
+    const v = Number(mm);
+    if (!gaugeId || !Number.isFinite(v) || v<=0 || !dateISO) return;
+    const docId = dateISO.slice(0,10);
+    const ref = db.collection('gauges').doc(gaugeId).collection('daily').doc(docId);
+    try{
+      await db.runTransaction(async tx=>{
+        const snap = await tx.get(ref);
+        const existing = snap.exists ? Number((snap.data()||{}).mm || 0) : 0;
+        const next = existing + v;
+        tx.set(ref,{
+          mm: next,
+          source:'diary',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+      });
+    }catch(e){
+      console.error('applyRainfallMirror failed', e);
+    }
+  }
+
+  // Activity / purchase visibility
   function updateInputRows(){
     const act = activitySel.value;
     const purchaseType = purchaseTypeSel.value;
 
     const usesChemActivity =
       act === 'Spraying paddocks' ||
-      act === 'Chemical (stock)';
-
+      act === 'Chemical (stock)' ||
+      act === 'Trucking (sale)';
     const purchaseChem   = (act === 'Purchase inputs' && purchaseType === 'Chemical');
     const purchaseSeed   = (act === 'Purchase inputs' && purchaseType === 'Seed');
     const purchaseFodder = (act === 'Purchase inputs' && purchaseType === 'Fodder');
@@ -1095,261 +1110,465 @@ const db = firebase.firestore();
     fodderRow.classList.toggle('hidden', !(feedingFodder || purchaseFodder));
   }
 
-  function loadStaticData(){
-    const propsRef = db.collection('properties');
-    const usersRef = db.collection('users');
-    const paddocksRef = db.collection('paddocks');
-    const chemsRef = db.collection('chemicals');
-    const seedRef = db.collection('seeds');
-    const fodderRef = db.collection('fodder');
-    const rainRef = db.collection('rain_gauges');
+  function onActivityChange(){
+    const act = activitySel.value;
+    const needsStock = (
+      act === 'Trucking (sale)' ||
+      act === 'Move stock' ||
+      act === 'Transfer stock (Out)' ||
+      act === 'Cattle purchase' ||
+      act === 'Chemical (stock)' ||
+      act === 'Mustering'
+    );
+    stockRow.classList.toggle('hidden', !needsStock);
 
-    return Promise.all([
-      propsRef.get(),
-      usersRef.get(),
-      paddocksRef.get(),
-      chemsRef.get(),
-      seedRef.get(),
-      fodderRef.get(),
-      rainRef.get()
-    ]).then(([propsSnap, usersSnap, paddocksSnap, chemsSnap, seedsSnap, fodderSnap, rainSnap])=>{
-      PROPERTIES = propsSnap.docs.map(d=>({id:d.id, ...d.data()}));
+    const needsToPaddock = (act === 'Move stock');
+    toPaddockWrap.classList.toggle('hidden', !needsToPaddock);
 
-      usersSnap.docs.forEach(d=>{
-        const u = d.data();
-        const email = (u.email || '').toLowerCase();
-        if (!email) return;
-        const fullName = [u.firstName, u.lastName].filter(Boolean).join(' ').trim();
-        USERS[email] = {
-          id: d.id,
-          email,
-          firstName: u.firstName || '',
-          lastName: u.lastName || '',
-          fullName
-        };
-      });
+    const needsTransferProp = (act === 'Transfer stock (Out)');
+    transferPropWrap.classList.toggle('hidden', !needsTransferProp);
 
-      PADDOCKS_BY_PROPERTY = {};
-      paddocksSnap.docs.forEach(d=>{
-        const p = d.data();
-        const propId = p.propertyId;
-        if (!PADDOCKS_BY_PROPERTY[propId]) PADDOCKS_BY_PROPERTY[propId] = [];
-        PADDOCKS_BY_PROPERTY[propId].push({id:d.id, ...p});
-      });
+    const isPurchase = (act === 'Purchase inputs');
+    purchaseRow.classList.toggle('hidden', !isPurchase);
 
-      CHEMICALS = chemsSnap.docs.map(d=>({id:d.id, ...d.data()}));
-      SEEDS = seedsSnap.docs.map(d=>({id:d.id, ...d.data()}));
-      FODDER = fodderSnap.docs.map(d=>({id:d.id, ...d.data()}));
-      RAIN_GAUGES = rainSnap.docs.map(d=>({id:d.id, ...d.data()}));
-    });
+    updateInputRows();
   }
 
-  function populatePropertySelects(){
-    const makeOpts = sel=>{
-      sel.innerHTML = '';
-      PROPERTIES.forEach(p=>{
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name || '(unnamed)';
-        sel.appendChild(opt);
-      });
-    };
-    makeOpts(propSel);
-    makeOpts(filterPropertySel);
-    makeOpts(transferPropertySel);
-
-    const optAll = document.createElement('option');
-    optAll.value = '';
-    optAll.textContent = 'All properties';
-    filterPropertySel.insertBefore(optAll, filterPropertySel.firstChild);
-    filterPropertySel.value = '';
-  }
-
-  function populatePaddocks(){
-    const propId = propSel.value;
-    const paddocks = PADDOCKS_BY_PROPERTY[propId] || [];
-
-    const fillSel = (sel, includeBlank)=>{
-      sel.innerHTML = '';
-      if (includeBlank){
-        const o = document.createElement('option');
-        o.value = '';
-        o.textContent = '(none)';
-        sel.appendChild(o);
-      }
-      paddocks.forEach(p=>{
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name || p.id;
-        sel.appendChild(opt);
-      });
-    };
-
-    fillSel(paddockSel, false);
-    fillSel(toPaddockSel, true);
-  }
-
-  function populateChemicals(){
-    chemSel.innerHTML = '';
-    const blank = document.createElement('option');
-    blank.value = '';
-    blank.textContent = '(none)';
-    chemSel.appendChild(blank);
-    CHEMICALS.forEach(c=>{
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.name || c.id;
-      chemSel.appendChild(opt);
-    });
-  }
-
-  function populateSeeds(){
-    seedSel.innerHTML = '';
-    const blank = document.createElement('option');
-    blank.value = '';
-    blank.textContent = '(none)';
-    seedSel.appendChild(blank);
-    SEEDS.forEach(s=>{
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = s.name || s.id;
-      seedSel.appendChild(opt);
-    });
-  }
-
-  function populateFodder(){
-    fodderSel.innerHTML = '';
-    const blank = document.createElement('option');
-    blank.value = '';
-    blank.textContent = '(none)';
-    fodderSel.appendChild(blank);
-    FODDER.forEach(f=>{
-      const opt = document.createElement('option');
-      opt.value = f.id;
-      opt.textContent = f.name || f.id;
-      fodderSel.appendChild(opt);
-    });
-  }
-
-  function populateRainGauges(){
-    gaugeSel.innerHTML = '';
-    RAIN_GAUGES.forEach(g=>{
-      const opt = document.createElement('option');
-      opt.value = g.id;
-      opt.textContent = g.name || g.id;
-      gaugeSel.appendChild(opt);
-    });
-  }
-
-  function populateActivityFilter(){
-    const activities = [
-      'Ploughing',
-      'Planting',
-      'Spraying paddocks',
-      'Chemical (stock)',
-      'Trucking (sale)',
-      'Mustering',
-      'Move stock',
-      'Feeding (fodder)',
-      'Rainfall',
-      'Purchase inputs',
-      'General'
-    ];
-    filterActivitySel.innerHTML = '';
-    const optAll = document.createElement('option');
-    optAll.value = '';
-    optAll.textContent = 'All activities';
-    filterActivitySel.appendChild(optAll);
-    activities.forEach(a=>{
-      const opt = document.createElement('option');
-      opt.value = a;
-      opt.textContent = a;
-      filterActivitySel.appendChild(opt);
-    });
-  }
-
-  const userLabelFor = r=>{
-    if (!r.createdByEmail) return '';
-    const email = String(r.createdByEmail).toLowerCase();
-    const u = USERS[email];
-    if (u){
-      if (u.fullName) return u.fullName;
-      if (u.firstName) return u.firstName;
-    }
-    return email.split('@')[0];
+  paddockSel.onchange = async ()=>{
+    await refreshStockContext();
+    await refreshClassOptions();
   };
+  speciesSel.onchange = refreshClassOptions;
+  activitySel.onchange = onActivityChange;
+  purchaseTypeSel.onchange = updateInputRows;
+  chemSel.onchange   = ()=> chemUnit.value   = chemSel.selectedOptions[0]?.dataset?.unit   || '';
+  seedSel.onchange   = ()=> seedUnit.value   = seedSel.selectedOptions[0]?.dataset?.unit   || '';
+  fodderSel.onchange = ()=> fodderUnit.value = fodderSel.selectedOptions[0]?.dataset?.unit || '';
 
-  function applyFiltersAndRender(){
-    if (!entries || !Array.isArray(entries)){
-      entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
-      if (entriesCards) entriesCards.innerHTML = '';
+  // Build payload
+  function buildPayloadFromUI(){
+    const propertyId = propSel.value;
+    const propertyName = propSel.selectedOptions[0]?.textContent || '';
+    const date = dateInp.value || todayISO();
+    const time = timeInp.value || '00:00';
+    const activity = activitySel.value;
+
+    const padOpt = paddockSel.selectedOptions[0];
+    const paddockId = padOpt?.value || '';
+    const paddockName = padOpt?.dataset?.name || '';
+
+    const toPadOpt = toPaddockSel.selectedOptions[0];
+    const toPaddockId = toPadOpt?.value || '';
+    const toPaddockName = toPadOpt?.dataset?.name || '';
+
+    const transferPropertyId = transferPropSel.value || null;
+    const transferPropertyName = transferPropertyId
+      ? (ALL_PROPERTIES.find(p=>p.id===transferPropertyId)?.name || '')
+      : null;
+
+    const weather = weatherInp.value || '';
+
+    const species = stockRow.classList.contains('hidden') ? null : (speciesSel.value || null);
+    const klass = stockRow.classList.contains('hidden') ? null : (classInp.value || null);
+    const headVal = stockRow.classList.contains('hidden') ? null : Number(headInp.value || 0);
+    const head = headVal && Number.isFinite(headVal) && headVal>0 ? headVal : null;
+
+    const rainVal = Number(rainMmInp.value || 0);
+    const rainfallMm = (rainVal>0 && Number.isFinite(rainVal)) ? rainVal : null;
+    const gaugeId = gaugeSel.value || null;
+    const gaugeName = gaugeSel.selectedOptions[0]?.textContent || null;
+
+    const chemId = chemRow.classList.contains('hidden') ? null : (chemSel.value || null);
+    const chemQtyVal = chemRow.classList.contains('hidden') ? null : Number(chemQty.value || 0);
+    const chemQtyNum = chemQtyVal && chemQtyVal>0 ? chemQtyVal : null;
+    const chemUnitVal = chemRow.classList.contains('hidden') ? null : (chemUnit.value || null);
+
+    const seedId = seedRow.classList.contains('hidden') ? null : (seedSel.value || null);
+    const seedQtyVal = seedRow.classList.contains('hidden') ? null : Number(seedQty.value || 0);
+    const seedQtyNum = seedQtyVal && seedQtyVal>0 ? seedQtyVal : null;
+    const seedUnitVal = seedRow.classList.contains('hidden') ? null : (seedUnit.value || null);
+
+    const fodderId = fodderRow.classList.contains('hidden') ? null : (fodderSel.value || null);
+    const fodderQtyVal = fodderRow.classList.contains('hidden') ? null : Number(fodderQty.value || 0);
+    const fodderQtyNum = fodderQtyVal && fodderQtyVal>0 ? fodderQtyVal : null;
+    const fodderUnitVal = fodderRow.classList.contains('hidden') ? null : (fodderUnit.value || null);
+
+    const notes = notesInp.value || '';
+
+    const purchaseType = purchaseRow.classList.contains('hidden') ? null : (purchaseTypeSel.value || null);
+    const purchaseSupplierVal = purchaseRow.classList.contains('hidden') ? null : (purchaseSupplier.value || null);
+    const purchaseRefVal = purchaseRow.classList.contains('hidden') ? null : (purchaseRef.value || null);
+
+    const user = auth.currentUser || CURRENT_USER;
+    const createdByUid   = user?.uid || CURRENT_UID || null;
+    const createdByEmail = (user?.email || CURRENT_EMAIL || null);
+
+    const payload = {
+      date,
+      time,
+      propertyId,
+      propertyName,
+      activity,
+      paddockId: paddockId || null,
+      paddock: paddockName || null,
+      toPaddockId: toPaddockId || null,
+      toPaddock: toPaddockName || null,
+      transferPropertyId,
+      transferPropertyName,
+      notes: notes || null,
+      weather: weather || null,
+
+      species: species || null,
+      livestockClass: klass || null,
+      headCount: head || null,
+
+      chemicalId: chemId || null,
+      chemicalQty: chemQtyNum || null,
+      chemicalUnit: chemUnitVal || null,
+
+      seedId: seedId || null,
+      seedQty: seedQtyNum || null,
+      seedUnit: seedUnitVal || null,
+
+      fodderId: fodderId || null,
+      fodderQty: fodderQtyNum || null,
+      fodderUnit: fodderUnitVal || null,
+
+      rainfallMm,
+      gaugeId,
+      gaugeName,
+
+      purchaseType,
+      purchaseSupplier: purchaseSupplierVal || null,
+      purchaseRef: purchaseRefVal || null,
+
+      createdByUid,
+      createdByEmail,
+      createdByRole: CURRENT_ROLE || null,
+
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    return {
+      payload,
+      propertyId,
+      activity,
+      paddockName,
+      toPaddockName,
+      transferPropertyId,
+      species,
+      klass,
+      head,
+      chemId,
+      chemQty:chemQtyNum,
+      seedId,
+      seedQty:seedQtyNum,
+      fodderId,
+      fodderQty:fodderQtyNum,
+      gaugeId,
+      rainfallMm
+    };
+  }
+
+  // Save
+  async function saveEntry(){
+    if (!propSel.value){
+      alert('Choose a property.');
       return;
     }
+    const {
+      payload,
+      propertyId,
+      activity,
+      paddockName,
+      toPaddockName,
+      transferPropertyId,
+      species,
+      klass,
+      head,
+      chemId,
+      chemQty,
+      seedId,
+      seedQty,
+      fodderId,
+      fodderQty,
+      gaugeId,
+      rainfallMm
+    } = buildPayloadFromUI();
 
-    const propId = filterPropertySel.value || '';
-    const act = filterActivitySel.value || '';
-    const typeFilter = filterTypeSel.value || '';
-    const userFilter = filterUserSel.value || '';
-
-    let filtered = entries.slice();
-
-    if (propId){
-      filtered = filtered.filter(r=>r.propertyId === propId);
-    }
-    if (act){
-      filtered = filtered.filter(r=>r.activity === act);
-    }
-    if (typeFilter === 'Rainfall'){
-      filtered = filtered.filter(r=>r.activity === 'Rainfall');
-    }else if (typeFilter === 'Stock'){
-      filtered = filtered.filter(r=>{
-        return r.species || r.head || r.classText || r.activity === 'Move stock' || r.activity === 'Trucking (sale)' || r.activity === 'Mustering';
-      });
-    }
-    if (userFilter){
-      filtered = filtered.filter(r=>userLabelFor(r) === userFilter);
-    }
-
-    filtered.sort((a,b)=>{
-      const aKey = (a.date || '') + 'T' + (a.time || '');
-      const bKey = (b.date || '') + 'T' + (b.time || '');
-      if (sortDir === 'newest'){
-        return aKey < bKey ? 1 : aKey > bKey ? -1 : 0;
-      }else{
-        return aKey > bKey ? 1 : aKey < bKey ? -1 : 0;
+    if (activity === 'Move stock'){
+      if (!paddockName || !toPaddockName) {
+        alert('For Move cattle choose FROM and TO paddocks.');
+        return;
       }
-    });
-
-    if (!filtered.length){
-      entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries match filters.</td></tr>';
-      if (entriesCards) entriesCards.innerHTML = '<div class="muted small">No entries match filters.</div>';
+      if (!klass || !head){
+        alert('For Move cattle set Class and Head.');
+        return;
+      }
+    }
+    if (activity === 'Trucking (sale)' || activity === 'Cattle purchase'){
+      if (!paddockName || !klass || !head){
+        alert('For stock movements set paddock, class and head.');
+        return;
+      }
+    }
+    if (activity === 'Transfer stock (Out)'){
+      if (!paddockName || !transferPropertyId || !klass || !head){
+        alert('For transfer set FROM paddock, TO property, class and head.');
+        return;
+      }
+    }
+    if (activity === 'Rainfall'){
+      if (!gaugeId || !rainfallMm){
+        alert('For Rainfall choose a gauge and enter mm.');
+        return;
+      }
+    }
+    if (activity === 'Planting' && (!seedId || !seedQty)){
+      alert('For Planting choose a seed and quantity.');
+      return;
+    }
+    if (activity === 'Feeding (fodder)' && (!fodderId || !fodderQty)){
+      alert('For Feeding choose a fodder and quantity.');
+      return;
+    }
+    if (activity === 'Purchase inputs' && payload.purchaseType === 'Fodder' && (!fodderId || !fodderQty)){
+      alert('For Fodder purchases choose a fodder item and quantity.');
       return;
     }
 
-    const tableHtml = filtered.map(r=>{
-      const stockBits = [];
-      if (r.species) stockBits.push(r.species);
-      if (r.classText) stockBits.push(r.classText);
-      if (r.head) stockBits.push(`${r.head} head`);
-      const stock = stockBits.join(', ');
+    try{
+      setStatus('Saving…');
+      await db.collection('diaryEntries').add(payload);
 
-      let inputs = '';
-      const bits = [];
-      if (r.chemicalId) bits.push('Chemical');
-      if (r.seedId) bits.push('Seed');
-      if (r.fodderId) bits.push('Fodder');
-      if (bits.length) inputs = bits.join(', ');
+      const sideEffects = [];
 
-      const rain = r.activity === 'Rainfall' ? (r.rainMm || '') : '';
+      // Chemical use / purchases
+      if (chemId && chemQty){
+        const chemDelta = (activity === 'Purchase inputs' && payload.purchaseType === 'Chemical') ? chemQty : -chemQty;
+        sideEffects.push(adjustChemicalStock(chemId, chemDelta));
+      }
 
-      const notes = r.notes || r.weather || '';
+      // Seed use / purchases
+      if (activity === 'Planting' && seedId && seedQty){
+        sideEffects.push(adjustSeedStock(seedId, -seedQty));
+      }else if (activity === 'Purchase inputs' && payload.purchaseType === 'Seed' && seedId && seedQty){
+        sideEffects.push(adjustSeedStock(seedId, +seedQty));
+      }
 
-      const userLabel = userLabelFor(r);
+      // Fodder use / purchases
+      if (activity === 'Feeding (fodder)' && fodderId && fodderQty){
+        sideEffects.push(adjustFodderStock(fodderId, -fodderQty));
+      }else if (activity === 'Purchase inputs' && payload.purchaseType === 'Fodder' && fodderId && fodderQty){
+        sideEffects.push(adjustFodderStock(fodderId, +fodderQty));
+      }
 
-      const delHtml = '<button type="button" class="btn small danger no-print" data-del-id="'+r.id+'">Delete</button>';
+      // Livestock movements
+      if (activity === 'Trucking (sale)' && paddockName && species && klass && head){
+        sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
+      }else if (activity === 'Cattle purchase' && paddockName && species && klass && head){
+        sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, +head));
+      }else if (activity === 'Move stock' && paddockName && toPaddockName && species && klass && head){
+        sideEffects.push(moveLivestockWithinProperty(propertyId, paddockName, toPaddockName, species, klass, head));
+      }else if (activity === 'Transfer stock (Out)' && paddockName && transferPropertyId && species && klass && head){
+        // subtract from current paddock
+        sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
+        // add to yards on destination property
+        sideEffects.push((async ()=>{
+          const yardName = await findYardNameForProperty(transferPropertyId);
+          if (!yardName){
+            console.warn('No yard paddock found on destination property for transfer', {transferPropertyId});
+            return;
+          }
+          await adjustLivestockLine(transferPropertyId, yardName, species, klass, +head);
+        })());
+      }
+      // Mustering: no stock change
 
-      return `<tr data-id="${r.id}">
+      // Rainfall mirror
+      if (activity === 'Rainfall' && gaugeId && rainfallMm){
+        sideEffects.push(applyRainfallMirror(gaugeId, rainfallMm, payload.date));
+      }
+
+      await Promise.all(sideEffects);
+
+      setStatus('Saved');
+      setSaveMsg('Saved.', 1500);
+      await refreshEntries();
+    }catch(e){
+      console.error(e);
+      setStatus('Save failed', true);
+      setSaveMsg('Save failed.', 3000);
+    }
+  }
+
+  // Recent entries (table + cards)
+  async function refreshEntries(){
+    entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">Loading…</td></tr>';
+    if (entriesCards){
+      entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
+    }
+    try{
+      const snap = await db.collection('diaryEntries')
+        .orderBy('date','desc')
+        .limit(200)
+        .get();
+      const rows = [];
+      snap.forEach(doc=>{
+        rows.push({id:doc.id, ...(doc.data()||{})});
+      });
+
+      // Build user filter options
+      const existingSelection = filterUserSel.value || '';
+      const userSet = new Set();
+      rows.forEach(r=>{
+        if (r.createdByEmail){
+          const email = String(r.createdByEmail).toLowerCase();
+          const u = USERS[email];
+          const label = u && u.firstName ? u.firstName : email.split('@')[0];
+          if (label) userSet.add(label);
+        }
+      });
+      const userList = Array.from(userSet).sort((a,b)=>a.localeCompare(b));
+
+      const isWorker = CURRENT_ROLE === 'worker';
+      if (isWorker){
+        // worker can't filter by user; they only see themselves
+        filterUserSel.parentElement.style.display = 'none';
+      }else{
+        filterUserSel.parentElement.style.display = '';
+        let optionsHtml = '<option value="">All users</option>';
+        optionsHtml += userList.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
+        filterUserSel.innerHTML = optionsHtml;
+        if (existingSelection && userList.includes(existingSelection)){
+          filterUserSel.value = existingSelection;
+        }
+      }
+
+      const yearFilter = parseInt(filterYear.value || '', 10) || null;
+      const propFilter = filterPropSel.value || '';
+      const selectedUser = (filterUserSel.value || '').trim();
+
+      const workerUid = CURRENT_UID;
+      const workerEmail = (CURRENT_EMAIL || '').toLowerCase();
+
+      let filtered = rows.filter(r=>{
+        if (yearFilter){
+          if (!r.date || String(r.date).slice(0,4) !== String(yearFilter)) return false;
+        }
+        if (propFilter && r.propertyId !== propFilter) return false;
+
+        // role-based visibility
+        if (isWorker){
+          const uidMatch = r.createdByUid && workerUid && r.createdByUid === workerUid;
+          const emailMatch = r.createdByEmail && workerEmail &&
+            String(r.createdByEmail).toLowerCase() === workerEmail;
+          if (!(uidMatch || emailMatch)) return false;
+        }
+
+        if (!isWorker && selectedUser){
+          const email = (r.createdByEmail || '').toLowerCase();
+          const u = USERS[email];
+          const label = u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
+          if (label !== selectedUser) return false;
+        }
+
+        return true;
+      });
+
+      // Sort
+      const sortMode = sortSel.value || 'dateDesc';
+      filtered.sort((a,b)=>{
+        const dateA = String(a.date || '');
+        const dateB = String(b.date || '');
+        const timeA = String(a.time || '');
+        const timeB = String(b.time || '');
+
+        const getUserName = (r)=>{
+          const email = (r.createdByEmail || '').toLowerCase();
+          const u = USERS[email];
+          return u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
+        };
+        const userA = getUserName(a);
+        const userB = getUserName(b);
+
+        if (sortMode === 'dateAsc'){
+          if (dateA !== dateB) return dateA.localeCompare(dateB);
+          return timeA.localeCompare(timeB);
+        }
+        if (sortMode === 'dateDesc'){
+          if (dateA !== dateB) return dateB.localeCompare(dateA);
+          return timeB.localeCompare(timeA);
+        }
+        if (sortMode === 'userAsc'){
+          const cmp = userA.localeCompare(userB);
+          if (cmp !== 0) return cmp;
+          if (dateA !== dateB) return dateB.localeCompare(dateA);
+          return timeB.localeCompare(timeA);
+        }
+        if (sortMode === 'userDesc'){
+          const cmp = userB.localeCompare(userA);
+          if (cmp !== 0) return cmp;
+          if (dateA !== dateB) return dateB.localeCompare(dateA);
+          return timeB.localeCompare(timeA);
+        }
+        return 0;
+      });
+
+      if (!filtered.length){
+        entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">No entries.</td></tr>';
+        if (entriesCards){
+          entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
+        }
+        return;
+      }
+
+      const canDeleteEntry = (r)=>{
+        if (CURRENT_ROLE !== 'worker') return true;
+        const uidMatch = r.createdByUid && CURRENT_UID && r.createdByUid === CURRENT_UID;
+        const emailMatch = r.createdByEmail && CURRENT_EMAIL &&
+          String(r.createdByEmail).toLowerCase() === CURRENT_EMAIL;
+        return uidMatch || emailMatch;
+      };
+
+      const userLabelFor = r=>{
+        if (!r.createdByEmail) return '';
+        const email = String(r.createdByEmail).toLowerCase();
+        const u = USERS[email];
+        if (u && u.firstName) return u.firstName;
+        return email.split('@')[0];
+      };
+
+      // Build table rows
+      const tableHtml = filtered.map(r=>{
+        const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
+
+        let inputs = '';
+        if (r.purchaseType){
+          inputs = r.purchaseType;
+          const bits = [];
+          if (r.chemicalId && r.chemicalQty) bits.push(`${r.chemicalQty} ${r.chemicalUnit||''} chem`);
+          if (r.seedId && r.seedQty)       bits.push(`${r.seedQty} ${r.seedUnit||''} seed`);
+          if (r.fodderId && r.fodderQty)   bits.push(`${r.fodderQty} ${r.fodderUnit||''} fodder`);
+          if (bits.length) inputs += ' (' + bits.join('; ') + ')';
+        }else{
+          if (r.chemicalId && r.chemicalQty) inputs = `${r.chemicalQty} ${r.chemicalUnit||''} chem`;
+          else if (r.seedId && r.seedQty)    inputs = `${r.seedQty} ${r.seedUnit||''} seed`;
+          else if (r.fodderId && r.fodderQty)inputs = `${r.fodderQty} ${r.fodderUnit||''} fodder`;
+        }
+
+        const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
+        const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
+
+        const userLabel = userLabelFor(r);
+
+        const delHtml = canDeleteEntry(r)
+          ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
+          : '';
+
+        return `<tr data-id="${r.id}">
           <td class="nowrap">${escapeHtml(r.date||'')}</td>
+          <td class="nowrap">${escapeHtml(r.time||'')}</td>
           <td>${escapeHtml(r.propertyName||'')}</td>
           <td>${escapeHtml(r.paddock||'')}</td>
           <td>${escapeHtml(r.activity||'')}</td>
@@ -1360,398 +1579,169 @@ const db = firebase.firestore();
           <td>${escapeHtml(userLabel)}</td>
           <td class="no-print">${delHtml}</td>
         </tr>`;
-    }).join('');
+      }).join('');
+      entriesBody.innerHTML = tableHtml;
 
-    entriesBody.innerHTML = tableHtml || '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
+      // Build mobile cards
+      if (entriesCards){
+        const cardsHtml = filtered.map(r=>{
+          const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
 
-    if (entriesCards){
-      const cardsHtml = filtered.map(r=>{
-        const stockBits = [];
-        if (r.species) stockBits.push(r.species);
-        if (r.classText) stockBits.push(r.classText);
-        if (r.head) stockBits.push(`${r.head} head`);
-        const stock = stockBits.join(', ');
+          let inputs = '';
+          if (r.purchaseType){
+            inputs = r.purchaseType;
+            const bits = [];
+            if (r.chemicalId && r.chemicalQty) bits.push(`${r.chemicalQty} ${r.chemicalUnit||''} chem`);
+            if (r.seedId && r.seedQty)       bits.push(`${r.seedQty} ${r.seedUnit||''} seed`);
+            if (r.fodderId && r.fodderQty)   bits.push(`${r.fodderQty} ${r.fodderUnit||''} fodder`);
+            if (bits.length) inputs += ' (' + bits.join('; ') + ')';
+          }else{
+            if (r.chemicalId && r.chemicalQty) inputs = `${r.chemicalQty} ${r.chemicalUnit||''} chem`;
+            else if (r.seedId && r.seedQty)    inputs = `${r.seedQty} ${r.seedUnit||''} seed`;
+            else if (r.fodderId && r.fodderQty)inputs = `${r.fodderQty} ${r.fodderUnit||''} fodder`;
+          }
 
-        const inputBits = [];
-        if (r.chemicalId && r.chemicalName) inputBits.push(`Chemical: ${r.chemicalName}`);
-        if (r.seedId && r.seedName)       inputBits.push(`Seed: ${r.seedName}`);
-        if (r.fodderId && r.fodderName)   inputBits.push(`Fodder: ${r.fodderName}`);
-        const inputs = inputBits.join(' | ');
+          const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
+          const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
 
-        const rain = r.activity === 'Rainfall' ? (r.rainMm || '') : '';
+          const userLabel = userLabelFor(r);
 
-        const notes = r.notes || r.weather || '';
+          const delHtml = canDeleteEntry(r)
+            ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
+            : '';
 
-        const userLabel = userLabelFor(r);
-
-        return `<div class="entry-card" data-id="${r.id}">
+          return `<div class="entry-card" data-id="${r.id}">
             <div class="ec-header">
               <div>${escapeHtml(r.date || '')}</div>
+              <div>${escapeHtml(r.time || '')}</div>
             </div>
             <div class="ec-line">
               <span class="ec-label">Property</span>${escapeHtml(r.propertyName || '')}
             </div>
             ${userLabel ? `<div class="ec-line"><span class="ec-label">User</span>${escapeHtml(userLabel)}</div>` : ''}
-            <div class="ec-line">
-              <span class="ec-label">Activity</span>${escapeHtml(r.activity || '')}
-            </div>
+            ${r.paddock ? `<div class="ec-line"><span class="ec-label">Paddock</span>${escapeHtml(r.paddock)}</div>` : ''}
+            <div class="ec-line ec-activity">${escapeHtml(r.activity || '')}</div>
             ${stock ? `<div class="ec-line"><span class="ec-label">Stock</span>${escapeHtml(stock)}</div>` : ''}
             ${inputs ? `<div class="ec-line"><span class="ec-label">Inputs</span>${escapeHtml(inputs)}</div>` : ''}
             ${rain ? `<div class="ec-line"><span class="ec-label">Rain</span>${escapeHtml(rain)} mm</div>` : ''}
-            ${notes ? `<div class="ec-line"><span class="ec-label">Notes</span>${escapeHtml(notes)}</div>` : ''}
-            <div class="ec-line no-print" style="margin-top:4px;">
-              <button type="button" class="btn small danger" data-del-id="${r.id}">Delete</button>
+            ${notes ? `<div class="ec-line ec-notes">${escapeHtml(notes)}</div>` : ''}
+            <div class="ec-actions no-print">
+              ${delHtml}
             </div>
           </div>`;
-      }).join('');
+        }).join('');
+        entriesCards.innerHTML = cardsHtml;
+      }
 
-      entriesCards.innerHTML = cardsHtml || '<div class="muted small">No entries.</div>';
-    }
-  }
-
-  function loadEntries(){
-    if (!currentUser) return;
-    setStatus('Loading entries…');
-    return db.collection('diary_entries')
-      .where('farmId','==',currentUser.farmId)
-      .get()
-      .then(snap=>{
-        entries = snap.docs.map(d=>{
-          const data = d.data();
-          const prop = PROPERTIES.find(p=>p.id === data.propertyId);
-          const paddArr = PADDOCKS_BY_PROPERTY[data.propertyId] || [];
-          const padd = paddArr.find(p=>p.id === data.paddockId);
-
-          const chem = CHEMICALS.find(c=>c.id === data.chemicalId);
-          const seed = SEEDS.find(s=>s.id === data.seedId);
-          const fodder = FODDER.find(f=>f.id === data.fodderId);
-
-          return {
-            id: d.id,
-            ...data,
-            propertyName: prop ? (prop.name || prop.id) : '',
-            paddock: padd ? (padd.name || padd.id) : '',
-            chemicalName: chem ? (chem.name || chem.id) : '',
-            seedName: seed ? (seed.name || seed.id) : '',
-            fodderName: fodder ? (fodder.name || fodder.id) : ''
-          };
-        });
-
-        const existingSelection = filterUserSel.value || '';
-        const userSet = new Set();
-        rows = entries;
-        rows.forEach(r=>{
-          if (r.createdByEmail){
-            const email = String(r.createdByEmail).toLowerCase();
-            const u = USERS[email];
-            const label = (u && (u.fullName || u.firstName))
-              ? (u.fullName || u.firstName)
-              : email.split('@')[0];
-            if (label) userSet.add(label);
+      // Wire delete buttons
+      const delButtons = document.querySelectorAll('#entriesBody button[data-del], #entriesCards button[data-del]');
+      delButtons.forEach(btn=>{
+        btn.onclick = async ()=>{
+          const id = btn.dataset.del;
+          if (!id) return;
+          const ok = confirm('Delete this diary entry? This does NOT undo stock/chemical/seed/fodder/rainfall changes.');
+          if (!ok) return;
+          try{
+            await db.collection('diaryEntries').doc(id).delete();
+            await refreshEntries();
+          }catch(e){
+            console.error(e);
+            alert('Delete failed, see console.');
           }
-        });
-        filterUserSel.innerHTML = '';
-        const optAll = document.createElement('option');
-        optAll.value = '';
-        optAll.textContent = 'All users';
-        filterUserSel.appendChild(optAll);
-        Array.from(userSet).sort().forEach(label=>{
-          const opt = document.createElement('option');
-          opt.value = label;
-          opt.textContent = label;
-          filterUserSel.appendChild(opt);
-        });
-        if (existingSelection && Array.from(userSet).includes(existingSelection)){
-          filterUserSel.value = existingSelection;
-        }else{
-          filterUserSel.value = '';
-        }
-
-        applyFiltersAndRender();
-        setStatus('');
-      })
-      .catch(err=>{
-        console.error(err);
-        setStatus('Error loading entries', true);
+        };
       });
+    }catch(e){
+      console.error(e);
+      entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">Error loading entries.</td></tr>';
+      if (entriesCards){
+        entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
+      }
+    }
   }
 
-  function onSave(){
-    if (!currentUser) return;
+  // Init after auth
+  async function initAfterAuth(){
+    dateInp.value = todayISO();
+    const now = new Date();
+    timeInp.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    filterYear.value = now.getFullYear();
 
-    const propertyId = propSel.value || '';
-    const date = dateInp.value || '';
-    const time = timeInp.value || '';
-    const activity = activitySel.value || '';
-
-    if (!propertyId || !date || !activity){
-      setStatus('Property, date and activity are required.', true);
-      return;
+    // Load users for name lookup (doc id is email with special chars replaced)
+    try{
+      const usersSnap = await db.collection('users').get();
+      USERS = {};
+      usersSnap.forEach(doc=>{
+        const d = doc.data() || {};
+        const docId = doc.id || '';
+        const emailGuess = docId.replace(/_/g,'.').toLowerCase();
+        const fullName = (d.name || '').trim();
+        const firstName = fullName ? fullName.split(' ')[0] : (emailGuess.split('@')[0] || '');
+        USERS[emailGuess] = {
+          fullName: fullName || null,
+          firstName
+        };
+      });
+    }catch(e){
+      console.error('Loading users for names failed', e);
+      USERS = {};
     }
 
-    const paddockId = paddockSel.value || '';
-    const toPaddockId = toPaddockSel.value || '';
-    const transferPropertyId = transferPropertySel.value || '';
+    await loadProperties();
+    if (propSel.options.length && propSel.value){
+      await loadPaddocksForProperty(propSel.value);
+      await loadGaugesForProperty(propSel.value);
+      await loadChemicalsForProperty(propSel.value);
+      await loadSeedsForProperty(propSel.value);
+      await loadFodderForProperty(propSel.value);
+      refreshTransferPropertyOptions(propSel.value);
+    }
 
-    const species = speciesSel.value || '';
-    const classText = classInp.value || '';
-    const head = headInp.value ? Number(headInp.value) : null;
+    onActivityChange();
 
-    const chemicalId = chemSel.value || '';
-    const chemRate = chemRateInp.value || '';
-    const chemTotal = chemTotalInp.value || '';
-
-    const seedId = seedSel.value || '';
-    const seedRate = seedRateInp.value || '';
-    const seedTotal = seedTotalInp.value || '';
-
-    const fodderId = fodderSel.value || '';
-    const fodderAmt = fodderAmtInp.value || '';
-
-    const purchaseType = purchaseTypeSel.value || '';
-    const supplier = supplierInp.value || '';
-    const invoice = invoiceInp.value || '';
-
-    const gaugeId = gaugeSel.value || '';
-    const rainMm = rainMmInp.value ? Number(rainMmInp.value) : null;
-
-    const notes = notesInp.value || '';
-    const weather = '';
-
-    const payload = {
-      farmId: currentUser.farmId,
-      propertyId,
-      date,
-      time,
-      activity,
-      paddockId,
-      toPaddockId,
-      transferPropertyId,
-      species,
-      classText,
-      head,
-      chemicalId,
-      chemRate,
-      chemTotal,
-      seedId,
-      seedRate,
-      seedTotal,
-      fodderId,
-      fodderAmt,
-      purchaseType,
-      supplier,
-      invoice,
-      gaugeId,
-      rainMm,
-      notes,
-      weather,
-      createdByEmail: currentUser.email,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    propSel.onchange = async ()=>{
+      await loadPaddocksForProperty(propSel.value);
+      await loadGaugesForProperty(propSel.value);
+      await loadChemicalsForProperty(propSel.value);
+      await loadSeedsForProperty(propSel.value);
+      await loadFodderForProperty(propSel.value);
+      refreshTransferPropertyOptions(propSel.value);
+      await refreshStockContext();
     };
 
-    setStatus('Saving entry…');
-    saveBtn.disabled = true;
-    db.collection('diary_entries').add(payload)
-      .then(()=>{
-        setStatus('Saved');
-        saveBtn.disabled = false;
-        notesInp.value = '';
-        headInp.value = '';
-        classInp.value = '';
-        chemRateInp.value = '';
-        chemTotalInp.value = '';
-        seedRateInp.value = '';
-        seedTotalInp.value = '';
-        fodderAmtInp.value = '';
-        supplierInp.value = '';
-        invoiceInp.value = '';
-        rainMmInp.value = '';
-        return loadEntries();
-      })
-      .catch(err=>{
-        console.error(err);
-        saveBtn.disabled = false;
-        setStatus('Error saving entry', true);
-      });
+    $('#saveBtn').onclick = saveEntry;
+    $('#resetBtn').onclick = ()=>{
+      notesInp.value = '';
+      weatherInp.value = '';
+      headInp.value = '';
+      classInp.value = '';
+      rainMmInp.value = '';
+      gaugeSel.selectedIndex = 0;
+      chemSel.selectedIndex = 0;
+      chemQty.value = '';
+      chemUnit.value = '';
+      seedSel.selectedIndex = 0;
+      seedQty.value = '';
+      seedUnit.value = '';
+      fodderSel.selectedIndex = 0;
+      fodderQty.value = '';
+      fodderUnit.value = '';
+      purchaseSupplier.value = '';
+      purchaseRef.value = '';
+    };
+    $('#refreshBtn').onclick = refreshEntries;
+    $('#printBtn').onclick = ()=>window.print();
+    sortSel.onchange = refreshEntries;
+    filterUserSel.onchange = refreshEntries;
+    filterPropSel.onchange = refreshEntries;
+    filterYear.onchange = refreshEntries;
+
+    await refreshEntries();
   }
 
-  function onDelete(id){
-    if (!currentUser || !id) return;
-    if (!confirm('Delete this entry?')) return;
-    setStatus('Deleting…');
-    db.collection('diary_entries').doc(id).delete()
-      .then(()=>{
-        setStatus('Deleted');
-        entries = entries.filter(e=>e.id !== id);
-        applyFiltersAndRender();
-      })
-      .catch(err=>{
-        console.error(err);
-        setStatus('Error deleting entry', true);
-      });
-  }
-
-  function onEntriesClick(e){
-    const btn = e.target.closest('[data-del-id]');
-    if (!btn) return;
-    const id = btn.getAttribute('data-del-id');
-    onDelete(id);
-  }
-
-  function onSortClick(dir){
-    sortDir = dir;
-    if (dir === 'newest'){
-      sortNewestBtn.classList.add('active');
-      sortOldestBtn.classList.remove('active');
-    }else{
-      sortOldestBtn.classList.add('active');
-      sortNewestBtn.classList.remove('active');
-    }
-    applyFiltersAndRender();
-  }
-
-  function showLogin(){
-    appRoot.classList.add('hidden');
-    loginRoot.classList.remove('hidden');
-  }
-
-  function showApp(){
-    loginRoot.classList.add('hidden');
-    appRoot.classList.remove('hidden');
-  }
-
-  function setLoginError(msg){
-    if (!msg){
-      loginError.classList.add('hidden');
-      loginError.textContent = '';
-      return;
-    }
-    loginError.textContent = msg;
-    loginError.classList.remove('hidden');
-  }
-
-  function setLoginInfo(msg){
-    if (!msg){
-      loginInfo.classList.add('hidden');
-      loginInfo.textContent = '';
-      return;
-    }
-    loginInfo.textContent = msg;
-    loginInfo.classList.remove('hidden');
-  }
-
-  function signIn(){
-    const email = (siEmail.value || '').trim();
-    const pass  = siPass.value || '';
-    if (!email || !pass){
-      setLoginError('Email and password required.');
-      return;
-    }
-    setLoginError('');
-    setLoginInfo('Signing in…');
-    auth.signInWithEmailAndPassword(email, pass)
-      .then(()=>{
-        setLoginInfo('');
-      })
-      .catch(err=>{
-        console.error(err);
-        setLoginInfo('');
-        setLoginError('Sign in failed.');
-      });
-  }
-
-  function signOut(){
-    auth.signOut().catch(err=>{
-      console.error(err);
-    });
-  }
-
-  auth.onAuthStateChanged(user=>{
-    if (!user){
-      currentUser = null;
-      showLogin();
-      return;
-    }
-    const email = (user.email || '').toLowerCase();
-    db.collection('users').where('email','==',email).limit(1).get()
-      .then(snap=>{
-        if (snap.empty){
-          currentUser = {
-            uid: user.uid,
-            email,
-            farmId: ''
-          };
-        }else{
-          const u = snap.docs[0].data();
-          const fullName = [u.firstName, u.lastName].filter(Boolean).join(' ').trim();
-          currentUser = {
-            uid: user.uid,
-            email,
-            farmId: u.farmId || '',
-            fullName
-          };
-        }
-
-        const label = currentUser.fullName || currentUser.email.split('@')[0] || currentUser.email;
-        userChip.textContent = `Signed in as ${label}`;
-        showApp();
-
-        Promise.resolve()
-          .then(loadStaticData)
-          .then(()=>{
-            populatePropertySelects();
-            populatePaddocks();
-            populateChemicals();
-            populateSeeds();
-            populateFodder();
-            populateRainGauges();
-            populateActivityFilter();
-            initDateTime();
-            onActivityChange();
-            return loadEntries();
-          })
-          .catch(err=>{
-            console.error(err);
-            setStatus('Error loading data', true);
-          });
-
-      })
-      .catch(err=>{
-        console.error(err);
-        showLogin();
-      });
-  });
-
-  propSel.addEventListener('change', ()=>{
-    populatePaddocks();
-  });
-  activitySel.addEventListener('change', onActivityChange);
-  purchaseTypeSel.addEventListener('change', onPurchaseTypeChange);
-  saveBtn.addEventListener('click', onSave);
-  printBtn.addEventListener('click', ()=>window.print());
-
-  entriesBody.addEventListener('click', onEntriesClick);
-  if (entriesCards){
-    entriesCards.addEventListener('click', onEntriesClick);
-  }
-
-  filterPropertySel.addEventListener('change', applyFiltersAndRender);
-  filterActivitySel.addEventListener('change', applyFiltersAndRender);
-  filterTypeSel.addEventListener('change', applyFiltersAndRender);
-  filterUserSel.addEventListener('change', applyFiltersAndRender);
-  sortNewestBtn.addEventListener('click', ()=>onSortClick('newest'));
-  sortOldestBtn.addEventListener('click', ()=>onSortClick('oldest'));
-
-  signInBtn.addEventListener('click', signIn);
-  signOutBtn.addEventListener('click', signOut);
-
-  siEmail.addEventListener('keydown', e=>{ if (e.key === 'Enter') signIn(); });
-  siPass.addEventListener('keydown', e=>{ if (e.key === 'Enter') signIn(); });
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    showLogin();
+  // Kick off
+  window.addEventListener('load', ()=>{
+    setStatus('Ready');
   });
 </script>
-
 </body>
 </html>
