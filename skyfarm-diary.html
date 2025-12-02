@@ -1433,14 +1433,16 @@
         rows.push({id:doc.id, ...(doc.data()||{})});
       });
 
-      // Build user filter options
+            // Build user filter options (use full name from users & roles)
       const existingSelection = filterUserSel.value || '';
       const userSet = new Set();
       rows.forEach(r=>{
         if (r.createdByEmail){
           const email = String(r.createdByEmail).toLowerCase();
           const u = USERS[email];
-          const label = u && u.firstName ? u.firstName : email.split('@')[0];
+          const label = (u && (u.fullName || u.firstName))
+            ? (u.fullName || u.firstName)
+            : email.split('@')[0];
           if (label) userSet.add(label);
         }
       });
@@ -1550,7 +1552,9 @@
         if (!r.createdByEmail) return '';
         const email = String(r.createdByEmail).toLowerCase();
         const u = USERS[email];
-        if (u && u.firstName) return u.firstName;
+        if (u && (u.fullName || u.firstName)){
+          return u.fullName || u.firstName;
+        }
         return email.split('@')[0];
       };
 
@@ -1679,18 +1683,22 @@
     timeInp.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     filterYear.value = now.getFullYear();
 
-    // Load users for name lookup (doc id is email with special chars replaced)
+        // Load users for name lookup (use stored email + name from users & roles)
     try{
       const usersSnap = await db.collection('users').get();
       USERS = {};
       usersSnap.forEach(doc=>{
         const d = doc.data() || {};
-        const docId = doc.id || '';
-        const emailGuess = docId.replace(/_/g,'.').toLowerCase();
-        const fullName = (d.name || '').trim();
-        const firstName = fullName ? fullName.split(' ')[0] : (emailGuess.split('@')[0] || '');
-        USERS[emailGuess] = {
-          fullName: fullName || null,
+
+        // Email saved by skyfarm-users.html
+        const email = String(d.email || '').toLowerCase();
+        if (!email) return;
+
+        const fullName = (d.name || '').trim();      // e.g. "Nyssa"
+        const firstName = fullName || email.split('@')[0];
+
+        USERS[email] = {
+          fullName,
           firstName
         };
       });
