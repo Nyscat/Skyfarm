@@ -120,7 +120,7 @@
       color:#0f172a;
       text-decoration:none;
     }
-    .db-menu a:hover{background:#f1f59;}
+    .db-menu a:hover{background:#f1f5f9;}
     .hidden{display:none;}
 
     .wrap{
@@ -323,7 +323,8 @@
           <label>Date</label>
           <input id="dateInp" type="date" class="w160"/>
         </div>
-        <div>
+        <!-- hide time from the UI but keep the input for sorting/storage -->
+        <div id="timeWrap" class="hidden">
           <label>Time</label>
           <input id="timeInp" type="time" class="w120"/>
         </div>
@@ -372,11 +373,12 @@
           </select>
         </div>
 
-        <div>
+        <!-- rainfall fields only visible when activity = Rainfall -->
+        <div id="rainMmWrap" class="hidden">
           <label>Rainfall (mm to 9am)</label>
           <input id="rainMmInp" type="number" min="0" step="0.1" class="w120"/>
         </div>
-        <div>
+        <div id="gaugeWrap" class="hidden">
           <label>Gauge</label>
           <select id="gaugeSel" class="w220">
             <option value="">(none)</option>
@@ -395,7 +397,7 @@
         </div>
       </div>
 
-      <!-- Stock section -->
+      <!-- Stock section (only for stock-related activities) -->
       <div id="stockRow" class="row hidden">
         <div>
           <label>Species</label>
@@ -490,7 +492,8 @@
         </div>
       </div>
 
-      <div id="stockContext" class="row small" style="color:#374151;"></div>
+      <!-- paddock livestock info, only when a stock activity is chosen -->
+      <div id="stockContext" class="row small hidden" style="color:#374151;"></div>
 
       <div class="row">
         <button id="saveBtn" class="btn primary" type="button">Save entry</button>
@@ -539,7 +542,7 @@
             <thead>
             <tr>
               <th>Date</th>
-              <th>Time</th>
+              <!-- Time column removed from display -->
               <th>Property</th>
               <th>Paddock</th>
               <th>Activity</th>
@@ -552,7 +555,7 @@
             </tr>
             </thead>
             <tbody id="entriesBody">
-            <tr><td colspan="11" class="muted small">Loading…</td></tr>
+            <tr><td colspan="10" class="muted small">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -641,6 +644,8 @@
   const toPaddockSel = $('#toPaddockSel');
   const transferPropWrap = $('#transferPropWrap');
   const transferPropSel = $('#transferPropSel');
+  const rainMmWrap = $('#rainMmWrap');
+  const gaugeWrap = $('#gaugeWrap');
   const rainMmInp = $('#rainMmInp');
   const gaugeSel = $('#gaugeSel');
   const notesInp = $('#notesInp');
@@ -1098,8 +1103,8 @@
 
     const usesChemActivity =
       act === 'Spraying paddocks' ||
-      act === 'Chemical (stock)' ||
-      act === 'Trucking (sale)';
+      act === 'Chemical (stock)';
+
     const purchaseChem   = (act === 'Purchase inputs' && purchaseType === 'Chemical');
     const purchaseSeed   = (act === 'Purchase inputs' && purchaseType === 'Seed');
     const purchaseFodder = (act === 'Purchase inputs' && purchaseType === 'Fodder');
@@ -1112,6 +1117,7 @@
 
   function onActivityChange(){
     const act = activitySel.value;
+
     const needsStock = (
       act === 'Trucking (sale)' ||
       act === 'Move stock' ||
@@ -1121,6 +1127,7 @@
       act === 'Mustering'
     );
     stockRow.classList.toggle('hidden', !needsStock);
+    stockContext.classList.toggle('hidden', !needsStock);
 
     const needsToPaddock = (act === 'Move stock');
     toPaddockWrap.classList.toggle('hidden', !needsToPaddock);
@@ -1130,6 +1137,14 @@
 
     const isPurchase = (act === 'Purchase inputs');
     purchaseRow.classList.toggle('hidden', !isPurchase);
+
+    const isRain = (act === 'Rainfall');
+    rainMmWrap.classList.toggle('hidden', !isRain);
+    gaugeWrap.classList.toggle('hidden', !isRain);
+    if (!isRain){
+      rainMmInp.value = '';
+      gaugeSel.selectedIndex = 0;
+    }
 
     updateInputRows();
   }
@@ -1404,7 +1419,7 @@
 
   // Recent entries (table + cards)
   async function refreshEntries(){
-    entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">Loading…</td></tr>';
+    entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Loading…</td></tr>';
     if (entriesCards){
       entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
     }
@@ -1516,7 +1531,7 @@
       });
 
       if (!filtered.length){
-        entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">No entries.</td></tr>';
+        entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
         if (entriesCards){
           entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
         }
@@ -1539,7 +1554,7 @@
         return email.split('@')[0];
       };
 
-      // Build table rows
+      // Build table rows (no time column)
       const tableHtml = filtered.map(r=>{
         const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
 
@@ -1568,7 +1583,6 @@
 
         return `<tr data-id="${r.id}">
           <td class="nowrap">${escapeHtml(r.date||'')}</td>
-          <td class="nowrap">${escapeHtml(r.time||'')}</td>
           <td>${escapeHtml(r.propertyName||'')}</td>
           <td>${escapeHtml(r.paddock||'')}</td>
           <td>${escapeHtml(r.activity||'')}</td>
@@ -1582,7 +1596,7 @@
       }).join('');
       entriesBody.innerHTML = tableHtml;
 
-      // Build mobile cards
+      // Build mobile cards (no time)
       if (entriesCards){
         const cardsHtml = filtered.map(r=>{
           const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
@@ -1613,7 +1627,6 @@
           return `<div class="entry-card" data-id="${r.id}">
             <div class="ec-header">
               <div>${escapeHtml(r.date || '')}</div>
-              <div>${escapeHtml(r.time || '')}</div>
             </div>
             <div class="ec-line">
               <span class="ec-label">Property</span>${escapeHtml(r.propertyName || '')}
@@ -1652,7 +1665,7 @@
       });
     }catch(e){
       console.error(e);
-      entriesBody.innerHTML = '<tr><td colspan="11" class="muted small">Error loading entries.</td></tr>';
+      entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Error loading entries.</td></tr>';
       if (entriesCards){
         entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
       }
