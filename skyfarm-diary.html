@@ -286,7 +286,12 @@
   <!-- Header -->
   <div id="sf-header">
     <div class="bar">
-      <a class="brand" href="skyfarm-diary.html">🌱 SkyFarm</a>
+      <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
+  <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
+       alt="SkyFarm logo"
+       style="height:28px;width:auto;border-radius:6px;">
+  <span>SkyFarm</span>
+</a>
       <nav>
         <a href="skyfarm-diary.html" aria-current="page">Diary</a>
         <a href="skyfarm-map.html">Map</a>
@@ -1581,9 +1586,13 @@
 
         const userLabel = userLabelFor(r);
 
-        const delHtml = canDeleteEntry(r)
-          ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
-          : '';
+        const editHtml = canDeleteEntry(r)
+  ? `<button type="button" class="btn small" data-edit="${r.id}">Edit</button>`
+  : '';
+
+const delHtml = canDeleteEntry(r)
+  ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
+  : '';
 
         return `<tr data-id="${r.id}">
           <td class="nowrap">${escapeHtml(r.date||'')}</td>
@@ -1595,7 +1604,7 @@
           <td>${escapeHtml(rain)}</td>
           <td>${escapeHtml(notes)}</td>
           <td>${escapeHtml(userLabel)}</td>
-          <td class="no-print">${delHtml}</td>
+          <td class="no-print">${editHtml} ${delHtml}</td>
         </tr>`;
       }).join('');
       entriesBody.innerHTML = tableHtml;
@@ -1650,6 +1659,11 @@
         entriesCards.innerHTML = cardsHtml;
       }
 
+      // Wire EDIT buttons
+const editBtns = document.querySelectorAll('#entriesBody button[data-edit], #entriesCards button[data-edit]');
+editBtns.forEach(btn=>{
+  btn.onclick = ()=> openEditModal(btn.dataset.edit);
+});
       // Wire delete buttons
       const delButtons = document.querySelectorAll('#entriesBody button[data-del], #entriesCards button[data-del]');
       delButtons.forEach(btn=>{
@@ -1675,7 +1689,69 @@
       }
     }
   }
+// ---------------------------------------------
+// EDIT ENTRY LOGIC (safe edits only)
+// ---------------------------------------------
+let CURRENT_EDIT_ID = null;
 
+const editModal = document.getElementById('editModal');
+const editNotes = document.getElementById('editNotes');
+const editWeather = document.getElementById('editWeather');
+const editActivity = document.getElementById('editActivity');
+const editCancel = document.getElementById('editCancel');
+const editSave = document.getElementById('editSave');
+
+const SAFE_ACTIVITIES = [
+  'General',
+  'Ploughing',
+  'Planting',
+  'Spraying paddocks'
+];
+
+function openEditModal(id){
+  CURRENT_EDIT_ID = id;
+
+  db.collection('diaryEntries').doc(id).get().then(snap=>{
+    if (!snap.exists) return;
+
+    const d = snap.data();
+
+    // Populate modal fields
+    editNotes.value = d.notes || '';
+    editWeather.value = d.weather || '';
+
+    // Activity dropdown
+    editActivity.innerHTML = SAFE_ACTIVITIES.map(a =>
+      `<option value="${a}"${a===d.activity?' selected':''}>${a}</option>`
+    ).join('');
+
+    // Show modal
+    editModal.style.display = 'flex';
+  });
+}
+
+editCancel.onclick = ()=> editModal.style.display = 'none';
+
+editSave.onclick = ()=>{
+  if (!CURRENT_EDIT_ID) return;
+
+  const updates = {
+    notes: editNotes.value || null,
+    weather: editWeather.value || null,
+    activity: editActivity.value,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  db.collection('diaryEntries').doc(CURRENT_EDIT_ID).update(updates)
+    .then(()=>{
+      editModal.style.display = 'none';
+      refreshEntries();
+    })
+    .catch(e=>{
+      console.error(e);
+      alert('Edit failed');
+    });
+};
   // Init after auth
   async function initAfterAuth(){
     dateInp.value = todayISO();
@@ -1764,5 +1840,27 @@
     setStatus('Ready');
   });
 </script>
+<!-- Edit Entry Modal -->
+<div id="editModal" style="
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
+  display:none;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#fff;padding:20px;border-radius:12px;width:90%;max-width:420px;">
+    <h3>Edit entry</h3>
+
+    <label>Activity (safe activities only)</label>
+    <select id="editActivity" style="width:100%;margin-bottom:10px;"></select>
+
+    <label>Notes</label>
+    <textarea id="editNotes" style="width:100%;min-height:60px;margin-bottom:10px;"></textarea>
+
+    <label>Weather</label>
+    <input id="editWeather" style="width:100%;margin-bottom:15px;" />
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button id="editCancel" class="btn">Cancel</button>
+      <button id="editSave" class="btn primary">Save</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
