@@ -287,11 +287,11 @@
   <div id="sf-header">
     <div class="bar">
       <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
-  <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-       alt="SkyFarm logo"
-       style="height:28px;width:auto;border-radius:6px;">
-  <span>SkyFarm</span>
-</a>
+        <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
+             alt="SkyFarm logo"
+             style="height:28px;width:auto;border-radius:6px;">
+        <span>SkyFarm</span>
+      </a>
       <nav>
         <a href="skyfarm-diary.html" aria-current="page">Diary</a>
         <a href="skyfarm-map.html">Map</a>
@@ -595,1023 +595,999 @@
     </div>
   </div>
 
-<script>
-  // ---------- Firebase init ----------
-  const firebaseConfig = {
-    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-    authDomain: "consentes-pastoral.firebaseapp.com",
-    projectId: "consentes-pastoral",
-    appId: "1:494858780013:web:d87497b370c82eeab06e64"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  const auth = firebase.auth();
+  <!-- Edit Entry Modal -->
+  <div id="editModal" style="
+    position:fixed;inset:0;background:rgba(0,0,0,.45);
+    display:none;align-items:center;justify-content:center;z-index:9999;">
+    <div style="background:#fff;padding:20px;border-radius:12px;width:90%;max-width:420px;">
+      <h3>Edit entry</h3>
 
-  // ---------- Helpers ----------
-  const $  = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-  const todayISO = () => new Date().toISOString().slice(0,10);
-  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  function setStatus(msg, warn){
-    const el = $('#status');
-    el.textContent = msg || '';
-    el.classList.toggle('status-warn', !!warn);
-  }
-  function setSaveMsg(msg, ms){
-    const el = $('#saveMsg');
-    el.textContent = msg || '';
-    if (ms){
-      setTimeout(()=>{ if (el.textContent===msg) el.textContent=''; }, ms);
-    }
-  }
+      <label>Activity (safe activities only)</label>
+      <select id="editActivity" style="width:100%;margin-bottom:10px;"></select>
 
-  const SUGGESTED_CLASSES = [
-    'Cows','PTIC cows','Heifers','Steers','Bulls',
-    'Cows & calves','Weaners','Calves'
-  ];
-  let ALL_PROPERTIES = [];
-  let USERS = {};  // email -> {firstName, fullName}
+      <label>Notes</label>
+      <textarea id="editNotes" style="width:100%;min-height:60px;margin-bottom:10px;"></textarea>
 
-  // Current user/role
-  let CURRENT_USER = null;
-  let CURRENT_UID = null;
-  let CURRENT_EMAIL = null;
-  let CURRENT_ROLE = 'worker';       // admin | manager | worker
-  let ALLOWED_PROPERTY_IDS = null;   // Set of propertyIds, or null = all
+      <label>Weather</label>
+      <input id="editWeather" style="width:100%;margin-bottom:15px;" />
 
-  // DOM refs
-  const propSel = $('#propSel');
-  const dateInp = $('#dateInp');
-  const timeInp = $('#timeInp');
-  const activitySel = $('#activitySel');
-  const paddockSel = $('#paddockSel');
-  const toPaddockWrap = $('#toPaddockWrap');
-  const toPaddockSel = $('#toPaddockSel');
-  const transferPropWrap = $('#transferPropWrap');
-  const transferPropSel = $('#transferPropSel');
-  const rainMmWrap = $('#rainMmWrap');
-  const gaugeWrap = $('#gaugeWrap');
-  const rainMmInp = $('#rainMmInp');
-  const gaugeSel = $('#gaugeSel');
-  const notesInp = $('#notesInp');
-  const weatherInp = $('#weatherInp');
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button id="editCancel" class="btn" type="button">Cancel</button>
+        <button id="editSave" class="btn primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
 
-  const stockRow = $('#stockRow');
-  const speciesSel = $('#speciesSel');
-  const classInp = $('#classInp');
-  const headInp = $('#headInp');
-
-  const chemRow = $('#chemRow');
-  const chemSel = $('#chemSel');
-  const chemQty = $('#chemQty');
-  const chemUnit = $('#chemUnit');
-
-  const seedRow = $('#seedRow');
-  const seedSel = $('#seedSel');
-  const seedQty = $('#seedQty');
-  const seedUnit = $('#seedUnit');
-
-  const fodderRow = $('#fodderRow');
-  const fodderSel = $('#fodderSel');
-  const fodderQty = $('#fodderQty');
-  const fodderUnit = $('#fodderUnit');
-
-  const purchaseRow = $('#purchaseRow');
-  const purchaseTypeSel = $('#purchaseTypeSel');
-  const purchaseSupplier = $('#purchaseSupplier');
-  const purchaseRef = $('#purchaseRef');
-
-  const stockContext = $('#stockContext');
-
-  const filterPropSel = $('#filterPropSel');
-  const filterYear = $('#filterYear');
-  const filterUserSel = $('#filterUserSel');
-  const sortSel = $('#sortSel');
-  const entriesBody = $('#entriesBody');
-  const entriesCards = $('#entriesCards');
-
-  const authOverlay = $('#authOverlay');
-  const authWho = $('#authWho');
-  const signOutBtn = $('#signOutBtn');
-  const dbMenuBtn = $('#dbMenuBtn');
-  const dbMenu = $('#dbMenu');
-
-  // Header DB menu
-  if (dbMenuBtn && dbMenu){
-    dbMenuBtn.onclick = e => {
-      e.stopPropagation();
-      dbMenu.classList.toggle('hidden');
+  <script>
+    // ---------- Firebase init ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+      authDomain: "consentes-pastoral.firebaseapp.com",
+      projectId: "consentes-pastoral",
+      appId: "1:494858780013:web:d87497b370c82eeab06e64"
     };
-    document.addEventListener('click', e=>{
-      if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn){
-        dbMenu.classList.add('hidden');
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ---------- Helpers ----------
+    const $  = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    function setStatus(msg, warn){
+      const el = $('#status');
+      el.textContent = msg || '';
+      el.classList.toggle('status-warn', !!warn);
+    }
+    function setSaveMsg(msg, ms){
+      const el = $('#saveMsg');
+      el.textContent = msg || '';
+      if (ms){
+        setTimeout(()=>{ if (el.textContent===msg) el.textContent=''; }, ms);
       }
-    });
-  }
-
-  // Auth
-  const siEmail = $('#siEmail');
-  const siPass = $('#siPass');
-  const signInBtn = $('#signInBtn');
-  const authMsg = $('#authMsg');
-  const closeOverlayBtn = $('#closeOverlayBtn');
-
-  function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
-
-  signInBtn.onclick = async ()=>{
-    const email = (siEmail.value || '').trim();
-    const pass  = siPass.value || '';
-    if (!email || !pass){
-      authMsg.textContent = 'Enter email and password.';
-      return;
-    }
-    authMsg.textContent = 'Signing in…';
-    try{
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      await auth.signInWithEmailAndPassword(email, pass);
-      authMsg.textContent = 'Signed in.';
-      showOverlay(false);
-    }catch(e){
-      console.error(e);
-      authMsg.textContent = e.message || 'Sign-in failed.';
-    }
-  };
-  closeOverlayBtn.onclick = ()=> showOverlay(false);
-  signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
-
-  async function loadCurrentUserRole(user){
-    CURRENT_USER = user;
-    CURRENT_UID = user?.uid || null;
-    CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
-    CURRENT_ROLE = 'worker';
-    ALLOWED_PROPERTY_IDS = null;
-
-    if (!CURRENT_EMAIL) return;
-    const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
-    try{
-      const snap = await db.collection('users').doc(docId).get();
-      if (snap.exists){
-        const data = snap.data() || {};
-        CURRENT_ROLE = data.role || 'worker';
-        const allowed = data.allowedProperties || [];
-        if (Array.isArray(allowed) && allowed.length){
-          ALLOWED_PROPERTY_IDS = new Set(allowed);
-        }
-      }
-    }catch(e){
-      console.error('loadCurrentUserRole failed', e);
-    }
-  }
-
-  auth.onAuthStateChanged(async user=>{
-    if (user){
-      authWho.textContent = user.email || 'Signed in';
-      signOutBtn.classList.remove('hidden');
-      showOverlay(false);
-      try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
-      await loadCurrentUserRole(user);
-      await initAfterAuth();
-    }else{
-      authWho.textContent = 'Not signed in';
-      signOutBtn.classList.add('hidden');
-      showOverlay(true);
-    }
-  });
-
-  // Load properties
-  async function loadProperties(){
-    const snap = await db.collection('properties').get();
-    let props = [];
-    snap.forEach(doc=>{
-      const d = doc.data() || {};
-      props.push({id:doc.id, name:d.name || '(Property)'});
-    });
-    props.sort((a,b)=>a.name.localeCompare(b.name));
-
-    if (ALLOWED_PROPERTY_IDS instanceof Set){
-      props = props.filter(p=>ALLOWED_PROPERTY_IDS.has(p.id));
     }
 
-    ALL_PROPERTIES = props;
+    const SUGGESTED_CLASSES = [
+      'Cows','PTIC cows','Heifers','Steers','Bulls',
+      'Cows & calves','Weaners','Calves'
+    ];
+    let ALL_PROPERTIES = [];
+    let USERS = {};  // email -> {firstName, fullName}
 
-    if (!props.length){
-      propSel.innerHTML = '<option value="">(no properties available)</option>';
-      filterPropSel.innerHTML = '<option value="">(none)</option>';
-      return;
-    }
+    // Current user/role
+    let CURRENT_USER = null;
+    let CURRENT_UID = null;
+    let CURRENT_EMAIL = null;
+    let CURRENT_ROLE = 'worker';       // admin | manager | worker
+    let ALLOWED_PROPERTY_IDS = null;   // Set of propertyIds, or null = all
 
-    propSel.innerHTML = props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-    filterPropSel.innerHTML = '<option value="">(All properties)</option>' +
-      props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-  }
+    // DOM refs
+    const propSel = $('#propSel');
+    const dateInp = $('#dateInp');
+    const timeInp = $('#timeInp');
+    const activitySel = $('#activitySel');
+    const paddockSel = $('#paddockSel');
+    const toPaddockWrap = $('#toPaddockWrap');
+    const toPaddockSel = $('#toPaddockSel');
+    const transferPropWrap = $('#transferPropWrap');
+    const transferPropSel = $('#transferPropSel');
+    const rainMmWrap = $('#rainMmWrap');
+    const gaugeWrap = $('#gaugeWrap');
+    const rainMmInp = $('#rainMmInp');
+    const gaugeSel = $('#gaugeSel');
+    const notesInp = $('#notesInp');
+    const weatherInp = $('#weatherInp');
 
-  function refreshTransferPropertyOptions(currentPropertyId){
-    if (!ALL_PROPERTIES.length) return;
-    const html = '<option value="">(choose)</option>' +
-      ALL_PROPERTIES
-        .filter(p => p.id !== currentPropertyId)
-        .map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`)
-        .join('');
-    transferPropSel.innerHTML = html;
-  }
+    const stockRow = $('#stockRow');
+    const speciesSel = $('#speciesSel');
+    const classInp = $('#classInp');
+    const headInp = $('#headInp');
 
-  async function loadPaddocksForProperty(propertyId){
-    paddockSel.innerHTML = '<option value="">(loading…)</option>';
-    toPaddockSel.innerHTML = '<option value="">(loading…)</option>';
-    if (!propertyId){
-      paddockSel.innerHTML = '<option value="">(choose property)</option>';
-      toPaddockSel.innerHTML = '<option value="">(choose property)</option>';
-      return;
-    }
-    const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
-    const pads = [];
-    snap.forEach(doc=>{
-      const d = doc.data() || {};
-      pads.push({id:doc.id, name:d.name || '(paddock)', isYards: !!d.isYards});
-    });
-    pads.sort((a,b)=>{
-      if (a.isYards !== b.isYards) return a.isYards ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
-    const html = '<option value="">(choose)</option>' +
-      pads.map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name)}">${escapeHtml(p.name)}${p.isYards?' — Yards':''}</option>`).join('');
-    paddockSel.innerHTML = html;
-    toPaddockSel.innerHTML = html;
-  }
+    const chemRow = $('#chemRow');
+    const chemSel = $('#chemSel');
+    const chemQty = $('#chemQty');
+    const chemUnit = $('#chemUnit');
 
-  async function loadGaugesForProperty(propertyId){
-    gaugeSel.innerHTML = '<option value="">(none)</option>';
-    if (!propertyId) return;
-    const snap = await db.collection('gauges').where('propertyId','==',propertyId).get();
-    const gs = [];
-    snap.forEach(doc=>{
-      const d = doc.data() || {};
-      if (d.active === false) return;
-      gs.push({id:doc.id, name:d.name || '(Gauge)'});
-    });
-    gs.sort((a,b)=>a.name.localeCompare(b.name));
-    gaugeSel.innerHTML = '<option value="">(none)</option>' +
-      gs.map(g=>`<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
-  }
+    const seedRow = $('#seedRow');
+    const seedSel = $('#seedSel');
+    const seedQty = $('#seedQty');
+    const seedUnit = $('#seedUnit');
 
-  async function loadChemicalsForProperty(propertyId){
-    chemSel.innerHTML = '<option value="">(none)</option>';
-    chemUnit.value = '';
-    if (!propertyId) return;
-    const snap = await db.collection('chemicals').where('propertyId','==',propertyId).get();
-    const rows = [];
-    snap.forEach(doc=>{
-      const d = doc.data() || {};
-      rows.push({id:doc.id,name:d.name||'(chemical)', unit:d.unit||'', qty:Number(d.quantity||0)});
-    });
-    rows.sort((a,b)=>a.name.localeCompare(b.name));
-    chemSel.innerHTML = '<option value="">(none)</option>' +
-      rows.map(c=>`<option value="${c.id}" data-unit="${escapeHtml(c.unit)}">${escapeHtml(c.name)} (${escapeHtml(c.unit)}) — ${c.qty}</option>`).join('');
-  }
+    const fodderRow = $('#fodderRow');
+    const fodderSel = $('#fodderSel');
+    const fodderQty = $('#fodderQty');
+    const fodderUnit = $('#fodderUnit');
 
-  async function loadSeedsForProperty(propertyId){
-    seedSel.innerHTML = '<option value="">(none)</option>';
-    seedUnit.value = '';
-    if (!propertyId) return;
-    const snap = await db.collection('seeds').where('propertyId','==',propertyId).get();
-    const rows = [];
-    snap.forEach(doc=>{
-      const d = doc.data() || {};
-      rows.push({id:doc.id,name:d.name||'(seed)', unit:d.unit||'', qty:Number(d.quantity||0)});
-    });
-    rows.sort((a,b)=>a.name.localeCompare(b.name));
-    seedSel.innerHTML = '<option value="">(none)</option>' +
-      rows.map(s=>`<option value="${s.id}" data-unit="${escapeHtml(s.unit)}">${escapeHtml(s.name)} (${escapeHtml(s.unit)}) — ${s.qty}</option>`).join('');
-  }
+    const purchaseRow = $('#purchaseRow');
+    const purchaseTypeSel = $('#purchaseTypeSel');
+    const purchaseSupplier = $('#purchaseSupplier');
+    const purchaseRef = $('#purchaseRef');
 
-  async function loadFodderForProperty(propertyId){
-    fodderSel.innerHTML = '<option value="">(none)</option>';
-    fodderUnit.value = '';
-    if (!propertyId) return;
-    const snap = await db.collection('fodder').where('propertyId','==',propertyId).get();
-    const rows = [];
-    snap.forEach(doc=>{
-      const d = doc.data() || {};
-      rows.push({id:doc.id,name:d.name||'(fodder)', unit:d.unit||'', qty:Number(d.quantity||0)});
-    });
-    rows.sort((a,b)=>a.name.localeCompare(b.name));
-    fodderSel.innerHTML = '<option value="">(none)</option>' +
-      rows.map(f=>`<option value="${f.id}" data-unit="${escapeHtml(f.unit)}">${escapeHtml(f.name)} (${escapeHtml(f.unit)}) — ${f.qty}</option>`).join('');
-  }
+    const stockContext = $('#stockContext');
 
-  async function refreshStockContext(){
-    const propertyId = propSel.value;
-    const padName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-    if (!propertyId || !padName){
-      stockContext.innerHTML = '';
-      return;
-    }
-    try{
-      const snap = await db.collection('livestock')
-        .where('propertyId','==',propertyId)
-        .get();
-      const mobs = [];
-      snap.forEach(doc=>{
-        const d = doc.data() || {};
-        if (d.location === padName){
-          mobs.push({species:d.species||'Cattle', klass:d.class||'', count:Number(d.count||0)});
+    const filterPropSel = $('#filterPropSel');
+    const filterYear = $('#filterYear');
+    const filterUserSel = $('#filterUserSel');
+    const sortSel = $('#sortSel');
+    const entriesBody = $('#entriesBody');
+    const entriesCards = $('#entriesCards');
+
+    const authOverlay = $('#authOverlay');
+    const authWho = $('#authWho');
+    const signOutBtn = $('#signOutBtn');
+    const dbMenuBtn = $('#dbMenuBtn');
+    const dbMenu = $('#dbMenu');
+
+    // Header DB menu
+    if (dbMenuBtn && dbMenu){
+      dbMenuBtn.onclick = e => {
+        e.stopPropagation();
+        dbMenu.classList.toggle('hidden');
+      };
+      document.addEventListener('click', e=>{
+        if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn){
+          dbMenu.classList.add('hidden');
         }
       });
-      if (!mobs.length){
-        stockContext.innerHTML = '<span class="muted small">No livestock recorded in this paddock.</span>';
-      }else{
-        stockContext.innerHTML = mobs.map(m=>`<span class="pill">${escapeHtml(m.species)} — ${escapeHtml(m.klass)}: ${m.count}</span>`).join('');
-      }
-    }catch(e){
-      console.error(e);
-      stockContext.innerHTML = '<span class="muted small">Error loading paddock stock.</span>';
     }
-  }
 
-  async function refreshClassOptions(){
-    const propertyId = propSel.value;
-    const padName = paddockSel.selectedOptions[0]?.dataset?.name || '';
-    const classes = new Set(SUGGESTED_CLASSES);
-    if (propertyId && padName){
+    // Auth
+    const siEmail = $('#siEmail');
+    const siPass = $('#siPass');
+    const signInBtn = $('#signInBtn');
+    const authMsg = $('#authMsg');
+    const closeOverlayBtn = $('#closeOverlayBtn');
+
+    function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+
+    signInBtn.onclick = async ()=>{
+      const email = (siEmail.value || '').trim();
+      const pass  = siPass.value || '';
+      if (!email || !pass){
+        authMsg.textContent = 'Enter email and password.';
+        return;
+      }
+      authMsg.textContent = 'Signing in…';
       try{
-        const snap = await db.collection('livestock').where('propertyId','==',propertyId).get();
-        snap.forEach(doc=>{
-          const d = doc.data() || {};
-          if (d.location === padName && d.species){
-            classes.add(String(d.class||'').trim());
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithEmailAndPassword(email, pass);
+        authMsg.textContent = 'Signed in.';
+        showOverlay(false);
+      }catch(e){
+        console.error(e);
+        authMsg.textContent = e.message || 'Sign-in failed.';
+      }
+    };
+    closeOverlayBtn.onclick = ()=> showOverlay(false);
+    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+    async function loadCurrentUserRole(user){
+      CURRENT_USER = user;
+      CURRENT_UID = user?.uid || null;
+      CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
+      CURRENT_ROLE = 'worker';
+      ALLOWED_PROPERTY_IDS = null;
+
+      if (!CURRENT_EMAIL) return;
+      const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
+      try{
+        const snap = await db.collection('users').doc(docId).get();
+        if (snap.exists){
+          const data = snap.data() || {};
+          CURRENT_ROLE = data.role || 'worker';
+          const allowed = data.allowedProperties || [];
+          if (Array.isArray(allowed) && allowed.length){
+            ALLOWED_PROPERTY_IDS = new Set(allowed);
           }
-        });
-      }catch(e){}
+        }
+      }catch(e){
+        console.error('loadCurrentUserRole failed', e);
+      }
     }
-    const list = Array.from(classes).filter(Boolean).sort((a,b)=>a.localeCompare(b));
-    $('#classOptions').innerHTML = list.map(c=>`<option value="${escapeHtml(c)}"></option>`).join('');
-  }
 
-  // Side-effect helpers
-  async function adjustChemicalStock(chemId, deltaQty){
-    if (!chemId || !deltaQty) return;
-    const ref = db.collection('chemicals').doc(chemId);
-    try{
-      await db.runTransaction(async tx=>{
-        const snap = await tx.get(ref);
-        if (!snap.exists) return;
-        const data = snap.data() || {};
-        const current = Number(data.quantity || 0);
-        const next = current + deltaQty;
-        tx.update(ref,{
-          quantity: next,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      });
-    }catch(e){
-      console.error('Chemical stock adjustment failed', e);
-    }
-  }
+    auth.onAuthStateChanged(async user=>{
+      if (user){
+        authWho.textContent = user.email || 'Signed in';
+        signOutBtn.classList.remove('hidden');
+        showOverlay(false);
+        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+        await loadCurrentUserRole(user);
+        await initAfterAuth();
+      }else{
+        authWho.textContent = 'Not signed in';
+        signOutBtn.classList.add('hidden');
+        showOverlay(true);
+      }
+    });
 
-  async function adjustSeedStock(seedId, deltaQty){
-    if (!seedId || !deltaQty) return;
-    const ref = db.collection('seeds').doc(seedId);
-    try{
-      await db.runTransaction(async tx=>{
-        const snap = await tx.get(ref);
-        if (!snap.exists) return;
-        const data = snap.data() || {};
-        const current = Number(data.quantity || 0);
-        const next = current + deltaQty;
-        tx.update(ref,{
-          quantity: next,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      });
-    }catch(e){
-      console.error('Seed stock adjustment failed', e);
-    }
-  }
-
-  async function adjustFodderStock(fodderId, deltaQty){
-    if (!fodderId || !deltaQty) return;
-    const ref = db.collection('fodder').doc(fodderId);
-    try{
-      await db.runTransaction(async tx=>{
-        const snap = await tx.get(ref);
-        if (!snap.exists) return;
-        const data = snap.data() || {};
-        const current = Number(data.quantity || 0);
-        const next = current + deltaQty;
-        tx.update(ref,{
-          quantity: next,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      });
-    }catch(e){
-      console.error('Fodder stock adjustment failed', e);
-    }
-  }
-
-  async function adjustLivestockLine(propertyId, paddockName, species, klass, deltaHead){
-    if (!propertyId || !paddockName || !species || !klass || !deltaHead) return;
-    const head = Math.round(deltaHead);
-    if (!head) return;
-
-    try{
-      const snap = await db.collection('livestock').where('propertyId','==',propertyId).get();
-      let targetDoc = null;
+    // Load properties
+    async function loadProperties(){
+      const snap = await db.collection('properties').get();
+      let props = [];
       snap.forEach(doc=>{
         const d = doc.data() || {};
-        if (d.location === paddockName &&
-            String(d.species||'').toLowerCase() === String(species).toLowerCase() &&
-            String(d.class||'') === String(klass)){
-          targetDoc = {ref:doc.ref,data:d};
-        }
+        props.push({id:doc.id, name:d.name || '(Property)'});
       });
+      props.sort((a,b)=>a.name.localeCompare(b.name));
 
-      if (targetDoc){
-        await db.runTransaction(async tx=>{
-          const s = await tx.get(targetDoc.ref);
-          if (!s.exists) return;
-          const d = s.data() || {};
-          const current = Number(d.count || 0);
-          const next = Math.max(0, current + head);
-          tx.update(targetDoc.ref,{
-            count: next,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        });
-      }else if (head > 0){
-        await db.collection('livestock').add({
-          propertyId,
-          location:paddockName,
-          species,
-          class:klass,
-          count:head,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
+      if (ALLOWED_PROPERTY_IDS instanceof Set){
+        props = props.filter(p=>ALLOWED_PROPERTY_IDS.has(p.id));
       }
-    }catch(e){
-      console.error('adjustLivestockLine failed', e);
+
+      ALL_PROPERTIES = props;
+
+      if (!props.length){
+        propSel.innerHTML = '<option value="">(no properties available)</option>';
+        filterPropSel.innerHTML = '<option value="">(none)</option>';
+        return;
+      }
+
+      propSel.innerHTML = props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+      filterPropSel.innerHTML = '<option value="">(All properties)</option>' +
+        props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     }
-  }
 
-  async function moveLivestockWithinProperty(propertyId, fromPaddock, toPaddock, species, klass, head){
-    if (!propertyId || !fromPaddock || !toPaddock || !species || !klass || !head) return;
-    await adjustLivestockLine(propertyId, fromPaddock, species, klass, -Math.abs(head));
-    await adjustLivestockLine(propertyId, toPaddock,   species, klass,  Math.abs(head));
-  }
+    function refreshTransferPropertyOptions(currentPropertyId){
+      if (!ALL_PROPERTIES.length) return;
+      const html = '<option value="">(choose)</option>' +
+        ALL_PROPERTIES
+          .filter(p => p.id !== currentPropertyId)
+          .map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`)
+          .join('');
+      transferPropSel.innerHTML = html;
+    }
 
-  async function findYardNameForProperty(propertyId){
-    if (!propertyId) return null;
-    try{
-      const snap = await db.collection('paddocks')
-        .where('propertyId','==',propertyId)
-        .get();
-      const yards = [];
+    async function loadPaddocksForProperty(propertyId){
+      paddockSel.innerHTML = '<option value="">(loading…)</option>';
+      toPaddockSel.innerHTML = '<option value="">(loading…)</option>';
+      if (!propertyId){
+        paddockSel.innerHTML = '<option value="">(choose property)</option>';
+        toPaddockSel.innerHTML = '<option value="">(choose property)</option>';
+        return;
+      }
+      const snap = await db.collection('paddocks').where('propertyId','==',propertyId).get();
+      const pads = [];
       snap.forEach(doc=>{
         const d = doc.data() || {};
-        if (d.isYards){
-          yards.push(d.name || '(unnamed)');
-        }
+        pads.push({id:doc.id, name:d.name || '(paddock)', isYards: !!d.isYards});
       });
-      yards.sort((a,b)=>String(a||'').localeCompare(String(b||'')));
-      return yards[0] || null;
-    }catch(e){
-      console.error('findYardNameForProperty failed', e);
-      return null;
-    }
-  }
-
-  async function applyRainfallMirror(gaugeId, mm, dateISO){
-    const v = Number(mm);
-    if (!gaugeId || !Number.isFinite(v) || v<=0 || !dateISO) return;
-    const docId = dateISO.slice(0,10);
-    const ref = db.collection('gauges').doc(gaugeId).collection('daily').doc(docId);
-    try{
-      await db.runTransaction(async tx=>{
-        const snap = await tx.get(ref);
-        const existing = snap.exists ? Number((snap.data()||{}).mm || 0) : 0;
-        const next = existing + v;
-        tx.set(ref,{
-          mm: next,
-          source:'diary',
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, {merge:true});
+      pads.sort((a,b)=>{
+        if (a.isYards !== b.isYards) return a.isYards ? -1 : 1;
+        return a.name.localeCompare(b.name);
       });
-    }catch(e){
-      console.error('applyRainfallMirror failed', e);
-    }
-  }
-
-  // Activity / purchase visibility
-  function updateInputRows(){
-    const act = activitySel.value;
-    const purchaseType = purchaseTypeSel.value;
-
-    const usesChemActivity =
-      act === 'Spraying paddocks' ||
-      act === 'Chemical (stock)';
-
-    const purchaseChem   = (act === 'Purchase inputs' && purchaseType === 'Chemical');
-    const purchaseSeed   = (act === 'Purchase inputs' && purchaseType === 'Seed');
-    const purchaseFodder = (act === 'Purchase inputs' && purchaseType === 'Fodder');
-    const feedingFodder  = (act === 'Feeding (fodder)');
-
-    chemRow.classList.toggle('hidden', !(usesChemActivity || purchaseChem));
-    seedRow.classList.toggle('hidden', !(act === 'Planting' || purchaseSeed));
-    fodderRow.classList.toggle('hidden', !(feedingFodder || purchaseFodder));
-  }
-
-  function onActivityChange(){
-    const act = activitySel.value;
-
-    const needsStock = (
-      act === 'Trucking (sale)' ||
-      act === 'Move stock' ||
-      act === 'Transfer stock (Out)' ||
-      act === 'Cattle purchase' ||
-      act === 'Chemical (stock)' ||
-      act === 'Mustering'
-    );
-    stockRow.classList.toggle('hidden', !needsStock);
-    stockContext.classList.toggle('hidden', !needsStock);
-
-    const needsToPaddock = (act === 'Move stock');
-    toPaddockWrap.classList.toggle('hidden', !needsToPaddock);
-
-    const needsTransferProp = (act === 'Transfer stock (Out)');
-    transferPropWrap.classList.toggle('hidden', !needsTransferProp);
-
-    const isPurchase = (act === 'Purchase inputs');
-    purchaseRow.classList.toggle('hidden', !isPurchase);
-
-    const isRain = (act === 'Rainfall');
-    rainMmWrap.classList.toggle('hidden', !isRain);
-    gaugeWrap.classList.toggle('hidden', !isRain);
-    if (!isRain){
-      rainMmInp.value = '';
-      gaugeSel.selectedIndex = 0;
+      const html = '<option value="">(choose)</option>' +
+        pads.map(p=>`<option value="${p.id}" data-name="${escapeHtml(p.name)}">${escapeHtml(p.name)}${p.isYards?' — Yards':''}</option>`).join('');
+      paddockSel.innerHTML = html;
+      toPaddockSel.innerHTML = html;
     }
 
-    updateInputRows();
-  }
-
-  paddockSel.onchange = async ()=>{
-    await refreshStockContext();
-    await refreshClassOptions();
-  };
-  speciesSel.onchange = refreshClassOptions;
-  activitySel.onchange = onActivityChange;
-  purchaseTypeSel.onchange = updateInputRows;
-  chemSel.onchange   = ()=> chemUnit.value   = chemSel.selectedOptions[0]?.dataset?.unit   || '';
-  seedSel.onchange   = ()=> seedUnit.value   = seedSel.selectedOptions[0]?.dataset?.unit   || '';
-  fodderSel.onchange = ()=> fodderUnit.value = fodderSel.selectedOptions[0]?.dataset?.unit || '';
-
-  // Build payload
-  function buildPayloadFromUI(){
-    const propertyId = propSel.value;
-    const propertyName = propSel.selectedOptions[0]?.textContent || '';
-    const date = dateInp.value || todayISO();
-    const time = timeInp.value || '00:00';
-    const activity = activitySel.value;
-
-    const padOpt = paddockSel.selectedOptions[0];
-    const paddockId = padOpt?.value || '';
-    const paddockName = padOpt?.dataset?.name || '';
-
-    const toPadOpt = toPaddockSel.selectedOptions[0];
-    const toPaddockId = toPadOpt?.value || '';
-    const toPaddockName = toPadOpt?.dataset?.name || '';
-
-    const transferPropertyId = transferPropSel.value || null;
-    const transferPropertyName = transferPropertyId
-      ? (ALL_PROPERTIES.find(p=>p.id===transferPropertyId)?.name || '')
-      : null;
-
-    const weather = weatherInp.value || '';
-
-    const species = stockRow.classList.contains('hidden') ? null : (speciesSel.value || null);
-    const klass = stockRow.classList.contains('hidden') ? null : (classInp.value || null);
-    const headVal = stockRow.classList.contains('hidden') ? null : Number(headInp.value || 0);
-    const head = headVal && Number.isFinite(headVal) && headVal>0 ? headVal : null;
-
-    const rainVal = Number(rainMmInp.value || 0);
-    const rainfallMm = (rainVal>0 && Number.isFinite(rainVal)) ? rainVal : null;
-    const gaugeId = gaugeSel.value || null;
-    const gaugeName = gaugeSel.selectedOptions[0]?.textContent || null;
-
-    const chemId = chemRow.classList.contains('hidden') ? null : (chemSel.value || null);
-    const chemQtyVal = chemRow.classList.contains('hidden') ? null : Number(chemQty.value || 0);
-    const chemQtyNum = chemQtyVal && chemQtyVal>0 ? chemQtyVal : null;
-    const chemUnitVal = chemRow.classList.contains('hidden') ? null : (chemUnit.value || null);
-
-    const seedId = seedRow.classList.contains('hidden') ? null : (seedSel.value || null);
-    const seedQtyVal = seedRow.classList.contains('hidden') ? null : Number(seedQty.value || 0);
-    const seedQtyNum = seedQtyVal && seedQtyVal>0 ? seedQtyVal : null;
-    const seedUnitVal = seedRow.classList.contains('hidden') ? null : (seedUnit.value || null);
-
-    const fodderId = fodderRow.classList.contains('hidden') ? null : (fodderSel.value || null);
-    const fodderQtyVal = fodderRow.classList.contains('hidden') ? null : Number(fodderQty.value || 0);
-    const fodderQtyNum = fodderQtyVal && fodderQtyVal>0 ? fodderQtyVal : null;
-    const fodderUnitVal = fodderRow.classList.contains('hidden') ? null : (fodderUnit.value || null);
-
-    const notes = notesInp.value || '';
-
-    const purchaseType = purchaseRow.classList.contains('hidden') ? null : (purchaseTypeSel.value || null);
-    const purchaseSupplierVal = purchaseRow.classList.contains('hidden') ? null : (purchaseSupplier.value || null);
-    const purchaseRefVal = purchaseRow.classList.contains('hidden') ? null : (purchaseRef.value || null);
-
-    const user = auth.currentUser || CURRENT_USER;
-    const createdByUid   = user?.uid || CURRENT_UID || null;
-    const createdByEmail = (user?.email || CURRENT_EMAIL || null);
-
-    const payload = {
-      date,
-      time,
-      propertyId,
-      propertyName,
-      activity,
-      paddockId: paddockId || null,
-      paddock: paddockName || null,
-      toPaddockId: toPaddockId || null,
-      toPaddock: toPaddockName || null,
-      transferPropertyId,
-      transferPropertyName,
-      notes: notes || null,
-      weather: weather || null,
-
-      species: species || null,
-      livestockClass: klass || null,
-      headCount: head || null,
-
-      chemicalId: chemId || null,
-      chemicalQty: chemQtyNum || null,
-      chemicalUnit: chemUnitVal || null,
-
-      seedId: seedId || null,
-      seedQty: seedQtyNum || null,
-      seedUnit: seedUnitVal || null,
-
-      fodderId: fodderId || null,
-      fodderQty: fodderQtyNum || null,
-      fodderUnit: fodderUnitVal || null,
-
-      rainfallMm,
-      gaugeId,
-      gaugeName,
-
-      purchaseType,
-      purchaseSupplier: purchaseSupplierVal || null,
-      purchaseRef: purchaseRefVal || null,
-
-      createdByUid,
-      createdByEmail,
-      createdByRole: CURRENT_ROLE || null,
-
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    return {
-      payload,
-      propertyId,
-      activity,
-      paddockName,
-      toPaddockName,
-      transferPropertyId,
-      species,
-      klass,
-      head,
-      chemId,
-      chemQty:chemQtyNum,
-      seedId,
-      seedQty:seedQtyNum,
-      fodderId,
-      fodderQty:fodderQtyNum,
-      gaugeId,
-      rainfallMm
-    };
-  }
-
-  // Save
-  async function saveEntry(){
-    if (!propSel.value){
-      alert('Choose a property.');
-      return;
-    }
-    const {
-      payload,
-      propertyId,
-      activity,
-      paddockName,
-      toPaddockName,
-      transferPropertyId,
-      species,
-      klass,
-      head,
-      chemId,
-      chemQty,
-      seedId,
-      seedQty,
-      fodderId,
-      fodderQty,
-      gaugeId,
-      rainfallMm
-    } = buildPayloadFromUI();
-
-    if (activity === 'Move stock'){
-      if (!paddockName || !toPaddockName) {
-        alert('For Move cattle choose FROM and TO paddocks.');
-        return;
-      }
-      if (!klass || !head){
-        alert('For Move cattle set Class and Head.');
-        return;
-      }
-    }
-    if (activity === 'Trucking (sale)' || activity === 'Cattle purchase'){
-      if (!paddockName || !klass || !head){
-        alert('For stock movements set paddock, class and head.');
-        return;
-      }
-    }
-    if (activity === 'Transfer stock (Out)'){
-      if (!paddockName || !transferPropertyId || !klass || !head){
-        alert('For transfer set FROM paddock, TO property, class and head.');
-        return;
-      }
-    }
-    if (activity === 'Rainfall'){
-      if (!gaugeId || !rainfallMm){
-        alert('For Rainfall choose a gauge and enter mm.');
-        return;
-      }
-    }
-    if (activity === 'Planting' && (!seedId || !seedQty)){
-      alert('For Planting choose a seed and quantity.');
-      return;
-    }
-    if (activity === 'Feeding (fodder)' && (!fodderId || !fodderQty)){
-      alert('For Feeding choose a fodder and quantity.');
-      return;
-    }
-    if (activity === 'Purchase inputs' && payload.purchaseType === 'Fodder' && (!fodderId || !fodderQty)){
-      alert('For Fodder purchases choose a fodder item and quantity.');
-      return;
+    async function loadGaugesForProperty(propertyId){
+      gaugeSel.innerHTML = '<option value="">(none)</option>';
+      if (!propertyId) return;
+      const snap = await db.collection('gauges').where('propertyId','==',propertyId).get();
+      const gs = [];
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        if (d.active === false) return;
+        gs.push({id:doc.id, name:d.name || '(Gauge)'});
+      });
+      gs.sort((a,b)=>a.name.localeCompare(b.name));
+      gaugeSel.innerHTML = '<option value="">(none)</option>' +
+        gs.map(g=>`<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
     }
 
-    try{
-      setStatus('Saving…');
-      await db.collection('diaryEntries').add(payload);
-
-      const sideEffects = [];
-
-      // Chemical use / purchases
-      if (chemId && chemQty){
-        const chemDelta = (activity === 'Purchase inputs' && payload.purchaseType === 'Chemical') ? chemQty : -chemQty;
-        sideEffects.push(adjustChemicalStock(chemId, chemDelta));
-      }
-
-      // Seed use / purchases
-      if (activity === 'Planting' && seedId && seedQty){
-        sideEffects.push(adjustSeedStock(seedId, -seedQty));
-      }else if (activity === 'Purchase inputs' && payload.purchaseType === 'Seed' && seedId && seedQty){
-        sideEffects.push(adjustSeedStock(seedId, +seedQty));
-      }
-
-      // Fodder use / purchases
-      if (activity === 'Feeding (fodder)' && fodderId && fodderQty){
-        sideEffects.push(adjustFodderStock(fodderId, -fodderQty));
-      }else if (activity === 'Purchase inputs' && payload.purchaseType === 'Fodder' && fodderId && fodderQty){
-        sideEffects.push(adjustFodderStock(fodderId, +fodderQty));
-      }
-
-      // Livestock movements
-      if (activity === 'Trucking (sale)' && paddockName && species && klass && head){
-        sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
-      }else if (activity === 'Cattle purchase' && paddockName && species && klass && head){
-        sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, +head));
-      }else if (activity === 'Move stock' && paddockName && toPaddockName && species && klass && head){
-        sideEffects.push(moveLivestockWithinProperty(propertyId, paddockName, toPaddockName, species, klass, head));
-      }else if (activity === 'Transfer stock (Out)' && paddockName && transferPropertyId && species && klass && head){
-        // subtract from current paddock
-        sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
-        // add to yards on destination property
-        sideEffects.push((async ()=>{
-          const yardName = await findYardNameForProperty(transferPropertyId);
-          if (!yardName){
-            console.warn('No yard paddock found on destination property for transfer', {transferPropertyId});
-            return;
-          }
-          await adjustLivestockLine(transferPropertyId, yardName, species, klass, +head);
-        })());
-      }
-      // Mustering: no stock change
-
-      // Rainfall mirror
-      if (activity === 'Rainfall' && gaugeId && rainfallMm){
-        sideEffects.push(applyRainfallMirror(gaugeId, rainfallMm, payload.date));
-      }
-
-      await Promise.all(sideEffects);
-
-      setStatus('Saved');
-      setSaveMsg('Saved.', 1500);
-      await refreshEntries();
-    }catch(e){
-      console.error(e);
-      setStatus('Save failed', true);
-      setSaveMsg('Save failed.', 3000);
-    }
-  }
-
-  // Recent entries (table + cards)
-  async function refreshEntries(){
-    entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Loading…</td></tr>';
-    if (entriesCards){
-      entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
-    }
-    try{
-      const snap = await db.collection('diaryEntries')
-        .orderBy('date','desc')
-        .limit(200)
-        .get();
+    async function loadChemicalsForProperty(propertyId){
+      chemSel.innerHTML = '<option value="">(none)</option>';
+      chemUnit.value = '';
+      if (!propertyId) return;
+      const snap = await db.collection('chemicals').where('propertyId','==',propertyId).get();
       const rows = [];
       snap.forEach(doc=>{
-        rows.push({id:doc.id, ...(doc.data()||{})});
+        const d = doc.data() || {};
+        rows.push({id:doc.id,name:d.name||'(chemical)', unit:d.unit||'', qty:Number(d.quantity||0)});
       });
+      rows.sort((a,b)=>a.name.localeCompare(b.name));
+      chemSel.innerHTML = '<option value="">(none)</option>' +
+        rows.map(c=>`<option value="${c.id}" data-unit="${escapeHtml(c.unit)}">${escapeHtml(c.name)} (${escapeHtml(c.unit)}) — ${c.qty}</option>`).join('');
+    }
 
-            // Build user filter options (use full name from users & roles)
-      const existingSelection = filterUserSel.value || '';
-      const userSet = new Set();
-      rows.forEach(r=>{
-        if (r.createdByEmail){
-          const email = String(r.createdByEmail).toLowerCase();
-          const u = USERS[email];
-          const label = (u && (u.fullName || u.firstName))
-            ? (u.fullName || u.firstName)
-            : email.split('@')[0];
-          if (label) userSet.add(label);
-        }
+    async function loadSeedsForProperty(propertyId){
+      seedSel.innerHTML = '<option value="">(none)</option>';
+      seedUnit.value = '';
+      if (!propertyId) return;
+      const snap = await db.collection('seeds').where('propertyId','==',propertyId).get();
+      const rows = [];
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        rows.push({id:doc.id,name:d.name||'(seed)', unit:d.unit||'', qty:Number(d.quantity||0)});
       });
-      const userList = Array.from(userSet).sort((a,b)=>a.localeCompare(b));
+      rows.sort((a,b)=>a.name.localeCompare(b.name));
+      seedSel.innerHTML = '<option value="">(none)</option>' +
+        rows.map(s=>`<option value="${s.id}" data-unit="${escapeHtml(s.unit)}">${escapeHtml(s.name)} (${escapeHtml(s.unit)}) — ${s.qty}</option>`).join('');
+    }
 
-      const isWorker = CURRENT_ROLE === 'worker';
-      if (isWorker){
-        // worker can't filter by user; they only see themselves
-        filterUserSel.parentElement.style.display = 'none';
-      }else{
-        filterUserSel.parentElement.style.display = '';
-        let optionsHtml = '<option value="">All users</option>';
-        optionsHtml += userList.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
-        filterUserSel.innerHTML = optionsHtml;
-        if (existingSelection && userList.includes(existingSelection)){
-          filterUserSel.value = existingSelection;
+    async function loadFodderForProperty(propertyId){
+      fodderSel.innerHTML = '<option value="">(none)</option>';
+      fodderUnit.value = '';
+      if (!propertyId) return;
+      const snap = await db.collection('fodder').where('propertyId','==',propertyId).get();
+      const rows = [];
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        rows.push({id:doc.id,name:d.name||'(fodder)', unit:d.unit||'', qty:Number(d.quantity||0)});
+      });
+      rows.sort((a,b)=>a.name.localeCompare(b.name));
+      fodderSel.innerHTML = '<option value="">(none)</option>' +
+        rows.map(f=>`<option value="${f.id}" data-unit="${escapeHtml(f.unit)}">${escapeHtml(f.name)} (${escapeHtml(f.unit)}) — ${f.qty}</option>`).join('');
+    }
+
+    async function refreshStockContext(){
+      const propertyId = propSel.value;
+      const padName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+      if (!propertyId || !padName){
+        stockContext.innerHTML = '';
+        return;
+      }
+      try{
+        const snap = await db.collection('livestock')
+          .where('propertyId','==',propertyId)
+          .get();
+        const mobs = [];
+        snap.forEach(doc=>{
+          const d = doc.data() || {};
+          if (d.location === padName){
+            mobs.push({species:d.species||'Cattle', klass:d.class||'', count:Number(d.count||0)});
+          }
+        });
+        if (!mobs.length){
+          stockContext.innerHTML = '<span class="muted small">No livestock recorded in this paddock.</span>';
+        }else{
+          stockContext.innerHTML = mobs.map(m=>`<span class="pill">${escapeHtml(m.species)} — ${escapeHtml(m.klass)}: ${m.count}</span>`).join('');
         }
+      }catch(e){
+        console.error(e);
+        stockContext.innerHTML = '<span class="muted small">Error loading paddock stock.</span>';
+      }
+    }
+
+    async function refreshClassOptions(){
+      const propertyId = propSel.value;
+      const padName = paddockSel.selectedOptions[0]?.dataset?.name || '';
+      const classes = new Set(SUGGESTED_CLASSES);
+      if (propertyId && padName){
+        try{
+          const snap = await db.collection('livestock').where('propertyId','==',propertyId).get();
+          snap.forEach(doc=>{
+            const d = doc.data() || {};
+            if (d.location === padName && d.species){
+              classes.add(String(d.class||'').trim());
+            }
+          });
+        }catch(e){}
+      }
+      const list = Array.from(classes).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+      $('#classOptions').innerHTML = list.map(c=>`<option value="${escapeHtml(c)}"></option>`).join('');
+    }
+
+    // Side-effect helpers
+    async function adjustChemicalStock(chemId, deltaQty){
+      if (!chemId || !deltaQty) return;
+      const ref = db.collection('chemicals').doc(chemId);
+      try{
+        await db.runTransaction(async tx=>{
+          const snap = await tx.get(ref);
+          if (!snap.exists) return;
+          const data = snap.data() || {};
+          const current = Number(data.quantity || 0);
+          const next = current + deltaQty;
+          tx.update(ref,{
+            quantity: next,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+      }catch(e){
+        console.error('Chemical stock adjustment failed', e);
+      }
+    }
+
+    async function adjustSeedStock(seedId, deltaQty){
+      if (!seedId || !deltaQty) return;
+      const ref = db.collection('seeds').doc(seedId);
+      try{
+        await db.runTransaction(async tx=>{
+          const snap = await tx.get(ref);
+          if (!snap.exists) return;
+          const data = snap.data() || {};
+          const current = Number(data.quantity || 0);
+          const next = current + deltaQty;
+          tx.update(ref,{
+            quantity: next,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+      }catch(e){
+        console.error('Seed stock adjustment failed', e);
+      }
+    }
+
+    async function adjustFodderStock(fodderId, deltaQty){
+      if (!fodderId || !deltaQty) return;
+      const ref = db.collection('fodder').doc(fodderId);
+      try{
+        await db.runTransaction(async tx=>{
+          const snap = await tx.get(ref);
+          if (!snap.exists) return;
+          const data = snap.data() || {};
+          const current = Number(data.quantity || 0);
+          const next = current + deltaQty;
+          tx.update(ref,{
+            quantity: next,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+      }catch(e){
+        console.error('Fodder stock adjustment failed', e);
+      }
+    }
+
+    async function adjustLivestockLine(propertyId, paddockName, species, klass, deltaHead){
+      if (!propertyId || !paddockName || !species || !klass || !deltaHead) return;
+      const head = Math.round(deltaHead);
+      if (!head) return;
+
+      try{
+        const snap = await db.collection('livestock').where('propertyId','==',propertyId).get();
+        let targetDoc = null;
+        snap.forEach(doc=>{
+          const d = doc.data() || {};
+          if (d.location === paddockName &&
+              String(d.species||'').toLowerCase() === String(species).toLowerCase() &&
+              String(d.class||'') === String(klass)){
+            targetDoc = {ref:doc.ref,data:d};
+          }
+        });
+
+        if (targetDoc){
+          await db.runTransaction(async tx=>{
+            const s = await tx.get(targetDoc.ref);
+            if (!s.exists) return;
+            const d = s.data() || {};
+            const current = Number(d.count || 0);
+            const next = Math.max(0, current + head);
+            tx.update(targetDoc.ref,{
+              count: next,
+              lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          });
+        }else if (head > 0){
+          await db.collection('livestock').add({
+            propertyId,
+            location:paddockName,
+            species,
+            class:klass,
+            count:head,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      }catch(e){
+        console.error('adjustLivestockLine failed', e);
+      }
+    }
+
+    async function moveLivestockWithinProperty(propertyId, fromPaddock, toPaddock, species, klass, head){
+      if (!propertyId || !fromPaddock || !toPaddock || !species || !klass || !head) return;
+      await adjustLivestockLine(propertyId, fromPaddock, species, klass, -Math.abs(head));
+      await adjustLivestockLine(propertyId, toPaddock,   species, klass,  Math.abs(head));
+    }
+
+    async function findYardNameForProperty(propertyId){
+      if (!propertyId) return null;
+      try{
+        const snap = await db.collection('paddocks')
+          .where('propertyId','==',propertyId)
+          .get();
+        const yards = [];
+        snap.forEach(doc=>{
+          const d = doc.data() || {};
+          if (d.isYards){
+            yards.push(d.name || '(unnamed)');
+          }
+        });
+        yards.sort((a,b)=>String(a||'').localeCompare(String(b||'')));
+        return yards[0] || null;
+      }catch(e){
+        console.error('findYardNameForProperty failed', e);
+        return null;
+      }
+    }
+
+    async function applyRainfallMirror(gaugeId, mm, dateISO){
+      const v = Number(mm);
+      if (!gaugeId || !Number.isFinite(v) || v<=0 || !dateISO) return;
+      const docId = dateISO.slice(0,10);
+      const ref = db.collection('gauges').doc(gaugeId).collection('daily').doc(docId);
+      try{
+        await db.runTransaction(async tx=>{
+          const snap = await tx.get(ref);
+          const existing = snap.exists ? Number((snap.data()||{}).mm || 0) : 0;
+          const next = existing + v;
+          tx.set(ref,{
+            mm: next,
+            source:'diary',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, {merge:true});
+        });
+      }catch(e){
+        console.error('applyRainfallMirror failed', e);
+      }
+    }
+
+    // Activity / purchase visibility
+    function updateInputRows(){
+      const act = activitySel.value;
+      const purchaseType = purchaseTypeSel.value;
+
+      const usesChemActivity =
+        act === 'Spraying paddocks' ||
+        act === 'Chemical (stock)';
+
+      const purchaseChem   = (act === 'Purchase inputs' && purchaseType === 'Chemical');
+      const purchaseSeed   = (act === 'Purchase inputs' && purchaseType === 'Seed');
+      const purchaseFodder = (act === 'Purchase inputs' && purchaseType === 'Fodder');
+      const feedingFodder  = (act === 'Feeding (fodder)');
+
+      chemRow.classList.toggle('hidden', !(usesChemActivity || purchaseChem));
+      seedRow.classList.toggle('hidden', !(act === 'Planting' || purchaseSeed));
+      fodderRow.classList.toggle('hidden', !(feedingFodder || purchaseFodder));
+    }
+
+    function onActivityChange(){
+      const act = activitySel.value;
+
+      const needsStock = (
+        act === 'Trucking (sale)' ||
+        act === 'Move stock' ||
+        act === 'Transfer stock (Out)' ||
+        act === 'Cattle purchase' ||
+        act === 'Chemical (stock)' ||
+        act === 'Mustering'
+      );
+      stockRow.classList.toggle('hidden', !needsStock);
+      stockContext.classList.toggle('hidden', !needsStock);
+
+      const needsToPaddock = (act === 'Move stock');
+      toPaddockWrap.classList.toggle('hidden', !needsToPaddock);
+
+      const needsTransferProp = (act === 'Transfer stock (Out)');
+      transferPropWrap.classList.toggle('hidden', !needsTransferProp);
+
+      const isPurchase = (act === 'Purchase inputs');
+      purchaseRow.classList.toggle('hidden', !isPurchase);
+
+      const isRain = (act === 'Rainfall');
+      rainMmWrap.classList.toggle('hidden', !isRain);
+      gaugeWrap.classList.toggle('hidden', !isRain);
+      if (!isRain){
+        rainMmInp.value = '';
+        gaugeSel.selectedIndex = 0;
       }
 
-      const yearFilter = parseInt(filterYear.value || '', 10) || null;
-      const propFilter = filterPropSel.value || '';
-      const selectedUser = (filterUserSel.value || '').trim();
+      updateInputRows();
+    }
 
-      const workerUid = CURRENT_UID;
-      const workerEmail = (CURRENT_EMAIL || '').toLowerCase();
+    paddockSel.onchange = async ()=>{
+      await refreshStockContext();
+      await refreshClassOptions();
+    };
+    speciesSel.onchange = refreshClassOptions;
+    activitySel.onchange = onActivityChange;
+    purchaseTypeSel.onchange = updateInputRows;
+    chemSel.onchange   = ()=> chemUnit.value   = chemSel.selectedOptions[0]?.dataset?.unit   || '';
+    seedSel.onchange   = ()=> seedUnit.value   = seedSel.selectedOptions[0]?.dataset?.unit   || '';
+    fodderSel.onchange = ()=> fodderUnit.value = fodderSel.selectedOptions[0]?.dataset?.unit || '';
 
-      let filtered = rows.filter(r=>{
-        if (yearFilter){
-          if (!r.date || String(r.date).slice(0,4) !== String(yearFilter)) return false;
+    // Build payload
+    function buildPayloadFromUI(){
+      const propertyId = propSel.value;
+      const propertyName = propSel.selectedOptions[0]?.textContent || '';
+      const date = dateInp.value || todayISO();
+      const time = timeInp.value || '00:00';
+      const activity = activitySel.value;
+
+      const padOpt = paddockSel.selectedOptions[0];
+      const paddockId = padOpt?.value || '';
+      const paddockName = padOpt?.dataset?.name || '';
+
+      const toPadOpt = toPaddockSel.selectedOptions[0];
+      const toPaddockId = toPadOpt?.value || '';
+      const toPaddockName = toPadOpt?.dataset?.name || '';
+
+      const transferPropertyId = transferPropSel.value || null;
+      const transferPropertyName = transferPropertyId
+        ? (ALL_PROPERTIES.find(p=>p.id===transferPropertyId)?.name || '')
+        : null;
+
+      const weather = weatherInp.value || '';
+
+      const species = stockRow.classList.contains('hidden') ? null : (speciesSel.value || null);
+      const klass = stockRow.classList.contains('hidden') ? null : (classInp.value || null);
+      const headVal = stockRow.classList.contains('hidden') ? null : Number(headInp.value || 0);
+      const head = headVal && Number.isFinite(headVal) && headVal>0 ? headVal : null;
+
+      const rainVal = Number(rainMmInp.value || 0);
+      const rainfallMm = (rainVal>0 && Number.isFinite(rainVal)) ? rainVal : null;
+      const gaugeId = gaugeSel.value || null;
+      const gaugeName = gaugeSel.selectedOptions[0]?.textContent || null;
+
+      const chemId = chemRow.classList.contains('hidden') ? null : (chemSel.value || null);
+      const chemQtyVal = chemRow.classList.contains('hidden') ? null : Number(chemQty.value || 0);
+      const chemQtyNum = chemQtyVal && chemQtyVal>0 ? chemQtyVal : null;
+      const chemUnitVal = chemRow.classList.contains('hidden') ? null : (chemUnit.value || null);
+
+      const seedId = seedRow.classList.contains('hidden') ? null : (seedSel.value || null);
+      const seedQtyVal = seedRow.classList.contains('hidden') ? null : Number(seedQty.value || 0);
+      const seedQtyNum = seedQtyVal && seedQtyVal>0 ? seedQtyVal : null;
+      const seedUnitVal = seedRow.classList.contains('hidden') ? null : (seedUnit.value || null);
+
+      const fodderId = fodderRow.classList.contains('hidden') ? null : (fodderSel.value || null);
+      const fodderQtyVal = fodderRow.classList.contains('hidden') ? null : Number(fodderQty.value || 0);
+      const fodderQtyNum = fodderQtyVal && fodderQtyVal>0 ? fodderQtyVal : null;
+      const fodderUnitVal = fodderRow.classList.contains('hidden') ? null : (fodderUnit.value || null);
+
+      const notes = notesInp.value || '';
+
+      const purchaseType = purchaseRow.classList.contains('hidden') ? null : (purchaseTypeSel.value || null);
+      const purchaseSupplierVal = purchaseRow.classList.contains('hidden') ? null : (purchaseSupplier.value || null);
+      const purchaseRefVal = purchaseRow.classList.contains('hidden') ? null : (purchaseRef.value || null);
+
+      const user = auth.currentUser || CURRENT_USER;
+      const createdByUid   = user?.uid || CURRENT_UID || null;
+      const createdByEmail = (user?.email || CURRENT_EMAIL || null);
+
+      const payload = {
+        date,
+        time,
+        propertyId,
+        propertyName,
+        activity,
+        paddockId: paddockId || null,
+        paddock: paddockName || null,
+        toPaddockId: toPaddockId || null,
+        toPaddock: toPaddockName || null,
+        transferPropertyId,
+        transferPropertyName,
+        notes: notes || null,
+        weather: weather || null,
+
+        species: species || null,
+        livestockClass: klass || null,
+        headCount: head || null,
+
+        chemicalId: chemId || null,
+        chemicalQty: chemQtyNum || null,
+        chemicalUnit: chemUnitVal || null,
+
+        seedId: seedId || null,
+        seedQty: seedQtyNum || null,
+        seedUnit: seedUnitVal || null,
+
+        fodderId: fodderId || null,
+        fodderQty: fodderQtyNum || null,
+        fodderUnit: fodderUnitVal || null,
+
+        rainfallMm,
+        gaugeId,
+        gaugeName,
+
+        purchaseType,
+        purchaseSupplier: purchaseSupplierVal || null,
+        purchaseRef: purchaseRefVal || null,
+
+        createdByUid,
+        createdByEmail,
+        createdByRole: CURRENT_ROLE || null,
+
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      return {
+        payload,
+        propertyId,
+        activity,
+        paddockName,
+        toPaddockName,
+        transferPropertyId,
+        species,
+        klass,
+        head,
+        chemId,
+        chemQty:chemQtyNum,
+        seedId,
+        seedQty:seedQtyNum,
+        fodderId,
+        fodderQty:fodderQtyNum,
+        gaugeId,
+        rainfallMm
+      };
+    }
+
+    // Save
+    async function saveEntry(){
+      if (!propSel.value){
+        alert('Choose a property.');
+        return;
+      }
+      const {
+        payload,
+        propertyId,
+        activity,
+        paddockName,
+        toPaddockName,
+        transferPropertyId,
+        species,
+        klass,
+        head,
+        chemId,
+        chemQty,
+        seedId,
+        seedQty,
+        fodderId,
+        fodderQty,
+        gaugeId,
+        rainfallMm
+      } = buildPayloadFromUI();
+
+      if (activity === 'Move stock'){
+        if (!paddockName || !toPaddockName) {
+          alert('For Move cattle choose FROM and TO paddocks.');
+          return;
         }
-        if (propFilter && r.propertyId !== propFilter) return false;
-
-        // role-based visibility
-        if (isWorker){
-          const uidMatch = r.createdByUid && workerUid && r.createdByUid === workerUid;
-          const emailMatch = r.createdByEmail && workerEmail &&
-            String(r.createdByEmail).toLowerCase() === workerEmail;
-          if (!(uidMatch || emailMatch)) return false;
+        if (!klass || !head){
+          alert('For Move cattle set Class and Head.');
+          return;
         }
-
-        if (!isWorker && selectedUser){
-          const email = (r.createdByEmail || '').toLowerCase();
-          const u = USERS[email];
-          const label = u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
-          if (label !== selectedUser) return false;
+      }
+      if (activity === 'Trucking (sale)' || activity === 'Cattle purchase'){
+        if (!paddockName || !klass || !head){
+          alert('For stock movements set paddock, class and head.');
+          return;
         }
-
-        return true;
-      });
-
-      // Sort
-      const sortMode = sortSel.value || 'dateDesc';
-      filtered.sort((a,b)=>{
-        const dateA = String(a.date || '');
-        const dateB = String(b.date || '');
-        const timeA = String(a.time || '');
-        const timeB = String(b.time || '');
-
-        const getUserName = (r)=>{
-          const email = (r.createdByEmail || '').toLowerCase();
-          const u = USERS[email];
-          return u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
-        };
-        const userA = getUserName(a);
-        const userB = getUserName(b);
-
-        if (sortMode === 'dateAsc'){
-          if (dateA !== dateB) return dateA.localeCompare(dateB);
-          return timeA.localeCompare(timeB);
+      }
+      if (activity === 'Transfer stock (Out)'){
+        if (!paddockName || !transferPropertyId || !klass || !head){
+          alert('For transfer set FROM paddock, TO property, class and head.');
+          return;
         }
-        if (sortMode === 'dateDesc'){
-          if (dateA !== dateB) return dateB.localeCompare(dateA);
-          return timeB.localeCompare(timeA);
+      }
+      if (activity === 'Rainfall'){
+        if (!gaugeId || !rainfallMm){
+          alert('For Rainfall choose a gauge and enter mm.');
+          return;
         }
-        if (sortMode === 'userAsc'){
-          const cmp = userA.localeCompare(userB);
-          if (cmp !== 0) return cmp;
-          if (dateA !== dateB) return dateB.localeCompare(dateA);
-          return timeB.localeCompare(timeA);
-        }
-        if (sortMode === 'userDesc'){
-          const cmp = userB.localeCompare(userA);
-          if (cmp !== 0) return cmp;
-          if (dateA !== dateB) return dateB.localeCompare(dateA);
-          return timeB.localeCompare(timeA);
-        }
-        return 0;
-      });
-
-      if (!filtered.length){
-        entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
-        if (entriesCards){
-          entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
-        }
+      }
+      if (activity === 'Planting' && (!seedId || !seedQty)){
+        alert('For Planting choose a seed and quantity.');
+        return;
+      }
+      if (activity === 'Feeding (fodder)' && (!fodderId || !fodderQty)){
+        alert('For Feeding choose a fodder and quantity.');
+        return;
+      }
+      if (activity === 'Purchase inputs' && payload.purchaseType === 'Fodder' && (!fodderId || !fodderQty)){
+        alert('For Fodder purchases choose a fodder item and quantity.');
         return;
       }
 
-      const canDeleteEntry = (r)=>{
-        if (CURRENT_ROLE !== 'worker') return true;
-        const uidMatch = r.createdByUid && CURRENT_UID && r.createdByUid === CURRENT_UID;
-        const emailMatch = r.createdByEmail && CURRENT_EMAIL &&
-          String(r.createdByEmail).toLowerCase() === CURRENT_EMAIL;
-        return uidMatch || emailMatch;
-      };
+      try{
+        setStatus('Saving…');
+        await db.collection('diaryEntries').add(payload);
 
-      const userLabelFor = r=>{
-        if (!r.createdByEmail) return '';
-        const email = String(r.createdByEmail).toLowerCase();
-        const u = USERS[email];
-        if (u && (u.fullName || u.firstName)){
-          return u.fullName || u.firstName;
-        }
-        return email.split('@')[0];
-      };
+        const sideEffects = [];
 
-      // Build table rows (no time column)
-      const tableHtml = filtered.map(r=>{
-        const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
-
-        let inputs = '';
-        if (r.purchaseType){
-          inputs = r.purchaseType;
-          const bits = [];
-          if (r.chemicalId && r.chemicalQty) bits.push(`${r.chemicalQty} ${r.chemicalUnit||''} chem`);
-          if (r.seedId && r.seedQty)       bits.push(`${r.seedQty} ${r.seedUnit||''} seed`);
-          if (r.fodderId && r.fodderQty)   bits.push(`${r.fodderQty} ${r.fodderUnit||''} fodder`);
-          if (bits.length) inputs += ' (' + bits.join('; ') + ')';
-        }else{
-          if (r.chemicalId && r.chemicalQty) inputs = `${r.chemicalQty} ${r.chemicalUnit||''} chem`;
-          else if (r.seedId && r.seedQty)    inputs = `${r.seedQty} ${r.seedUnit||''} seed`;
-          else if (r.fodderId && r.fodderQty)inputs = `${r.fodderQty} ${r.fodderUnit||''} fodder`;
+        // Chemical use / purchases
+        if (chemId && chemQty){
+          const chemDelta = (activity === 'Purchase inputs' && payload.purchaseType === 'Chemical') ? chemQty : -chemQty;
+          sideEffects.push(adjustChemicalStock(chemId, chemDelta));
         }
 
-        const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
-        const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
+        // Seed use / purchases
+        if (activity === 'Planting' && seedId && seedQty){
+          sideEffects.push(adjustSeedStock(seedId, -seedQty));
+        }else if (activity === 'Purchase inputs' && payload.purchaseType === 'Seed' && seedId && seedQty){
+          sideEffects.push(adjustSeedStock(seedId, +seedQty));
+        }
 
-        const userLabel = userLabelFor(r);
+        // Fodder use / purchases
+        if (activity === 'Feeding (fodder)' && fodderId && fodderQty){
+          sideEffects.push(adjustFodderStock(fodderId, -fodderQty));
+        }else if (activity === 'Purchase inputs' && payload.purchaseType === 'Fodder' && fodderId && fodderQty){
+          sideEffects.push(adjustFodderStock(fodderId, +fodderQty));
+        }
 
-        const editHtml = canDeleteEntry(r)
-  ? `<button type="button" class="btn small" data-edit="${r.id}">Edit</button>`
-  : '';
+        // Livestock movements
+        if (activity === 'Trucking (sale)' && paddockName && species && klass && head){
+          sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
+        }else if (activity === 'Cattle purchase' && paddockName && species && klass && head){
+          sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, +head));
+        }else if (activity === 'Move stock' && paddockName && toPaddockName && species && klass && head){
+          sideEffects.push(moveLivestockWithinProperty(propertyId, paddockName, toPaddockName, species, klass, head));
+        }else if (activity === 'Transfer stock (Out)' && paddockName && transferPropertyId && species && klass && head){
+          // subtract from current paddock
+          sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
+          // add to yards on destination property
+          sideEffects.push((async ()=>{
+            const yardName = await findYardNameForProperty(transferPropertyId);
+            if (!yardName){
+              console.warn('No yard paddock found on destination property for transfer', {transferPropertyId});
+              return;
+            }
+            await adjustLivestockLine(transferPropertyId, yardName, species, klass, +head);
+          })());
+        }
+        // Mustering: no stock change
 
-const delHtml = canDeleteEntry(r)
-  ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
-  : '';
+        // Rainfall mirror
+        if (activity === 'Rainfall' && gaugeId && rainfallMm){
+          sideEffects.push(applyRainfallMirror(gaugeId, rainfallMm, payload.date));
+        }
 
-        return `<tr data-id="${r.id}">
-          <td class="nowrap">${escapeHtml(r.date||'')}</td>
-          <td>${escapeHtml(r.propertyName||'')}</td>
-          <td>${escapeHtml(r.paddock||'')}</td>
-          <td>${escapeHtml(r.activity||'')}</td>
-          <td>${escapeHtml(stock)}</td>
-          <td>${escapeHtml(inputs)}</td>
-          <td>${escapeHtml(rain)}</td>
-          <td>${escapeHtml(notes)}</td>
-          <td>${escapeHtml(userLabel)}</td>
-          <td class="no-print">${editHtml} ${delHtml}</td>
-        </tr>`;
-      }).join('');
-      entriesBody.innerHTML = tableHtml;
+        await Promise.all(sideEffects);
 
-      // Build mobile cards (no time)
+        setStatus('Saved');
+        setSaveMsg('Saved.', 1500);
+        await refreshEntries();
+      }catch(e){
+        console.error(e);
+        setStatus('Save failed', true);
+        setSaveMsg('Save failed.', 3000);
+      }
+    }
+
+    // Recent entries (table + cards)
+    async function refreshEntries(){
+      entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Loading…</td></tr>';
       if (entriesCards){
-        const cardsHtml = filtered.map(r=>{
+        entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
+      }
+      try{
+        const snap = await db.collection('diaryEntries')
+          .orderBy('date','desc')
+          .limit(200)
+          .get();
+        const rows = [];
+        snap.forEach(doc=>{
+          rows.push({id:doc.id, ...(doc.data()||{})});
+        });
+
+        // Build user filter options (use full name from users & roles)
+        const existingSelection = filterUserSel.value || '';
+        const userSet = new Set();
+        rows.forEach(r=>{
+          if (r.createdByEmail){
+            const email = String(r.createdByEmail).toLowerCase();
+            const u = USERS[email];
+            const label = (u && (u.fullName || u.firstName))
+              ? (u.fullName || u.firstName)
+              : email.split('@')[0];
+            if (label) userSet.add(label);
+          }
+        });
+        const userList = Array.from(userSet).sort((a,b)=>a.localeCompare(b));
+
+        const isWorker = CURRENT_ROLE === 'worker';
+        if (isWorker){
+          // worker can't filter by user; they only see themselves
+          filterUserSel.parentElement.style.display = 'none';
+        }else{
+          filterUserSel.parentElement.style.display = '';
+          let optionsHtml = '<option value="">All users</option>';
+          optionsHtml += userList.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
+          filterUserSel.innerHTML = optionsHtml;
+          if (existingSelection && userList.includes(existingSelection)){
+            filterUserSel.value = existingSelection;
+          }
+        }
+
+        const yearFilter = parseInt(filterYear.value || '', 10) || null;
+        const propFilter = filterPropSel.value || '';
+        const selectedUser = (filterUserSel.value || '').trim();
+
+        const workerUid = CURRENT_UID;
+        const workerEmail = (CURRENT_EMAIL || '').toLowerCase();
+
+        let filtered = rows.filter(r=>{
+          if (yearFilter){
+            if (!r.date || String(r.date).slice(0,4) !== String(yearFilter)) return false;
+          }
+          if (propFilter && r.propertyId !== propFilter) return false;
+
+          // role-based visibility
+          if (isWorker){
+            const uidMatch = r.createdByUid && workerUid && r.createdByUid === workerUid;
+            const emailMatch = r.createdByEmail && workerEmail &&
+              String(r.createdByEmail).toLowerCase() === workerEmail;
+            if (!(uidMatch || emailMatch)) return false;
+          }
+
+          if (!isWorker && selectedUser){
+            const email = (r.createdByEmail || '').toLowerCase();
+            const u = USERS[email];
+            const label = u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
+            if (label !== selectedUser) return false;
+          }
+
+          return true;
+        });
+
+        // Sort
+        const sortMode = sortSel.value || 'dateDesc';
+        filtered.sort((a,b)=>{
+          const dateA = String(a.date || '');
+          const dateB = String(b.date || '');
+          const timeA = String(a.time || '');
+          const timeB = String(b.time || '');
+
+          const getUserName = (r)=>{
+            const email = (r.createdByEmail || '').toLowerCase();
+            const u = USERS[email];
+            return u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
+          };
+          const userA = getUserName(a);
+          const userB = getUserName(b);
+
+          if (sortMode === 'dateAsc'){
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
+            return timeA.localeCompare(timeB);
+          }
+          if (sortMode === 'dateDesc'){
+            if (dateA !== dateB) return dateB.localeCompare(dateA);
+            return timeB.localeCompare(timeA);
+          }
+          if (sortMode === 'userAsc'){
+            const cmp = userA.localeCompare(userB);
+            if (cmp !== 0) return cmp;
+            if (dateA !== dateB) return dateB.localeCompare(dateA);
+            return timeB.localeCompare(timeA);
+          }
+          if (sortMode === 'userDesc'){
+            const cmp = userB.localeCompare(userA);
+            if (cmp !== 0) return cmp;
+            if (dateA !== dateB) return dateB.localeCompare(dateA);
+            return timeB.localeCompare(timeA);
+          }
+          return 0;
+        });
+
+        if (!filtered.length){
+          entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
+          if (entriesCards){
+            entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
+          }
+          return;
+        }
+
+        const canDeleteEntry = (r)=>{
+          if (CURRENT_ROLE !== 'worker') return true;
+          const uidMatch = r.createdByUid && CURRENT_UID && r.createdByUid === CURRENT_UID;
+          const emailMatch = r.createdByEmail && CURRENT_EMAIL &&
+            String(r.createdByEmail).toLowerCase() === CURRENT_EMAIL;
+          return uidMatch || emailMatch;
+        };
+
+        const userLabelFor = r=>{
+          if (!r.createdByEmail) return '';
+          const email = String(r.createdByEmail).toLowerCase();
+          const u = USERS[email];
+          if (u && (u.fullName || u.firstName)){
+            return u.fullName || u.firstName;
+          }
+          return email.split('@')[0];
+        };
+
+        // Build table rows (no time column)
+        const tableHtml = filtered.map(r=>{
           const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
 
           let inputs = '';
@@ -1633,234 +1609,276 @@ const delHtml = canDeleteEntry(r)
 
           const userLabel = userLabelFor(r);
 
+          const editHtml = canDeleteEntry(r)
+            ? `<button type="button" class="btn small" data-edit="${r.id}">Edit</button>`
+            : '';
+
           const delHtml = canDeleteEntry(r)
             ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
             : '';
 
-          return `<div class="entry-card" data-id="${r.id}">
-            <div class="ec-header">
-              <div>${escapeHtml(r.date || '')}</div>
-            </div>
-            <div class="ec-line">
-              <span class="ec-label">Property</span>${escapeHtml(r.propertyName || '')}
-            </div>
-            ${userLabel ? `<div class="ec-line"><span class="ec-label">User</span>${escapeHtml(userLabel)}</div>` : ''}
-            ${r.paddock ? `<div class="ec-line"><span class="ec-label">Paddock</span>${escapeHtml(r.paddock)}</div>` : ''}
-            <div class="ec-line ec-activity">${escapeHtml(r.activity || '')}</div>
-            ${stock ? `<div class="ec-line"><span class="ec-label">Stock</span>${escapeHtml(stock)}</div>` : ''}
-            ${inputs ? `<div class="ec-line"><span class="ec-label">Inputs</span>${escapeHtml(inputs)}</div>` : ''}
-            ${rain ? `<div class="ec-line"><span class="ec-label">Rain</span>${escapeHtml(rain)} mm</div>` : ''}
-            ${notes ? `<div class="ec-line ec-notes">${escapeHtml(notes)}</div>` : ''}
-            <div class="ec-actions no-print">
-              ${delHtml}
-            </div>
-          </div>`;
+          return `<tr data-id="${r.id}">
+            <td class="nowrap">${escapeHtml(r.date||'')}</td>
+            <td>${escapeHtml(r.propertyName||'')}</td>
+            <td>${escapeHtml(r.paddock||'')}</td>
+            <td>${escapeHtml(r.activity||'')}</td>
+            <td>${escapeHtml(stock)}</td>
+            <td>${escapeHtml(inputs)}</td>
+            <td>${escapeHtml(rain)}</td>
+            <td>${escapeHtml(notes)}</td>
+            <td>${escapeHtml(userLabel)}</td>
+            <td class="no-print">${editHtml} ${delHtml}</td>
+          </tr>`;
         }).join('');
-        entriesCards.innerHTML = cardsHtml;
-      }
+        entriesBody.innerHTML = tableHtml;
 
-      // Wire EDIT buttons
-const editBtns = document.querySelectorAll('#entriesBody button[data-edit], #entriesCards button[data-edit]');
-editBtns.forEach(btn=>{
-  btn.onclick = ()=> openEditModal(btn.dataset.edit);
-});
-      // Wire delete buttons
-      const delButtons = document.querySelectorAll('#entriesBody button[data-del], #entriesCards button[data-del]');
-      delButtons.forEach(btn=>{
-        btn.onclick = async ()=>{
-          const id = btn.dataset.del;
-          if (!id) return;
-          const ok = confirm('Delete this diary entry? This does NOT undo stock/chemical/seed/fodder/rainfall changes.');
-          if (!ok) return;
-          try{
-            await db.collection('diaryEntries').doc(id).delete();
-            await refreshEntries();
-          }catch(e){
+        // Build mobile cards (no time)
+        if (entriesCards){
+          const cardsHtml = filtered.map(r=>{
+            const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
+
+            let inputs = '';
+            if (r.purchaseType){
+              inputs = r.purchaseType;
+              const bits = [];
+              if (r.chemicalId && r.chemicalQty) bits.push(`${r.chemicalQty} ${r.chemicalUnit||''} chem`);
+              if (r.seedId && r.seedQty)       bits.push(`${r.seedQty} ${r.seedUnit||''} seed`);
+              if (r.fodderId && r.fodderQty)   bits.push(`${r.fodderQty} ${r.fodderUnit||''} fodder`);
+              if (bits.length) inputs += ' (' + bits.join('; ') + ')';
+            }else{
+              if (r.chemicalId && r.chemicalQty) inputs = `${r.chemicalQty} ${r.chemicalUnit||''} chem`;
+              else if (r.seedId && r.seedQty)    inputs = `${r.seedQty} ${r.seedUnit||''} seed`;
+              else if (r.fodderId && r.fodderQty)inputs = `${r.fodderQty} ${r.fodderUnit||''} fodder`;
+            }
+
+            const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
+            const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
+
+            const userLabel = userLabelFor(r);
+
+            const editHtml = canDeleteEntry(r)
+              ? `<button type="button" class="btn small" data-edit="${r.id}">Edit</button>`
+              : '';
+
+            const delHtml = canDeleteEntry(r)
+              ? `<button type="button" class="btn small danger" data-del="${r.id}">Delete</button>`
+              : '';
+
+            return `<div class="entry-card" data-id="${r.id}">
+              <div class="ec-header">
+                <div>${escapeHtml(r.date || '')}</div>
+              </div>
+              <div class="ec-line">
+                <span class="ec-label">Property</span>${escapeHtml(r.propertyName || '')}
+              </div>
+              ${userLabel ? `<div class="ec-line"><span class="ec-label">User</span>${escapeHtml(userLabel)}</div>` : ''}
+              ${r.paddock ? `<div class="ec-line"><span class="ec-label">Paddock</span>${escapeHtml(r.paddock)}</div>` : ''}
+              <div class="ec-line ec-activity">${escapeHtml(r.activity || '')}</div>
+              ${stock ? `<div class="ec-line"><span class="ec-label">Stock</span>${escapeHtml(stock)}</div>` : ''}
+              ${inputs ? `<div class="ec-line"><span class="ec-label">Inputs</span>${escapeHtml(inputs)}</div>` : ''}
+              ${rain ? `<div class="ec-line"><span class="ec-label">Rain</span>${escapeHtml(rain)} mm</div>` : ''}
+              ${notes ? `<div class="ec-line ec-notes">${escapeHtml(notes)}</div>` : ''}
+              <div class="ec-actions no-print">
+                ${editHtml} ${delHtml}
+              </div>
+            </div>`;
+          }).join('');
+          entriesCards.innerHTML = cardsHtml;
+        }
+
+        // Wire EDIT buttons
+        const editBtns = document.querySelectorAll('#entriesBody button[data-edit], #entriesCards button[data-edit]');
+        editBtns.forEach(btn=>{
+          btn.onclick = ()=> openEditModal(btn.dataset.edit);
+        });
+
+        // Wire delete buttons
+        const delButtons = document.querySelectorAll('#entriesBody button[data-del], #entriesCards button[data-del]');
+        delButtons.forEach(btn=>{
+          btn.onclick = async ()=>{
+            const id = btn.dataset.del;
+            if (!id) return;
+            const ok = confirm('Delete this diary entry? This does NOT undo stock/chemical/seed/fodder/rainfall changes.');
+            if (!ok) return;
+            try{
+              await db.collection('diaryEntries').doc(id).delete();
+              await refreshEntries();
+            }catch(e){
+              console.error(e);
+              alert('Delete failed, see console.');
+            }
+          };
+        });
+      }catch(e){
+        console.error(e);
+        entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Error loading entries.</td></tr>';
+        if (entriesCards){
+          entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
+        }
+      }
+    }
+
+    // ---------------------------------------------
+    // EDIT ENTRY LOGIC (safe edits only)
+    // ---------------------------------------------
+    let CURRENT_EDIT_ID = null;
+
+    const editModal = document.getElementById('editModal');
+    const editNotes = document.getElementById('editNotes');
+    const editWeather = document.getElementById('editWeather');
+    const editActivity = document.getElementById('editActivity');
+    const editCancel = document.getElementById('editCancel');
+    const editSave = document.getElementById('editSave');
+
+    const SAFE_ACTIVITIES = [
+      'General',
+      'Ploughing',
+      'Planting',
+      'Spraying paddocks'
+    ];
+
+    function openEditModal(id){
+      CURRENT_EDIT_ID = id;
+
+      db.collection('diaryEntries').doc(id).get().then(snap=>{
+        if (!snap.exists) return;
+
+        const d = snap.data();
+
+        // Populate modal fields
+        editNotes.value = d.notes || '';
+        editWeather.value = d.weather || '';
+
+        // Activity dropdown
+        editActivity.innerHTML = SAFE_ACTIVITIES.map(a =>
+          `<option value="${a}"${a===d.activity?' selected':''}>${a}</option>`
+        ).join('');
+
+        // Show modal
+        editModal.style.display = 'flex';
+      }).catch(e=>{
+        console.error(e);
+      });
+    }
+
+    if (editCancel){
+      editCancel.onclick = ()=> {
+        editModal.style.display = 'none';
+        CURRENT_EDIT_ID = null;
+      };
+    }
+
+    if (editSave){
+      editSave.onclick = ()=>{
+        if (!CURRENT_EDIT_ID) return;
+
+        const updates = {
+          notes: editNotes.value || null,
+          weather: editWeather.value || null,
+          activity: editActivity.value,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        db.collection('diaryEntries').doc(CURRENT_EDIT_ID).update(updates)
+          .then(()=>{
+            editModal.style.display = 'none';
+            CURRENT_EDIT_ID = null;
+            refreshEntries();
+          })
+          .catch(e=>{
             console.error(e);
-            alert('Delete failed, see console.');
-          }
-        };
-      });
-    }catch(e){
-      console.error(e);
-      entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Error loading entries.</td></tr>';
-      if (entriesCards){
-        entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
+            alert('Edit failed');
+          });
+      };
+    }
+
+    // Init after auth
+    async function initAfterAuth(){
+      dateInp.value = todayISO();
+      const now = new Date();
+      timeInp.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      filterYear.value = now.getFullYear();
+
+      // Load users for name lookup (use stored email + name from users & roles)
+      try{
+        const usersSnap = await db.collection('users').get();
+        USERS = {};
+        usersSnap.forEach(doc=>{
+          const d = doc.data() || {};
+
+          // Email saved by skyfarm-users.html
+          const email = String(d.email || '').toLowerCase();
+          if (!email) return;
+
+          const fullName = (d.name || '').trim();      // e.g. "Nyssa"
+          const firstName = fullName || email.split('@')[0];
+
+          USERS[email] = {
+            fullName,
+            firstName
+          };
+        });
+      }catch(e){
+        console.error('Loading users for names failed', e);
+        USERS = {};
       }
+
+      await loadProperties();
+      if (propSel.options.length && propSel.value){
+        await loadPaddocksForProperty(propSel.value);
+        await loadGaugesForProperty(propSel.value);
+        await loadChemicalsForProperty(propSel.value);
+        await loadSeedsForProperty(propSel.value);
+        await loadFodderForProperty(propSel.value);
+        refreshTransferPropertyOptions(propSel.value);
+      }
+
+      onActivityChange();
+
+      propSel.onchange = async ()=>{
+        await loadPaddocksForProperty(propSel.value);
+        await loadGaugesForProperty(propSel.value);
+        await loadChemicalsForProperty(propSel.value);
+        await loadSeedsForProperty(propSel.value);
+        await loadFodderForProperty(propSel.value);
+        refreshTransferPropertyOptions(propSel.value);
+        await refreshStockContext();
+      };
+
+      $('#saveBtn').onclick = saveEntry;
+      $('#resetBtn').onclick = ()=>{
+        notesInp.value = '';
+        weatherInp.value = '';
+        headInp.value = '';
+        classInp.value = '';
+        rainMmInp.value = '';
+        gaugeSel.selectedIndex = 0;
+        chemSel.selectedIndex = 0;
+        chemQty.value = '';
+        chemUnit.value = '';
+        seedSel.selectedIndex = 0;
+        seedQty.value = '';
+        seedUnit.value = '';
+        fodderSel.selectedIndex = 0;
+        fodderQty.value = '';
+        fodderUnit.value = '';
+        purchaseSupplier.value = '';
+        purchaseRef.value = '';
+      };
+      $('#refreshBtn').onclick = refreshEntries;
+      $('#printBtn').onclick = ()=>window.print();
+      sortSel.onchange = refreshEntries;
+      filterUserSel.onchange = refreshEntries;
+      filterPropSel.onchange = refreshEntries;
+      filterYear.onchange = refreshEntries;
+
+      await refreshEntries();
     }
-  }
-// ---------------------------------------------
-// EDIT ENTRY LOGIC (safe edits only)
-// ---------------------------------------------
-let CURRENT_EDIT_ID = null;
 
-const editModal = document.getElementById('editModal');
-const editNotes = document.getElementById('editNotes');
-const editWeather = document.getElementById('editWeather');
-const editActivity = document.getElementById('editActivity');
-const editCancel = document.getElementById('editCancel');
-const editSave = document.getElementById('editSave');
-
-const SAFE_ACTIVITIES = [
-  'General',
-  'Ploughing',
-  'Planting',
-  'Spraying paddocks'
-];
-
-function openEditModal(id){
-  CURRENT_EDIT_ID = id;
-
-  db.collection('diaryEntries').doc(id).get().then(snap=>{
-    if (!snap.exists) return;
-
-    const d = snap.data();
-
-    // Populate modal fields
-    editNotes.value = d.notes || '';
-    editWeather.value = d.weather || '';
-
-    // Activity dropdown
-    editActivity.innerHTML = SAFE_ACTIVITIES.map(a =>
-      `<option value="${a}"${a===d.activity?' selected':''}>${a}</option>`
-    ).join('');
-
-    // Show modal
-    editModal.style.display = 'flex';
-  });
-}
-
-editCancel.onclick = ()=> editModal.style.display = 'none';
-
-editSave.onclick = ()=>{
-  if (!CURRENT_EDIT_ID) return;
-
-  const updates = {
-    notes: editNotes.value || null,
-    weather: editWeather.value || null,
-    activity: editActivity.value,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  db.collection('diaryEntries').doc(CURRENT_EDIT_ID).update(updates)
-    .then(()=>{
-      editModal.style.display = 'none';
-      refreshEntries();
-    })
-    .catch(e=>{
-      console.error(e);
-      alert('Edit failed');
+    // Kick off
+    window.addEventListener('load', ()=>{
+      setStatus('Ready');
     });
-};
-  // Init after auth
-  async function initAfterAuth(){
-    dateInp.value = todayISO();
-    const now = new Date();
-    timeInp.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    filterYear.value = now.getFullYear();
-
-        // Load users for name lookup (use stored email + name from users & roles)
-    try{
-      const usersSnap = await db.collection('users').get();
-      USERS = {};
-      usersSnap.forEach(doc=>{
-        const d = doc.data() || {};
-
-        // Email saved by skyfarm-users.html
-        const email = String(d.email || '').toLowerCase();
-        if (!email) return;
-
-        const fullName = (d.name || '').trim();      // e.g. "Nyssa"
-        const firstName = fullName || email.split('@')[0];
-
-        USERS[email] = {
-          fullName,
-          firstName
-        };
-      });
-    }catch(e){
-      console.error('Loading users for names failed', e);
-      USERS = {};
-    }
-
-    await loadProperties();
-    if (propSel.options.length && propSel.value){
-      await loadPaddocksForProperty(propSel.value);
-      await loadGaugesForProperty(propSel.value);
-      await loadChemicalsForProperty(propSel.value);
-      await loadSeedsForProperty(propSel.value);
-      await loadFodderForProperty(propSel.value);
-      refreshTransferPropertyOptions(propSel.value);
-    }
-
-    onActivityChange();
-
-    propSel.onchange = async ()=>{
-      await loadPaddocksForProperty(propSel.value);
-      await loadGaugesForProperty(propSel.value);
-      await loadChemicalsForProperty(propSel.value);
-      await loadSeedsForProperty(propSel.value);
-      await loadFodderForProperty(propSel.value);
-      refreshTransferPropertyOptions(propSel.value);
-      await refreshStockContext();
-    };
-
-    $('#saveBtn').onclick = saveEntry;
-    $('#resetBtn').onclick = ()=>{
-      notesInp.value = '';
-      weatherInp.value = '';
-      headInp.value = '';
-      classInp.value = '';
-      rainMmInp.value = '';
-      gaugeSel.selectedIndex = 0;
-      chemSel.selectedIndex = 0;
-      chemQty.value = '';
-      chemUnit.value = '';
-      seedSel.selectedIndex = 0;
-      seedQty.value = '';
-      seedUnit.value = '';
-      fodderSel.selectedIndex = 0;
-      fodderQty.value = '';
-      fodderUnit.value = '';
-      purchaseSupplier.value = '';
-      purchaseRef.value = '';
-    };
-    $('#refreshBtn').onclick = refreshEntries;
-    $('#printBtn').onclick = ()=>window.print();
-    sortSel.onchange = refreshEntries;
-    filterUserSel.onchange = refreshEntries;
-    filterPropSel.onchange = refreshEntries;
-    filterYear.onchange = refreshEntries;
-
-    await refreshEntries();
-  }
-
-  // Kick off
-  window.addEventListener('load', ()=>{
-    setStatus('Ready');
-  });
-</script>
-  <!-- Edit Entry Modal -->
-<div id="editModal" style="
-  position:fixed;inset:0;background:rgba(0,0,0,.45);
-  display:none;align-items:center;justify-content:center;z-index:9999;">
-  <div style="background:#fff;padding:20px;border-radius:12px;width:90%;max-width:420px;">
-    <h3>Edit entry</h3>
-
-    <label>Activity (safe activities only)</label>
-    <select id="editActivity" style="width:100%;margin-bottom:10px;"></select>
-
-    <label>Notes</label>
-    <textarea id="editNotes" style="width:100%;min-height:60px;margin-bottom:10px;"></textarea>
-
-    <label>Weather</label>
-    <input id="editWeather" style="width:100%;margin-bottom:15px;" />
-
-    <div style="display:flex;justify-content:flex-end;gap:10px;">
-      <button id="editCancel" class="btn">Cancel</button>
-      <button id="editSave" class="btn primary">Save</button>
-    </div>
-  </div>
-</div>
+  </script>
 </body>
 </html>
