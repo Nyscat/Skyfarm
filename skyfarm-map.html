@@ -118,12 +118,12 @@
       align-items:start;
     }
 
-    /* This is the critical bit for mobile: force a real height */
+    /* Map element */
     #map{
       width:100%;
       height:560px;       /* desktop / large screens */
       min-height:320px;
-      background:#e5e7eb; /* light grey so you can tell if tiles fail */
+      background:#e5e7eb;
       border-radius:12px;
     }
 
@@ -150,15 +150,15 @@
     }
     #authCard h2{margin:0 0 10px;}
 
-    /* --- Mobile: stack map & panel --- */
+    /* Mobile */
     @media (max-width:800px){
       .map-layout{
         display:flex;
         flex-direction:column;
       }
       #map{
-        height:65vh;      /* 65% of viewport height */
-        min-height:350px; /* never tiny */
+        height:65vh;
+        min-height:350px;
       }
     }
   </style>
@@ -169,11 +169,11 @@
 <div id="sf-header">
   <div class="bar">
     <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
-  <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-       alt="SkyFarm logo"
-       style="height:28px;width:auto;border-radius:6px;">
-  <span>SkyFarm</span>
-</a>
+      <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
+           alt="SkyFarm logo"
+           style="height:28px;width:auto;border-radius:6px;">
+      <span>SkyFarm</span>
+    </a>
     <nav>
       <a href="skyfarm-diary.html">Diary</a>
       <a href="skyfarm-map.html" aria-current="page">Map</a>
@@ -293,7 +293,10 @@ signInBtn.onclick = async ()=>{
     msgEl.textContent = 'Signed in.';
     showOverlay(false);
   }catch(e){
-    msgEl.textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
+    let msg = 'Unknown';
+    if (e && e.message) msg = e.message;
+    else if (e && e.code) msg = e.code;
+    msgEl.textContent = 'Sign-in failed: ' + msg;
   }
 };
 closeOverlay.onclick = ()=> showOverlay(false);
@@ -304,8 +307,12 @@ const statusEl      = document.getElementById('status');
 const paddockInfoEl = document.getElementById('paddockInfo');
 const propertySel   = document.getElementById('propertySel');
 function setStatus(t){ if (statusEl) statusEl.textContent = t; }
+
 function esc(s){
-  return String(s ?? '').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+  if (s === null || s === undefined) s = '';
+  return String(s).replace(/[&<>"]/g, function(c){
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c];
+  });
 }
 
 /* ---------- Map ---------- */
@@ -315,7 +322,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution:'&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-/* Force Leaflet to recalc size in a few situations (iOS is fussy) */
+/* Force Leaflet to recalc size in a few situations */
 function ensureMapSize(){
   try{ map.invalidateSize(); }catch(e){}
 }
@@ -613,7 +620,7 @@ auth.onAuthStateChanged(async user=>{
 
 /* ---------- Map layers ---------- */
 function featureStyle(feature){
-  const t = feature?.geometry?.type;
+  const t = (feature && feature.geometry) ? feature.geometry.type : null;
   if (t === 'Polygon' || t === 'MultiPolygon'){
     return { color:'#00897B', weight:2, fillOpacity:0.25 };
   }
@@ -630,9 +637,9 @@ async function loadMapLayers(){
 
       const layer = L.geoJSON(data, {
         style: featureStyle,
-        onEachFeature: (feature, lyr)=>{
-          const t = feature?.geometry?.type;
-          const isPaddock = t === 'Polygon' || t === 'MultiPolygon';
+        onEachFeature: function(feature, lyr){
+          const t = (feature && feature.geometry) ? feature.geometry.type : null;
+          const isPaddock = (t === 'Polygon' || t === 'MultiPolygon');
 
           if (isPaddock){
             const title = (feature.properties && feature.properties.title) ? String(feature.properties.title).trim() : '';
