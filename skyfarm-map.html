@@ -120,9 +120,9 @@
 
     /* Map element */
     #map{
-      position:relative;   /* important for Leaflet */
+      position:relative;   /* helps Leaflet in flex/grid layouts */
       width:100%;
-      height:560px;
+      height:560px;       /* desktop / large screens */
       min-height:320px;
       background:#e5e7eb;
       border-radius:12px;
@@ -253,21 +253,6 @@
 </div>
 
 <script>
-/* -------- crude error reporter so we can see mobile errors -------- */
-window.addEventListener('error', function(e){
-  var el = document.getElementById('status');
-  if (el) el.textContent = 'Error: ' + e.message;
-});
-window.addEventListener('unhandledrejection', function(e){
-  var el = document.getElementById('status');
-  var msg = 'Promise error';
-  if (e && e.reason){
-    if (e.reason.message) msg += ': ' + e.reason.message;
-    else msg += ': ' + String(e.reason);
-  }
-  if (el) el.textContent = msg;
-});
-
 /* ---------- Firebase init ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
@@ -283,8 +268,8 @@ const auth = firebase.auth();
 const dbMenuBtn = document.getElementById('dbMenuBtn');
 const dbMenu    = document.getElementById('dbMenu');
 if (dbMenuBtn && dbMenu){
-  dbMenuBtn.onclick = function(e){ e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
-  document.addEventListener('click', function(e){
+  dbMenuBtn.onclick = (e)=>{ e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
+  document.addEventListener('click', e=>{
     if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
   });
 }
@@ -298,7 +283,7 @@ const closeOverlay = document.getElementById('closeOverlayBtn');
 
 function showOverlay(on){ authOverlay.style.display = on ? 'flex' : 'none'; }
 
-signInBtn.onclick = async function(){
+signInBtn.onclick = async ()=>{
   const email = document.getElementById('siEmail').value.trim();
   const pass  = document.getElementById('siPass').value;
   const msgEl = document.getElementById('authMsg');
@@ -315,8 +300,8 @@ signInBtn.onclick = async function(){
     msgEl.textContent = 'Sign-in failed: ' + msg;
   }
 };
-closeOverlay.onclick = function(){ showOverlay(false); };
-signOutBtn.onclick   = async function(){ try{ await auth.signOut(); location.reload(); }catch(e){} };
+closeOverlay.onclick = ()=> showOverlay(false);
+signOutBtn.onclick   = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 
 /* ---------- UI helpers ---------- */
 const statusEl      = document.getElementById('status');
@@ -344,8 +329,8 @@ function ensureMapSize(){
 }
 window.addEventListener('resize', ensureMapSize);
 window.addEventListener('orientationchange', ensureMapSize);
-window.addEventListener('load', function(){ setTimeout(ensureMapSize, 300); });
-document.addEventListener('visibilitychange', function(){
+window.addEventListener('load', ()=> setTimeout(ensureMapSize, 300));
+document.addEventListener('visibilitychange', ()=>{
   if (!document.hidden) setTimeout(ensureMapSize, 300);
 });
 
@@ -377,7 +362,7 @@ let firestoreReady = false;
 async function loadProperties(){
   propertyMeta.clear();
   const snap = await db.collection('properties').get();
-  snap.forEach(function(doc){
+  snap.forEach(doc=>{
     const d = doc.data() || {};
     const name = d.name || '(Property)';
     propertyMeta.set(doc.id, { name, bounds:null });
@@ -390,7 +375,7 @@ async function loadProperties(){
 async function loadPaddocksIndex(){
   paddockIndex.clear();
   const snap = await db.collection('paddocks').get();
-  snap.forEach(function(doc){
+  snap.forEach(doc=>{
     const d = doc.data() || {};
     const name = (d.name || '').trim();
     const pid  = d.propertyId || null;
@@ -406,7 +391,7 @@ async function loadPaddocksIndex(){
 async function loadLivestockIndex(){
   livestockIndex.clear();
   const snap = await db.collection('livestock').get();
-  snap.forEach(function(doc){
+  snap.forEach(doc=>{
     const d = doc.data() || {};
     const propId  = d.propertyId;
     const paddock = (d.location || '').trim();
@@ -441,7 +426,7 @@ async function getRecentDiary(propertyId, paddockName){
     .limit(100)
     .get();
 
-  snap.forEach(function(doc){
+  snap.forEach(doc=>{
     const d = doc.data() || {};
     if ((d.paddock || '').trim() !== paddockName) return;
     const dateStr = d.date || '';
@@ -460,34 +445,34 @@ async function getRecentDiary(propertyId, paddockName){
 /* ---------- Render paddock info ---------- */
 function renderPaddockInfo(propertyName, paddockName, stockRec, diaryList){
   let html = '';
-  html += '<div><strong>Paddock:</strong> ' + esc(paddockName) + '</div>';
-  html += '<div><strong>Property:</strong> ' + esc(propertyName) + '</div>';
+  html += `<div><strong>Paddock:</strong> ${esc(paddockName)}</div>`;
+  html += `<div><strong>Property:</strong> ${esc(propertyName)}</div>`;
 
   if (stockRec){
-    html += '<div style="margin-top:6px;"><strong>Livestock in paddock:</strong> ' + stockRec.total + '</div>';
+    html += `<div style="margin-top:6px;"><strong>Livestock in paddock:</strong> ${stockRec.total}</div>`;
     const classes = Object.keys(stockRec.byClass);
     if (classes.length){
       html += '<div style="margin-top:4px;font-size:.9rem;">';
-      classes.sort().forEach(function(c){
-        html += '<span class="pill">' + esc(c) + ': ' + stockRec.byClass[c] + '</span>';
+      classes.sort().forEach(c=>{
+        html += `<span class="pill">${esc(c)}: ${stockRec.byClass[c]}</span>`;
       });
       html += '</div>';
     }
   } else {
-    html += '<div style="margin-top:6px;">No livestock records for this paddock.</div>';
+    html += `<div style="margin-top:6px;">No livestock records for this paddock.</div>`;
   }
 
   if (diaryList && diaryList.length){
-    html += '<div style="margin-top:10px;"><strong>Recent diary entries (last 30 days)</strong></div>';
+    html += `<div style="margin-top:10px;"><strong>Recent diary entries (last 30 days)</strong></div>`;
     html += '<ul style="margin:4px 0 0 18px;padding:0;font-size:.9rem;">';
-    diaryList.forEach(function(e){
+    diaryList.forEach(e=>{
       const label = [e.date, e.activity].filter(Boolean).join(' — ');
-      const notes = e.notes ? ': ' + esc(e.notes) : '';
-      html += '<li>' + esc(label) + notes + '</li>';
+      const notes = e.notes ? `: ${esc(e.notes)}` : '';
+      html += `<li>${esc(label)}${notes}</li>`;
     });
     html += '</ul>';
   } else {
-    html += '<div style="margin-top:10px;">No diary entries for this paddock in the last 30 days.</div>';
+    html += `<div style="margin-top:10px;">No diary entries for this paddock in the last 30 days.</div>`;
   }
 
   paddockInfoEl.innerHTML = html;
@@ -517,7 +502,7 @@ async function handlePaddockClick(mapIndex, feature){
   }
 
   if (!pid){
-    paddockInfoEl.innerHTML = '<span class="muted">No property match for paddock “‘ + esc(paddockName) + '”.</span>';
+    paddockInfoEl.innerHTML = `<span class="muted">No property match for paddock “${esc(paddockName)}”.</span>`;
     return;
   }
 
@@ -562,14 +547,14 @@ async function fetchWithFallback(primaryUrl, fallbackUrl){
 /* ---------- Property dropdown & zoom ---------- */
 function rebuildPropertyDropdown(){
   const entries = [];
-  propertyMeta.forEach(function(meta,id){
-    if (meta.bounds) entries.push({id:id,name:meta.name});
+  propertyMeta.forEach((meta,id)=>{
+    if (meta.bounds) entries.push({id,name:meta.name});
   });
-  entries.sort(function(a,b){ return a.name.localeCompare(b.name); });
+  entries.sort((a,b)=> a.name.localeCompare(b.name));
 
   const saved = localStorage.getItem(ACTIVE_PROPERTY_KEY) || 'ALL';
   propertySel.innerHTML = '<option value="ALL">(All properties)</option>';
-  entries.forEach(function(p){
+  entries.forEach(p=>{
     const opt = document.createElement('option');
     opt.value = p.id;
     opt.textContent = p.name;
@@ -584,7 +569,7 @@ function rebuildPropertyDropdown(){
     if (allBounds) map.fitBounds(allBounds, {padding:[20,20]});
   }
 
-  propertySel.onchange = function(){
+  propertySel.onchange = ()=>{
     const val = propertySel.value;
     localStorage.setItem(ACTIVE_PROPERTY_KEY, val);
     zoomToProperty(val);
@@ -603,9 +588,9 @@ function zoomToProperty(propertyId){
 }
 
 /* ---------- Auth + Firestore bootstrap ---------- */
-auth.onAuthStateChanged(async function(user){
+auth.onAuthStateChanged(async user=>{
   if (user){
-    authWho.textContent = user.email ? 'Signed in as ' + user.email : 'Signed in';
+    authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
     signOutBtn.classList.remove('hidden');
     showOverlay(false);
     try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
@@ -679,7 +664,7 @@ async function loadMapLayers(){
               }
             }
 
-            lyr.on('click', function(){ handlePaddockClick(i, feature); });
+            lyr.on('click', ()=> handlePaddockClick(i, feature));
           } else if (feature.properties && feature.properties.title){
             lyr.bindTooltip(String(feature.properties.title), {direction:'top'});
           }
