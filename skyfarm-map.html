@@ -298,8 +298,7 @@ signInBtn.onclick = async ()=>{
   const msgEl = document.getElementById('authMsg');
   msgEl.textContent = 'Signing in…';
   try{
-    await auth.setPersistence(firebase.auth.Auth.P
-ersistence.LOCAL);
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     await auth.signInWithEmailAndPassword(email, pass);
     msgEl.textContent = 'Signed in.';
     showOverlay(false);
