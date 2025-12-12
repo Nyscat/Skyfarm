@@ -120,9 +120,9 @@
 
     /* Map element */
     #map{
-      position:relative;   /* helps Leaflet in flex/grid layouts */
+      position:relative;
       width:100%;
-      height:560px;       /* desktop / large screens */
+      height:560px;
       min-height:320px;
       background:#e5e7eb;
       border-radius:12px;
@@ -130,6 +130,15 @@
 
     .map-panel{
       padding:0;
+    }
+
+    /* Leaflet fixes for mobile / global img styles */
+    .leaflet-container{
+      background:#e5e7eb;
+    }
+    .leaflet-container img{
+      max-width:none !important;
+      max-height:none !important;
     }
 
     /* Auth overlay */
@@ -289,7 +298,8 @@ signInBtn.onclick = async ()=>{
   const msgEl = document.getElementById('authMsg');
   msgEl.textContent = 'Signing in…';
   try{
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.setPersistence(firebase.auth.Auth.P
+ersistence.LOCAL);
     await auth.signInWithEmailAndPassword(email, pass);
     msgEl.textContent = 'Signed in.';
     showOverlay(false);
