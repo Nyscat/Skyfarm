@@ -140,7 +140,12 @@
       max-width:none !important;
       max-height:none !important;
     }
-
+.leaflet-container .leaflet-tile{
+  max-width:none !important;
+  max-height:none !important;
+  width:256px !important;
+  height:256px !important;
+}
     /* Auth overlay */
     #authOverlay{
       position:fixed;
@@ -326,10 +331,21 @@ function esc(s){
 
 /* ---------- Map ---------- */
 const map = L.map('map').setView([-20.0, 142.5], 7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19,
-  attribution:'&copy; OpenStreetMap contributors'
+const base = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors',
+  crossOrigin: true
 }).addTo(map);
+
+// Mobile debug: show tile errors in the status line
+base.on('tileerror', function(e){
+  setStatus('Map tiles blocked/failed to load on this browser (tileerror).');
+});
+base.on('load', function(){
+  // Only overwrite status if we’re not in the middle of other loading text
+  // Comment this out if you don’t want it.
+  // setStatus('Map tiles loaded.');
+});
 
 /* Force Leaflet to recalc size in a few situations */
 function ensureMapSize(){
