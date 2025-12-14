@@ -34,36 +34,25 @@
 
     /* Header */
     #sf-header{
-      position:sticky;
-      top:0;
-      z-index:40;
+      position:sticky; top:0; z-index:40;
       background:rgba(255,255,255,.96);
       backdrop-filter:blur(18px);
       border-bottom:1px solid rgba(148,163,184,.4);
     }
     #sf-header .bar{
-      max-width:1200px;
-      margin:0 auto;
-      padding:8px 14px;
-      display:flex;
-      align-items:center;
-      gap:10px;
+      max-width:1200px; margin:0 auto; padding:8px 14px;
+      display:flex; align-items:center; gap:10px;
     }
     #sf-header .brand{
-      font-weight:600;
-      font-size:1rem;
-      padding:4px 10px;
+      font-weight:600; font-size:1rem; padding:4px 10px;
       border-radius:999px;
       background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);
       color:#ecfdf3;
       box-shadow:0 10px 20px rgba(15,23,42,.25);
     }
     #sf-header nav a{
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:.85rem;
-      color:#0f172a;
-      text-decoration:none;
+      padding:4px 10px; border-radius:999px; font-size:.85rem;
+      color:#0f172a; text-decoration:none;
     }
     #sf-header nav a[aria-current="page"]{
       background:#e0f2fe;
@@ -97,16 +86,11 @@
       color:#ef4444;
       background:#fff;
     }
-    .btn.small{
-      padding:4px 10px;
-      font-size:.78rem;
-    }
+    .btn.small{ padding:4px 10px; font-size:.78rem; }
     .btn[disabled]{opacity:.5;cursor:default;}
 
     .db-menu{
-      position:absolute;
-      top:100%;
-      right:0;
+      position:absolute; top:100%; right:0;
       background:#fff;
       border:1px solid var(--line);
       border-radius:10px;
@@ -125,12 +109,8 @@
     .db-menu a:hover{background:#f1f5f9;}
     .hidden{display:none;}
 
-    .wrap{
-      max-width:1200px;
-      margin:0 auto;
-      padding:12px;
-    }
-    h1{margin:10px 0;font-size:1.5rem;}
+    .wrap{ max-width:1200px; margin:0 auto; padding:12px; }
+    h1{ margin:10px 0; font-size:1.5rem; }
 
     .card{
       background:var(--card);
@@ -141,18 +121,10 @@
       box-shadow:0 10px 25px rgba(15,23,42,.04);
     }
     .row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-      margin:6px 0;
+      display:flex; flex-wrap:wrap; gap:10px;
+      align-items:center; margin:6px 0;
     }
-    label{
-      display:block;
-      font-size:.8rem;
-      color:#475569;
-      margin-bottom:3px;
-    }
+    label{ display:block; font-size:.8rem; color:#475569; margin-bottom:3px; }
     input,select,textarea{
       border-radius:10px;
       border:1px solid #cbd5e1;
@@ -172,6 +144,7 @@
     .w120{width:120px;}
     .w160{width:160px;}
     .w220{width:220px;}
+
     .pill{
       display:inline-block;
       padding:2px 7px;
@@ -188,57 +161,26 @@
       color:#9a3412;
     }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:.8rem;
-    }
-    th,td{
-      border-bottom:1px solid #e5e7eb;
-      padding:6px 6px;
-      text-align:left;
-      vertical-align:top;
-    }
-    th{background:#f9fafb;color:#374151;}
-    tr:nth-child(even) td{background:#f9fafb;}
-    .nowrap{white-space:nowrap;}
+    table{ width:100%; border-collapse:collapse; font-size:.8rem; }
+    th,td{ border-bottom:1px solid #e5e7eb; padding:6px 6px; text-align:left; vertical-align:top; }
+    th{ background:#f9fafb; color:#374151; }
+    tr:nth-child(even) td{ background:#f9fafb; }
+    .nowrap{ white-space:nowrap; }
 
-    .table-scroll{
-      width:100%;
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
-    }
+    .table-scroll{ width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
 
-    /* Card list for mobile */
-    .entries-cards{
-      margin-top:8px;
-      display:none;
-      flex-direction:column;
-      gap:8px;
-    }
+    .entries-cards{ margin-top:8px; display:none; flex-direction:column; gap:8px; }
     .entry-card{
       border-radius:12px;
       border:1px solid var(--line);
       background:#f9fafb;
       padding:8px 10px;
     }
-    .ec-header{
-      display:flex;
-      justify-content:space-between;
-      font-size:.78rem;
-      font-weight:500;
-      margin-bottom:4px;
-    }
-    .ec-line{
-      font-size:.78rem;
-      margin-bottom:2px;
-    }
-    .ec-label{
-      font-weight:600;
-      color:#475569;
-      margin-right:4px;
-    }
-    .ec-notes{color:var(--muted);}
+    .ec-header{ display:flex; justify-content:space-between; font-size:.78rem; font-weight:500; margin-bottom:4px; }
+    .ec-line{ font-size:.78rem; margin-bottom:2px; }
+    .ec-label{ font-weight:600; color:#475569; margin-right:4px; }
+    .ec-notes{ color:var(--muted); }
+    .ec-actions{ margin-top:6px; text-align:right; }
 
     @media (max-width:800px){
       .table-desktop{display:none;}
@@ -255,12 +197,9 @@
 
     /* Auth overlay */
     #authOverlay{
-      position:fixed;
-      inset:0;
+      position:fixed; inset:0;
       background:radial-gradient(circle at top,#020617 0,rgba(15,23,42,.94) 40%,rgba(15,23,42,.97) 100%);
-      display:none;
-      align-items:center;
-      justify-content:center;
+      display:none; align-items:center; justify-content:center;
       z-index:50;
     }
     #authCard{
@@ -282,8 +221,8 @@
     }
   </style>
 </head>
-<body>
 
+<body>
   <!-- Header -->
   <div id="sf-header">
     <div class="bar">
@@ -378,10 +317,9 @@
       </div>
     </div>
 
-    <!-- 4-week window summary (informational) -->
     <div class="card">
       <div class="row">
-        <strong>4-week window (informational)</strong>
+        <strong>Last 28 days (informational)</strong>
         <span class="spacer"></span>
         <span class="muted small" id="windowLabel"></span>
       </div>
@@ -391,11 +329,10 @@
         <span class="pill" id="winDays">Days worked: 0</span>
       </div>
       <div class="small muted">
-        This is a running view only. Confirmed overtime requires checking the award rules, rostering, and finalising the period.
+        This is a running view only. Confirmed overtime requires checking the award rules, rostering, and finalising the 4-week period.
       </div>
     </div>
 
-    <!-- Recent entries -->
     <div class="card">
       <div class="row no-print">
         <strong>Recent entries</strong>
@@ -428,7 +365,6 @@
         <button id="printBtn" class="btn small" type="button">Print / PDF</button>
       </div>
 
-      <!-- Desktop/tablet view -->
       <div class="table-desktop">
         <div class="table-scroll">
           <table>
@@ -453,7 +389,6 @@
         </div>
       </div>
 
-      <!-- Mobile card view -->
       <div id="entriesCards" class="entries-cards"></div>
     </div>
   </div>
@@ -475,4 +410,558 @@
       </div>
       <div class="row">
         <button id="signInBtn" class="btn primary" type="button">Sign in</button>
-        <span id="
+        <span id="authMsg" class="muted small"></span>
+        <span class="spacer"></span>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Firebase init ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+      authDomain: "consentes-pastoral.firebaseapp.com",
+      projectId: "consentes-pastoral",
+      appId: "1:494858780013:web:d87497b370c82eeab06e64"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ---------- Helpers ----------
+    const $  = s => document.querySelector(s);
+    const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const todayISO = () => new Date().toISOString().slice(0,10);
+
+    function setStatus(msg, kind){
+      const el = $('#status');
+      el.textContent = msg || '';
+      el.classList.toggle('status-warn', kind === 'danger');
+      el.classList.toggle('status-warn2', kind === 'warn');
+    }
+    function setSaveMsg(msg, ms){
+      const el = $('#saveMsg');
+      el.textContent = msg || '';
+      if (ms){
+        setTimeout(()=>{ if (el.textContent===msg) el.textContent=''; }, ms);
+      }
+    }
+
+    function timeToMinutes(t){
+      if (!t || !String(t).includes(':')) return null;
+      const [h,m] = String(t).split(':').map(Number);
+      if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+      return h*60 + m;
+    }
+
+    // Handles overnight shifts: if finish < start, assume next day
+    function calculateHours(start, end, breakMin){
+      const s = timeToMinutes(start);
+      const e0 = timeToMinutes(end);
+      let b = Number(breakMin || 0);
+      if (!Number.isFinite(b) || b < 0) b = 0;
+
+      if (s == null || e0 == null) return { totalHours: 0, potentialOtHours: 0, minutes: 0 };
+
+      let e = e0;
+      if (e < s) e += 24*60; // overnight
+      let mins = (e - s) - b;
+      if (!Number.isFinite(mins) || mins < 0) mins = 0;
+
+      const hours = mins / 60;
+      const pot = Math.max(0, hours - 8);
+      return { totalHours: hours, potentialOtHours: pot, minutes: mins };
+    }
+
+    // ---------- State ----------
+    let CURRENT_UID = null;
+    let CURRENT_EMAIL = null;
+    let CURRENT_ROLE = 'worker';
+    let ALLOWED_PROPERTY_IDS = null; // Set or null
+    let ALL_PROPERTIES = [];
+    let USERS = {}; // email -> {firstName, fullName}
+
+    // ---------- DOM ----------
+    const propSel = $('#propSel');
+    const dateInp = $('#dateInp');
+    const startInp = $('#startInp');
+    const endInp = $('#endInp');
+    const breakInp = $('#breakInp');
+    const notesInp = $('#notesInp');
+
+    const pillTotal = $('#pillTotal');
+    const pillPot = $('#pillPot');
+
+    const winLabel = $('#windowLabel');
+    const winTotal = $('#winTotal');
+    const winPot = $('#winPot');
+    const winDays = $('#winDays');
+
+    const filterPropSel = $('#filterPropSel');
+    const filterUserSel = $('#filterUserSel');
+    const userFilterWrap = $('#userFilterWrap');
+    const filterYear = $('#filterYear');
+    const sortSel = $('#sortSel');
+    const entriesBody = $('#entriesBody');
+    const entriesCards = $('#entriesCards');
+
+    const authOverlay = $('#authOverlay');
+    const authWho = $('#authWho');
+    const signOutBtn = $('#signOutBtn');
+
+    const dbMenuBtn = $('#dbMenuBtn');
+    const dbMenu = $('#dbMenu');
+
+    // Header DB menu
+    if (dbMenuBtn && dbMenu){
+      dbMenuBtn.onclick = e => { e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
+      document.addEventListener('click', e=>{
+        if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
+      });
+    }
+
+    // Auth controls
+    const siEmail = $('#siEmail');
+    const siPass = $('#siPass');
+    const signInBtn = $('#signInBtn');
+    const authMsg = $('#authMsg');
+    const closeOverlayBtn = $('#closeOverlayBtn');
+
+    function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+
+    signInBtn.onclick = async ()=>{
+      const email = (siEmail.value || '').trim();
+      const pass  = siPass.value || '';
+      if (!email || !pass){
+        authMsg.textContent = 'Enter email and password.';
+        return;
+      }
+      authMsg.textContent = 'Signing in…';
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithEmailAndPassword(email, pass);
+        authMsg.textContent = 'Signed in.';
+        showOverlay(false);
+      }catch(e){
+        console.error(e);
+        authMsg.textContent = e.message || 'Sign-in failed.';
+      }
+    };
+    closeOverlayBtn.onclick = ()=> showOverlay(false);
+    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+    async function loadCurrentUserRole(user){
+      CURRENT_UID = user?.uid || null;
+      CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
+      CURRENT_ROLE = 'worker';
+      ALLOWED_PROPERTY_IDS = null;
+
+      if (!CURRENT_EMAIL) return;
+      const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
+      try{
+        const snap = await db.collection('users').doc(docId).get();
+        if (snap.exists){
+          const data = snap.data() || {};
+          CURRENT_ROLE = data.role || 'worker';
+          const allowed = data.allowedProperties || [];
+          if (Array.isArray(allowed) && allowed.length){
+            ALLOWED_PROPERTY_IDS = new Set(allowed);
+          }
+        }
+      }catch(e){
+        console.error('loadCurrentUserRole failed', e);
+      }
+    }
+
+    auth.onAuthStateChanged(async user=>{
+      if (user){
+        authWho.textContent = user.email || 'Signed in';
+        signOutBtn.classList.remove('hidden');
+        showOverlay(false);
+        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+        await loadCurrentUserRole(user);
+        await initAfterAuth();
+      }else{
+        authWho.textContent = 'Not signed in';
+        signOutBtn.classList.add('hidden');
+        showOverlay(true);
+      }
+    });
+
+    async function loadUsers(){
+      // Used for labels + admin filters
+      try{
+        const usersSnap = await db.collection('users').get();
+        USERS = {};
+        usersSnap.forEach(doc=>{
+          const d = doc.data() || {};
+          const email = String(d.email || '').toLowerCase();
+          if (!email) return;
+          const fullName = (d.name || '').trim();
+          const firstName = fullName || email.split('@')[0];
+          USERS[email] = { fullName, firstName };
+        });
+      }catch(e){
+        console.error('loadUsers failed', e);
+        USERS = {};
+      }
+    }
+
+    async function loadProperties(){
+      const snap = await db.collection('properties').get();
+      let props = [];
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        props.push({id:doc.id, name:d.name || '(Property)'});
+      });
+      props.sort((a,b)=>a.name.localeCompare(b.name));
+
+      if (ALLOWED_PROPERTY_IDS instanceof Set){
+        props = props.filter(p=>ALLOWED_PROPERTY_IDS.has(p.id));
+      }
+
+      ALL_PROPERTIES = props;
+
+      if (!props.length){
+        propSel.innerHTML = '<option value="">(no properties available)</option>';
+        filterPropSel.innerHTML = '<option value="">(none)</option>';
+        return;
+      }
+
+      propSel.innerHTML = props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+      filterPropSel.innerHTML =
+        '<option value="">(All properties)</option>' +
+        props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    }
+
+    function userLabel(email){
+      const e = (email || '').toLowerCase();
+      const u = USERS[e];
+      if (u && (u.fullName || u.firstName)) return (u.fullName || u.firstName);
+      return e ? e.split('@')[0] : '';
+    }
+
+    function updateCalcPills(){
+      const calc = calculateHours(startInp.value, endInp.value, breakInp.value);
+      pillTotal.textContent = `Total: ${calc.totalHours.toFixed(2)}h`;
+      pillPot.textContent = `Potential OT: ${calc.potentialOtHours.toFixed(2)}h`;
+    }
+
+    startInp.oninput = updateCalcPills;
+    endInp.oninput = updateCalcPills;
+    breakInp.oninput = updateCalcPills;
+
+    async function saveHours(){
+      if (!propSel.value){
+        alert('Choose a property.');
+        return;
+      }
+      const date = dateInp.value || todayISO();
+      const start = startInp.value || '';
+      const end = endInp.value || '';
+      const breakMin = Number(breakInp.value || 0) || 0;
+
+      if (!start || !end){
+        alert('Enter start and finish times.');
+        return;
+      }
+
+      const calc = calculateHours(start, end, breakMin);
+      if (calc.totalHours <= 0){
+        alert('Calculated hours are 0. Check times and break.');
+        return;
+      }
+
+      const user = auth.currentUser;
+      const createdByUid = user?.uid || CURRENT_UID || null;
+      const createdByEmail = (user?.email || CURRENT_EMAIL || null);
+
+      const payload = {
+        date,
+        propertyId: propSel.value,
+        propertyName: propSel.selectedOptions[0]?.textContent || '',
+        start,
+        end,
+        breakMin: breakMin || 0,
+        totalHours: Number(calc.totalHours.toFixed(4)),
+        potentialOtHours: Number(calc.potentialOtHours.toFixed(4)),
+        notes: notesInp.value || null,
+
+        createdByUid,
+        createdByEmail,
+        createdByRole: CURRENT_ROLE || null,
+
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try{
+        setStatus('Saving…');
+        await db.collection('hoursEntries').add(payload);
+        setStatus('Saved');
+        setSaveMsg('Saved.', 1500);
+        await refreshEntries();
+        await refreshWindowSummary();
+      }catch(e){
+        console.error(e);
+        setStatus('Save failed', 'danger');
+        setSaveMsg('Save failed. Check console.', 4000);
+      }
+    }
+
+    async function refreshWindowSummary(){
+      // last 28 days inclusive of today
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - 27);
+
+      const startISO = start.toISOString().slice(0,10);
+      const endISO = end.toISOString().slice(0,10);
+      winLabel.textContent = `${startISO} → ${endISO}`;
+
+      try{
+        // Fetch a wider set then filter client-side for role + prop
+        const snap = await db.collection('hoursEntries')
+          .where('date','>=',startISO)
+          .where('date','<=',endISO)
+          .get();
+
+        let rows = [];
+        snap.forEach(doc => rows.push({id:doc.id, ...(doc.data()||{})}));
+
+        // visibility: workers only their entries
+        if (CURRENT_ROLE === 'worker'){
+          const uid = CURRENT_UID;
+          const email = (CURRENT_EMAIL || '').toLowerCase();
+          rows = rows.filter(r=>{
+            const uidMatch = r.createdByUid && uid && r.createdByUid === uid;
+            const emailMatch = r.createdByEmail && email && String(r.createdByEmail).toLowerCase() === email;
+            return uidMatch || emailMatch;
+          });
+        }
+
+        let total = 0;
+        let pot = 0;
+        const daySet = new Set();
+
+        rows.forEach(r=>{
+          total += Number(r.totalHours || 0);
+          pot += Number(r.potentialOtHours || 0);
+          if (r.date) daySet.add(String(r.date));
+        });
+
+        winTotal.textContent = `Total: ${total.toFixed(2)}h`;
+        winPot.textContent = `Potential OT flags: ${pot.toFixed(2)}h`;
+        winDays.textContent = `Days worked: ${daySet.size}`;
+      }catch(e){
+        console.error(e);
+        winTotal.textContent = 'Total: —';
+        winPot.textContent = 'Potential OT flags: —';
+        winDays.textContent = 'Days worked: —';
+      }
+    }
+
+    async function refreshEntries(){
+      entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Loading…</td></tr>';
+      if (entriesCards) entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
+
+      try{
+        const snap = await db.collection('hoursEntries')
+          .orderBy('date','desc')
+          .limit(250)
+          .get();
+
+        let rows = [];
+        snap.forEach(doc => rows.push({id:doc.id, ...(doc.data()||{})}));
+
+        // build user filter options (admin/manager only)
+        const isWorker = CURRENT_ROLE === 'worker';
+        if (isWorker){
+          userFilterWrap.style.display = 'none';
+        }else{
+          userFilterWrap.style.display = '';
+          const userSet = new Set();
+          rows.forEach(r=>{
+            if (r.createdByEmail) userSet.add(userLabel(r.createdByEmail));
+          });
+          const list = Array.from(userSet).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+          const prev = filterUserSel.value || '';
+          filterUserSel.innerHTML = '<option value="">All users</option>' +
+            list.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
+          if (prev && list.includes(prev)) filterUserSel.value = prev;
+        }
+
+        // apply filters
+        const yearFilter = parseInt(filterYear.value || '', 10) || null;
+        const propFilter = filterPropSel.value || '';
+        const selectedUser = (filterUserSel.value || '').trim();
+
+        if (yearFilter){
+          rows = rows.filter(r => String(r.date || '').slice(0,4) === String(yearFilter));
+        }
+        if (propFilter){
+          rows = rows.filter(r => r.propertyId === propFilter);
+        }
+
+        if (isWorker){
+          const uid = CURRENT_UID;
+          const email = (CURRENT_EMAIL || '').toLowerCase();
+          rows = rows.filter(r=>{
+            const uidMatch = r.createdByUid && uid && r.createdByUid === uid;
+            const emailMatch = r.createdByEmail && email && String(r.createdByEmail).toLowerCase() === email;
+            return uidMatch || emailMatch;
+          });
+        }else if (selectedUser){
+          rows = rows.filter(r => userLabel(r.createdByEmail) === selectedUser);
+        }
+
+        // sort
+        const sortMode = sortSel.value || 'dateDesc';
+        rows.sort((a,b)=>{
+          const dA = String(a.date||'');
+          const dB = String(b.date||'');
+          const uA = userLabel(a.createdByEmail);
+          const uB = userLabel(b.createdByEmail);
+
+          if (sortMode === 'dateAsc') return dA.localeCompare(dB);
+          if (sortMode === 'dateDesc') return dB.localeCompare(dA);
+          if (sortMode === 'userAsc'){
+            const c = uA.localeCompare(uB); if (c!==0) return c;
+            return dB.localeCompare(dA);
+          }
+          if (sortMode === 'userDesc'){
+            const c = uB.localeCompare(uA); if (c!==0) return c;
+            return dB.localeCompare(dA);
+          }
+          return 0;
+        });
+
+        if (!rows.length){
+          entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
+          if (entriesCards) entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
+          return;
+        }
+
+        const canDelete = (r)=>{
+          if (CURRENT_ROLE !== 'worker') return true;
+          const uid = CURRENT_UID;
+          const email = (CURRENT_EMAIL || '').toLowerCase();
+          const uidMatch = r.createdByUid && uid && r.createdByUid === uid;
+          const emailMatch = r.createdByEmail && email && String(r.createdByEmail).toLowerCase() === email;
+          return uidMatch || emailMatch;
+        };
+
+        // desktop table
+        entriesBody.innerHTML = rows.map(r=>{
+          const tot = Number(r.totalHours || 0);
+          const pot = Number(r.potentialOtHours || 0);
+          const delBtn = canDelete(r) ? `<button class="btn small danger" type="button" data-del="${r.id}">Delete</button>` : '';
+          return `<tr>
+            <td class="nowrap">${escapeHtml(r.date||'')}</td>
+            <td>${escapeHtml(r.propertyName||'')}</td>
+            <td class="nowrap">${escapeHtml(r.start||'')}</td>
+            <td class="nowrap">${escapeHtml(r.end||'')}</td>
+            <td class="nowrap">${escapeHtml(String(r.breakMin ?? 0))}</td>
+            <td class="nowrap">${tot.toFixed(2)}</td>
+            <td class="nowrap">${pot.toFixed(2)}</td>
+            <td>${escapeHtml(r.notes||'')}</td>
+            <td>${escapeHtml(userLabel(r.createdByEmail))}</td>
+            <td class="no-print">${delBtn}</td>
+          </tr>`;
+        }).join('');
+
+        // mobile cards
+        if (entriesCards){
+          entriesCards.innerHTML = rows.map(r=>{
+            const tot = Number(r.totalHours || 0).toFixed(2);
+            const pot = Number(r.potentialOtHours || 0).toFixed(2);
+            const who = userLabel(r.createdByEmail);
+            const delBtn = canDelete(r) ? `<button class="btn small danger" type="button" data-del="${r.id}">Delete</button>` : '';
+            return `<div class="entry-card">
+              <div class="ec-header">
+                <div>${escapeHtml(r.date||'')}</div>
+                <div>${escapeHtml(r.propertyName||'')}</div>
+              </div>
+              ${who ? `<div class="ec-line"><span class="ec-label">User</span>${escapeHtml(who)}</div>` : ''}
+              <div class="ec-line"><span class="ec-label">Times</span>${escapeHtml(r.start||'')}–${escapeHtml(r.end||'')} (break ${escapeHtml(String(r.breakMin ?? 0))}m)</div>
+              <div class="ec-line"><span class="ec-label">Total</span>${escapeHtml(tot)}h</div>
+              <div class="ec-line"><span class="ec-label">Potential OT</span>${escapeHtml(pot)}h</div>
+              ${r.notes ? `<div class="ec-line ec-notes">${escapeHtml(r.notes)}</div>` : ''}
+              <div class="ec-actions no-print">${delBtn}</div>
+            </div>`;
+          }).join('');
+        }
+
+        // delete wiring
+        const dels = document.querySelectorAll('button[data-del]');
+        dels.forEach(btn=>{
+          btn.onclick = async ()=>{
+            const id = btn.dataset.del;
+            if (!id) return;
+            const ok = confirm('Delete this hours entry?');
+            if (!ok) return;
+            try{
+              await db.collection('hoursEntries').doc(id).delete();
+              await refreshEntries();
+              await refreshWindowSummary();
+            }catch(e){
+              console.error(e);
+              alert('Delete failed, see console.');
+            }
+          };
+        });
+
+      }catch(e){
+        console.error(e);
+        entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Error loading entries.</td></tr>';
+        if (entriesCards) entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
+      }
+    }
+
+    async function initAfterAuth(){
+      setStatus('Loading…');
+
+      const now = new Date();
+      dateInp.value = todayISO();
+      filterYear.value = now.getFullYear();
+
+      // default times
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      startInp.value = `${hh}:${mm}`;
+      endInp.value = `${hh}:${mm}`;
+      breakInp.value = '';
+
+      await loadUsers();
+      await loadProperties();
+
+      $('#saveBtn').onclick = saveHours;
+      $('#resetBtn').onclick = ()=>{
+        dateInp.value = todayISO();
+        startInp.value = '';
+        endInp.value = '';
+        breakInp.value = '';
+        notesInp.value = '';
+        updateCalcPills();
+      };
+      $('#refreshBtn').onclick = async ()=>{ await refreshEntries(); await refreshWindowSummary(); };
+      $('#printBtn').onclick = ()=>window.print();
+
+      sortSel.onchange = refreshEntries;
+      filterUserSel.onchange = refreshEntries;
+      filterPropSel.onchange = async ()=>{ await refreshEntries(); await refreshWindowSummary(); };
+      filterYear.onchange = refreshEntries;
+
+      updateCalcPills();
+      await refreshEntries();
+      await refreshWindowSummary();
+
+      setStatus('Ready');
+    }
+
+    // Kick off
+    window.addEventListener('load', ()=> setStatus('Ready'));
+  </script>
+</body>
+</html>
