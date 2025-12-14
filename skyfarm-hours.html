@@ -19,6 +19,7 @@
       --muted:#64748b;
       --accent:#047857;
       --danger:#b91c1c;
+      --warn:#b45309;
     }
     *{box-sizing:border-box;}
     body{
@@ -73,6 +74,7 @@
     .muted{color:var(--muted);}
     .small{font-size:.8rem;}
     .status-warn{color:var(--danger);}
+    .status-warn2{color:var(--warn);}
 
     .btn{
       border-radius:999px;
@@ -83,7 +85,7 @@
       cursor:pointer;
       display:inline-flex;
       align-items:center;
-      gap:4px;
+      gap:6px;
     }
     .btn.primary{
       background:var(--accent);
@@ -129,7 +131,6 @@
       padding:12px;
     }
     h1{margin:10px 0;font-size:1.5rem;}
-    h2{margin:0 0 8px;font-size:1.05rem;}
 
     .card{
       background:var(--card);
@@ -160,6 +161,7 @@
       font-family:inherit;
       background:#fff;
     }
+    textarea{resize:vertical;min-height:40px;}
     input:focus,select:focus,textarea:focus{
       outline:none;
       border-color:#2563eb;
@@ -170,6 +172,21 @@
     .w120{width:120px;}
     .w160{width:160px;}
     .w220{width:220px;}
+    .pill{
+      display:inline-block;
+      padding:2px 7px;
+      border-radius:999px;
+      font-size:.75rem;
+      background:#e5f3ff;
+      border:1px solid #bfdbfe;
+      margin-right:4px;
+      white-space:nowrap;
+    }
+    .pill.warn{
+      background:#fff7ed;
+      border-color:#fed7aa;
+      color:#9a3412;
+    }
 
     table{
       width:100%;
@@ -190,6 +207,50 @@
       width:100%;
       overflow-x:auto;
       -webkit-overflow-scrolling:touch;
+    }
+
+    /* Card list for mobile */
+    .entries-cards{
+      margin-top:8px;
+      display:none;
+      flex-direction:column;
+      gap:8px;
+    }
+    .entry-card{
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#f9fafb;
+      padding:8px 10px;
+    }
+    .ec-header{
+      display:flex;
+      justify-content:space-between;
+      font-size:.78rem;
+      font-weight:500;
+      margin-bottom:4px;
+    }
+    .ec-line{
+      font-size:.78rem;
+      margin-bottom:2px;
+    }
+    .ec-label{
+      font-weight:600;
+      color:#475569;
+      margin-right:4px;
+    }
+    .ec-notes{color:var(--muted);}
+
+    @media (max-width:800px){
+      .table-desktop{display:none;}
+      .entries-cards{display:flex;}
+      .row{flex-direction:column;align-items:flex-start;}
+      .w220,.w160,.w120,.w90{width:100%;}
+      #sf-header .bar{flex-wrap:wrap;}
+      #sf-header nav a{padding:4px 8px;}
+    }
+    @media (min-width:801px){
+      .table-desktop{display:block;}
+      .entries-cards{display:none;}
     }
 
     /* Auth overlay */
@@ -216,11 +277,13 @@
       body{background:#fff;}
       .wrap{padding:8px;}
       .card{box-shadow:none;border:none;margin:6px 0;}
+      .table-desktop{display:block!important;}
+      .entries-cards{display:none!important;}
     }
   </style>
 </head>
-
 <body>
+
   <!-- Header -->
   <div id="sf-header">
     <div class="bar">
@@ -256,88 +319,142 @@
   <div class="wrap">
     <h1>Hours</h1>
 
-    <!-- Hours entry form -->
     <div class="card no-print">
+      <div class="row">
+        <div style="flex:1;min-width:260px">
+          <div class="small muted">
+            Hours are averaged over a <strong>4-week period</strong> under the Pastoral Award (where averaging applies).
+            Daily hours over 8 are shown as <strong>Potential OT</strong> only. Overtime is confirmed when the 4-week average is finalised.
+          </div>
+        </div>
+        <span class="spacer"></span>
+        <div id="status" class="muted small">Ready</div>
+      </div>
+
       <div class="row">
         <div>
           <label>Property</label>
-          <select id="hoursProp" class="w220"></select>
+          <select id="propSel" class="w220"></select>
         </div>
         <div>
           <label>Date</label>
-          <input id="hoursDate" type="date" class="w160"/>
+          <input id="dateInp" type="date" class="w160"/>
         </div>
-        <span class="spacer"></span>
-        <div id="hoursStatus" class="muted small">Ready</div>
-      </div>
-
-      <div class="row">
         <div>
           <label>Start</label>
-          <input id="startTime" type="time" class="w160"/>
+          <input id="startInp" type="time" class="w120"/>
         </div>
         <div>
           <label>Finish</label>
-          <input id="endTime" type="time" class="w160"/>
+          <input id="endInp" type="time" class="w120"/>
         </div>
         <div>
           <label>Break (mins)</label>
-          <input id="breakMins" type="number" min="0" step="5" value="30" class="w160"/>
+          <input id="breakInp" type="number" min="0" step="5" class="w120" placeholder="0"/>
         </div>
       </div>
 
       <div class="row">
-        <div style="flex:1;min-width:260px">
-          <label>Duties</label>
-          <input id="dutiesInp" style="width:100%" placeholder="Mustering, fencing, feeding..."/>
-        </div>
         <div style="flex:1;min-width:260px">
           <label>Notes (optional)</label>
-          <input id="hoursNotesInp" style="width:100%" placeholder="Anything to record"/>
+          <textarea id="notesInp" placeholder="Job, location, anything relevant..."></textarea>
+        </div>
+        <div style="min-width:260px">
+          <label>Calculated</label>
+          <div id="calcBox" class="small">
+            <span class="pill" id="pillTotal">Total: 0.00h</span>
+            <span class="pill warn" id="pillPot">Potential OT: 0.00h</span>
+          </div>
+          <div class="small muted" style="margin-top:4px;">
+            Potential OT is a daily flag (over 8). Confirmed overtime is based on the 4-week average.
+          </div>
         </div>
       </div>
 
       <div class="row">
-        <button id="saveHoursBtn" class="btn primary" type="button">Save hours</button>
-        <button id="resetHoursBtn" class="btn" type="button">Reset</button>
-        <span id="hoursSummary" class="muted small"></span>
-      </div>
-
-      <div class="small muted">
-        Totals are calculated automatically. Anything over 8 hours/day is shown as overtime.
+        <button id="saveBtn" class="btn primary" type="button">Save hours</button>
+        <button id="resetBtn" class="btn" type="button">Reset</button>
+        <span id="saveMsg" class="muted small"></span>
       </div>
     </div>
 
-    <!-- Recent hours -->
+    <!-- 4-week window summary (informational) -->
+    <div class="card">
+      <div class="row">
+        <strong>4-week window (informational)</strong>
+        <span class="spacer"></span>
+        <span class="muted small" id="windowLabel"></span>
+      </div>
+      <div class="row">
+        <span class="pill" id="winTotal">Total: 0.00h</span>
+        <span class="pill warn" id="winPot">Potential OT flags: 0.00h</span>
+        <span class="pill" id="winDays">Days worked: 0</span>
+      </div>
+      <div class="small muted">
+        This is a running view only. Confirmed overtime requires checking the award rules, rostering, and finalising the period.
+      </div>
+    </div>
+
+    <!-- Recent entries -->
     <div class="card">
       <div class="row no-print">
-        <strong>Recent hours</strong>
+        <strong>Recent entries</strong>
+        <div>
+          <label class="small">Property</label>
+          <select id="filterPropSel" class="w160"></select>
+        </div>
+        <div id="userFilterWrap">
+          <label class="small">User</label>
+          <select id="filterUserSel" class="w160"></select>
+        </div>
+        <div>
+          <label class="small">Year</label>
+          <input id="filterYear" type="number" class="w90" min="2000" max="2100"/>
+        </div>
+        <div>
+          <label class="small">Sort</label>
+          <select id="sortSel" class="w160">
+            <option value="dateDesc">Newest first</option>
+            <option value="dateAsc">Oldest first</option>
+            <option value="userAsc">User A–Z</option>
+            <option value="userDesc">User Z–A</option>
+          </select>
+        </div>
+        <div>
+          <label class="small">&nbsp;</label>
+          <button id="refreshBtn" class="btn small" type="button">Refresh</button>
+        </div>
         <span class="spacer"></span>
-        <button id="refreshHoursBtn" class="btn small" type="button">Refresh</button>
         <button id="printBtn" class="btn small" type="button">Print / PDF</button>
       </div>
 
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Property</th>
-              <th>Start</th>
-              <th>Finish</th>
-              <th>Break</th>
-              <th>Total</th>
-              <th>OT</th>
-              <th>Duties</th>
-              <th>User</th>
-              <th class="no-print"></th>
-            </tr>
-          </thead>
-          <tbody id="hoursBody">
-            <tr><td colspan="10" class="muted small">Loading…</td></tr>
-          </tbody>
-        </table>
+      <!-- Desktop/tablet view -->
+      <div class="table-desktop">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Property</th>
+                <th class="nowrap">Start</th>
+                <th class="nowrap">Finish</th>
+                <th class="nowrap">Break</th>
+                <th class="nowrap">Total</th>
+                <th class="nowrap">Potential OT</th>
+                <th>Notes</th>
+                <th>User</th>
+                <th class="no-print"></th>
+              </tr>
+            </thead>
+            <tbody id="entriesBody">
+              <tr><td colspan="10" class="muted small">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      <!-- Mobile card view -->
+      <div id="entriesCards" class="entries-cards"></div>
     </div>
   </div>
 
@@ -358,354 +475,4 @@
       </div>
       <div class="row">
         <button id="signInBtn" class="btn primary" type="button">Sign in</button>
-        <span id="authMsg" class="muted small"></span>
-        <span class="spacer"></span>
-        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ---------- Firebase init ----------
-    const firebaseConfig = {
-      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-      authDomain: "consentes-pastoral.firebaseapp.com",
-      projectId: "consentes-pastoral",
-      appId: "1:494858780013:web:d87497b370c82eeab06e64"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    // ---------- Helpers ----------
-    const $  = s => document.querySelector(s);
-    const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-    const todayISO = () => new Date().toISOString().slice(0,10);
-
-    function setHoursStatus(msg, warn){
-      const el = $('#hoursStatus');
-      el.textContent = msg || '';
-      el.classList.toggle('status-warn', !!warn);
-    }
-
-    function calculateHours(start, end, breakMin = 0){
-      // Simple daily calc: total hours minus unpaid break.
-      // Anything over 8 hours/day is overtime (can adjust later).
-      const [sh, sm] = start.split(':').map(Number);
-      const [eh, em] = end.split(':').map(Number);
-
-      let mins = (eh*60 + em) - (sh*60 + sm) - Number(breakMin || 0);
-      if (!Number.isFinite(mins)) mins = 0;
-      if (mins < 0) mins = 0;
-
-      const hours = mins / 60;
-      const overtime = Math.max(0, hours - 8);
-      return { hours, overtime };
-    }
-
-    // Current user/role
-    let CURRENT_USER = null;
-    let CURRENT_UID = null;
-    let CURRENT_EMAIL = null;
-    let CURRENT_ROLE = 'worker';       // admin | manager | worker
-    let ALLOWED_PROPERTY_IDS = null;   // Set of propertyIds, or null = all
-
-    // Properties
-    let ALL_PROPERTIES = [];
-
-    // DOM refs
-    const hoursProp = $('#hoursProp');
-    const hoursDate = $('#hoursDate');
-    const startTime = $('#startTime');
-    const endTime = $('#endTime');
-    const breakMins = $('#breakMins');
-    const dutiesInp = $('#dutiesInp');
-    const hoursNotesInp = $('#hoursNotesInp');
-
-    const saveHoursBtn = $('#saveHoursBtn');
-    const resetHoursBtn = $('#resetHoursBtn');
-    const refreshHoursBtn = $('#refreshHoursBtn');
-    const printBtn = $('#printBtn');
-
-    const hoursSummary = $('#hoursSummary');
-    const hoursBody = $('#hoursBody');
-
-    // Header DB menu
-    const dbMenuBtn = $('#dbMenuBtn');
-    const dbMenu = $('#dbMenu');
-    if (dbMenuBtn && dbMenu){
-      dbMenuBtn.onclick = e => {
-        e.stopPropagation();
-        dbMenu.classList.toggle('hidden');
-      };
-      document.addEventListener('click', e=>{
-        if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn){
-          dbMenu.classList.add('hidden');
-        }
-      });
-    }
-
-    // Auth overlay
-    const authOverlay = $('#authOverlay');
-    const authWho = $('#authWho');
-    const signOutBtn = $('#signOutBtn');
-
-    const siEmail = $('#siEmail');
-    const siPass = $('#siPass');
-    const signInBtn = $('#signInBtn');
-    const authMsg = $('#authMsg');
-    const closeOverlayBtn = $('#closeOverlayBtn');
-
-    function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
-
-    signInBtn.onclick = async ()=>{
-      const email = (siEmail.value || '').trim();
-      const pass  = siPass.value || '';
-      if (!email || !pass){
-        authMsg.textContent = 'Enter email and password.';
-        return;
-      }
-      authMsg.textContent = 'Signing in…';
-      try{
-        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        await auth.signInWithEmailAndPassword(email, pass);
-        authMsg.textContent = 'Signed in.';
-        showOverlay(false);
-      }catch(e){
-        console.error(e);
-        authMsg.textContent = e.message || 'Sign-in failed.';
-      }
-    };
-    closeOverlayBtn.onclick = ()=> showOverlay(false);
-    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
-
-    async function loadCurrentUserRole(user){
-      CURRENT_USER = user;
-      CURRENT_UID = user?.uid || null;
-      CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
-      CURRENT_ROLE = 'worker';
-      ALLOWED_PROPERTY_IDS = null;
-
-      if (!CURRENT_EMAIL) return;
-      const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
-      try{
-        const snap = await db.collection('users').doc(docId).get();
-        if (snap.exists){
-          const data = snap.data() || {};
-          CURRENT_ROLE = data.role || 'worker';
-          const allowed = data.allowedProperties || [];
-          if (Array.isArray(allowed) && allowed.length){
-            ALLOWED_PROPERTY_IDS = new Set(allowed);
-          }
-        }
-      }catch(e){
-        console.error('loadCurrentUserRole failed', e);
-      }
-    }
-
-    // Load properties (same behaviour as your diary page)
-    async function loadProperties(){
-      const snap = await db.collection('properties').get();
-      let props = [];
-      snap.forEach(doc=>{
-        const d = doc.data() || {};
-        props.push({id:doc.id, name:d.name || '(Property)'});
-      });
-      props.sort((a,b)=>a.name.localeCompare(b.name));
-
-      if (ALLOWED_PROPERTY_IDS instanceof Set){
-        props = props.filter(p=>ALLOWED_PROPERTY_IDS.has(p.id));
-      }
-
-      ALL_PROPERTIES = props;
-
-      if (!props.length){
-        hoursProp.innerHTML = '<option value="">(no properties available)</option>';
-        return;
-      }
-
-      hoursProp.innerHTML = props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-    }
-
-    async function saveHours(){
-      if (!hoursProp.value){
-        alert("Choose a property.");
-        return;
-      }
-      if (!hoursDate.value){
-        alert("Choose a date.");
-        return;
-      }
-      if (!startTime.value || !endTime.value){
-        alert("Start and finish are required.");
-        return;
-      }
-
-      const b = Number(breakMins.value || 0);
-      if (!Number.isFinite(b) || b < 0){
-        alert("Break minutes must be 0 or more.");
-        return;
-      }
-
-      // Quick sanity check: finish must be after start for now (same-day shift).
-      // If you need overnight shifts later, we can add a "spans midnight" toggle.
-      const calcTry = calculateHours(startTime.value, endTime.value, b);
-      if (calcTry.hours <= 0){
-        alert("Finish time must be after start time (same day).");
-        return;
-      }
-
-      const calc = calculateHours(startTime.value, endTime.value, b);
-      hoursSummary.textContent = `Total ${calc.hours.toFixed(2)} hrs (OT ${calc.overtime.toFixed(2)})`;
-
-      try{
-        setHoursStatus("Saving…");
-
-        await db.collection('timesheets').add({
-          date: hoursDate.value,
-
-          propertyId: hoursProp.value,
-          propertyName: hoursProp.selectedOptions[0]?.textContent || "",
-
-          workerUid: CURRENT_UID,
-          workerEmail: CURRENT_EMAIL,
-
-          startTime: startTime.value,
-          endTime: endTime.value,
-          breakMinutes: b,
-
-          totalHours: calc.hours,
-          overtimeHours: calc.overtime,
-
-          duties: dutiesInp.value || null,
-          notes: hoursNotesInp.value || null,
-
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          locked: false
-        });
-
-        setHoursStatus("Saved");
-        await refreshHours();
-      }catch(e){
-        console.error(e);
-        setHoursStatus("Save failed", true);
-        alert("Save failed. Check console.");
-      }
-    }
-
-    async function refreshHours(){
-      hoursBody.innerHTML = `<tr><td colspan="10" class="muted small">Loading…</td></tr>`;
-
-      try{
-        let q = db.collection('timesheets')
-          .orderBy('date','desc')
-          .limit(200);
-
-        // Workers only see their own
-        if (CURRENT_ROLE === 'worker' && CURRENT_EMAIL){
-          q = q.where('workerEmail','==',CURRENT_EMAIL.toLowerCase());
-        }
-
-        const snap = await q.get();
-        const rows = [];
-        snap.forEach(doc => rows.push({ id: doc.id, ...(doc.data() || {}) }));
-
-        if (!rows.length){
-          hoursBody.innerHTML = `<tr><td colspan="10" class="muted small">No hours yet.</td></tr>`;
-          return;
-        }
-
-        hoursBody.innerHTML = rows.map(r=>{
-          const canDelete =
-            (CURRENT_ROLE !== 'worker') ||
-            (String(r.workerEmail||'').toLowerCase() === (CURRENT_EMAIL||'').toLowerCase());
-
-          const delBtn = (canDelete && r.locked !== true)
-            ? `<button class="btn small danger" data-del="${r.id}" type="button">Delete</button>`
-            : '';
-
-          const total = Number(r.totalHours || 0);
-          const ot = Number(r.overtimeHours || 0);
-
-          return `<tr>
-            <td class="nowrap">${escapeHtml(r.date||'')}</td>
-            <td>${escapeHtml(r.propertyName||'')}</td>
-            <td>${escapeHtml(r.startTime||'')}</td>
-            <td>${escapeHtml(r.endTime||'')}</td>
-            <td>${escapeHtml(String(r.breakMinutes ?? ''))}</td>
-            <td>${escapeHtml(total.toFixed(2))}</td>
-            <td>${escapeHtml(ot.toFixed(2))}</td>
-            <td>${escapeHtml(r.duties||'')}</td>
-            <td>${escapeHtml((r.workerEmail||'').split('@')[0])}</td>
-            <td class="no-print">${delBtn}</td>
-          </tr>`;
-        }).join('');
-
-        document.querySelectorAll('button[data-del]').forEach(btn=>{
-          btn.onclick = async ()=>{
-            const id = btn.dataset.del;
-            if (!id) return;
-            const ok = confirm("Delete this hours entry?");
-            if (!ok) return;
-            try{
-              await db.collection('timesheets').doc(id).delete();
-              await refreshHours();
-            }catch(e){
-              console.error(e);
-              alert("Delete failed. Check console.");
-            }
-          };
-        });
-
-      }catch(e){
-        console.error(e);
-        hoursBody.innerHTML = `<tr><td colspan="10" class="muted small">Error loading hours.</td></tr>`;
-      }
-    }
-
-    async function initAfterAuth(){
-      hoursDate.value = todayISO();
-      const now = new Date();
-      startTime.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-      endTime.value = '';
-
-      await loadProperties();
-
-      saveHoursBtn.onclick = saveHours;
-      resetHoursBtn.onclick = ()=>{
-        startTime.value = '';
-        endTime.value = '';
-        breakMins.value = 30;
-        dutiesInp.value = '';
-        hoursNotesInp.value = '';
-        hoursSummary.textContent = '';
-        setHoursStatus("Ready");
-      };
-      refreshHoursBtn.onclick = refreshHours;
-      printBtn.onclick = ()=>window.print();
-
-      await refreshHours();
-    }
-
-    auth.onAuthStateChanged(async user=>{
-      if (user){
-        authWho.textContent = user.email || 'Signed in';
-        signOutBtn.classList.remove('hidden');
-        showOverlay(false);
-        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
-        await loadCurrentUserRole(user);
-        await initAfterAuth();
-      }else{
-        authWho.textContent = 'Not signed in';
-        signOutBtn.classList.add('hidden');
-        showOverlay(true);
-      }
-    });
-
-    window.addEventListener('load', ()=>{
-      setHoursStatus('Ready');
-    });
-  </script>
-</body>
-</html>
+        <span id="
