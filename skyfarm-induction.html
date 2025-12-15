@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SkyFarm — Safety Induction</title>
 
-  <!-- Optional: shared header styling (recommended) -->
-  <link rel="stylesheet" href="skyfarm-shared.css">
+  <!-- Shared header styling -->
+  <link rel="stylesheet" href="skyfarm-shared.css"/>
 
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -73,6 +73,7 @@
       padding:10px;
       margin-bottom:8px;
       cursor:pointer;
+      user-select:none;
     }
     .module-item.active{
       border-color:#0f766e;
@@ -91,7 +92,7 @@
       margin-right:4px;
       white-space:nowrap;
     }
-    .pill.ok{background:#ecfdf5;border-color:#bbf7d0;color:var(--ok);}
+    .pill.ok{background:#ecfdf5;border-color:#bbf7d0;color:#166534;}
     .pill.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
     .pill.bad{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
 
@@ -128,28 +129,6 @@
     .content ul{margin:8px 0 8px 18px;}
     .content li{margin:6px 0;}
 
-    .q{
-      border-top:1px solid var(--line);
-      margin-top:12px;
-      padding-top:12px;
-    }
-    .q h3{margin:0 0 8px;font-size:1.05rem;}
-    .q .question{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px;
-      background:#fff;
-      margin-bottom:10px;
-    }
-    .q .prompt{font-weight:600;margin-bottom:8px;}
-    .q label{
-      display:flex;
-      gap:8px;
-      align-items:flex-start;
-      margin:6px 0;
-      font-size:.92rem;
-    }
-
     .notice{
       border:1px solid var(--line);
       border-radius:12px;
@@ -157,12 +136,52 @@
       background:#f9fafb;
     }
 
+    /* --- QUIZ LAYOUT FIX (this is the main change) --- */
+    .q{
+      border-top:1px solid var(--line);
+      margin-top:12px;
+      padding-top:12px;
+    }
+    .q h3{margin:0 0 8px;font-size:1.05rem;}
+
+    .q .question{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px;
+      background:#fff;
+      margin-bottom:10px;
+      text-align:left;
+      direction:ltr;
+    }
+    .q .prompt{
+      font-weight:700;
+      margin-bottom:10px;
+    }
+
+    /* Force radio + text into a clean 2-column layout */
+    .q .question label{
+      display:grid;
+      grid-template-columns: 18px 1fr;
+      column-gap:10px;
+      align-items:start;
+      justify-items:start;
+      margin:8px 0;
+      font-size:.95rem;
+      line-height:1.3;
+      cursor:pointer;
+      text-align:left;
+      direction:ltr;
+    }
+    .q .question input[type="radio"]{
+      margin-top:2px;
+    }
+
     /* Auth overlay */
     #authOverlay{
       position:fixed; inset:0;
       background:radial-gradient(circle at top,#020617 0,rgba(15,23,42,.94) 40%,rgba(15,23,42,.97) 100%);
       display:none; align-items:center; justify-content:center;
-      z-index:9999;
+      z-index:50;
     }
     #authCard{
       width:min(520px,92vw);
@@ -172,18 +191,19 @@
       padding:20px;
     }
     #authCard h2{margin:0 0 8px;}
-    input{
+    #authCard label{display:block;font-size:.85rem;color:#475569;margin-bottom:4px;}
+    #authCard input{
+      width:100%;
       border-radius:10px;
       border:1px solid #cbd5e1;
-      padding:6px 8px;
-      font-size:.9rem;
+      padding:8px 10px;
+      font-size:.95rem;
       font-family:inherit;
       background:#fff;
-      width:100%;
     }
 
     @media print{
-      #sf-header-root,.no-print{display:none!important;}
+      .no-print{display:none!important;}
       body{background:#fff;}
       .wrap{padding:8px;}
       .card{box-shadow:none;border:none;margin:6px 0;}
@@ -194,7 +214,7 @@
 
 <body>
   <!-- Shared header mount point -->
-  <div id="sf-header-root"></div>
+  <div id="sf-header-root" class="no-print"></div>
 
   <div class="wrap">
     <h1>Safety Induction</h1>
@@ -203,21 +223,13 @@
       <div class="row">
         <div class="notice" style="flex:1;min-width:280px">
           <div class="small muted">
-            Complete each module and pass the quiz. Progress saves automatically.
-            At the end you’ll get a completion record you can print.
-          </div>
-          <div style="margin-top:8px;">
-            <span class="pill"><strong>Properties:</strong> Consentes • Gerawin • Mt Myrtle</span>
-            <span class="pill"><strong>UHF:</strong> Channel 18</span>
-          </div>
-          <div style="margin-top:8px;" class="small">
-            <strong>Non-negotiable:</strong> Everyone goes home safe. Safety is key.
+            Complete each module and pass the quiz to finish the induction.
+            Your progress saves automatically. At the end you’ll get a completion record (printable).
           </div>
         </div>
         <span class="spacer"></span>
         <div id="status" class="muted small">Loading…</div>
       </div>
-
       <div class="row">
         <span class="pill" id="pillProgress">Progress: 0/0</span>
         <span class="pill warn" id="pillScore">Latest score: —</span>
@@ -238,19 +250,6 @@
           <div class="row no-print" style="margin-top:10px;">
             <button class="btn small" id="prevBtn" type="button">Back</button>
             <button class="btn small" id="nextBtn" type="button">Next</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <strong>Emergency contacts</strong>
-          <div class="small muted" style="margin-top:6px;">
-            Call help early. Give clear location and what happened.
-          </div>
-          <div style="margin-top:8px; font-size:.92rem;">
-            <div><strong>Paul Currin</strong> — <a href="tel:0428126499">0428 126 499</a></div>
-            <div style="margin-top:4px;"><strong>Nyssa Currin</strong> — <a href="tel:0427200783">0427 200 783</a></div>
-            <div class="small muted" style="margin-top:8px;">Emergency services: <strong>000</strong></div>
-            <div class="small muted">UHF: <strong>Channel 18</strong></div>
           </div>
         </div>
       </div>
@@ -274,7 +273,7 @@
 
         <div class="card" id="certificateCard" style="display:none;">
           <h2 style="margin:0 0 6px;">Induction certificate</h2>
-          <div class="small muted">Generated from what’s stored in Firestore.</div>
+          <div class="small muted">This is generated from what’s stored in Firestore.</div>
           <div style="margin-top:10px;" id="certBody"></div>
           <div class="row no-print" style="margin-top:10px;">
             <button class="btn primary" id="printCertBtn" type="button">Print</button>
@@ -291,11 +290,11 @@
       <p class="small muted">Email &amp; password only.</p>
       <div class="row">
         <div style="flex:1;min-width:240px">
-          <label class="small muted">Email</label>
+          <label>Email</label>
           <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
         </div>
         <div style="flex:1;min-width:200px">
-          <label class="small muted">Password</label>
+          <label>Password</label>
           <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
         </div>
       </div>
@@ -308,8 +307,15 @@
     </div>
   </div>
 
+  <!-- Shared header JS -->
+  <script src="skyfarm-header.js"></script>
   <script>
-    // ---------- Firebase init ----------
+    // Mount the shared header
+    SkyFarmHeader.mount();
+  </script>
+
+  <script>
+    // ---------- Firebase init (safe) ----------
     const firebaseConfig = {
       apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
       authDomain: "consentes-pastoral.firebaseapp.com",
@@ -317,27 +323,16 @@
       appId: "1:494858780013:web:d87497b370c82eeab06e64"
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // Mount shared header AFTER Firebase exists
-    // (important so it doesn't get stuck on "Checking sign-in…")
-  </script>
-
-  <!-- Shared header -->
-  <script src="skyfarm-header.js"></script>
-  <script>
-    if (window.SkyFarmHeader?.mount) SkyFarmHeader.mount();
-  </script>
-
-  <script>
     // ---------- Helpers ----------
     const $  = s => document.querySelector(s);
     const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     function setStatus(msg, kind){
       const el = $('#status');
-      if (!el) return;
       el.textContent = msg || '';
       el.classList.toggle('status-warn', kind === 'danger');
       el.classList.toggle('status-ok', kind === 'ok');
@@ -348,7 +343,7 @@
 
     const MODULES = [
       {
-        id: 'safety-culture',
+        id: 'culture',
         title: 'Safety culture (non-negotiables)',
         minutes: 4,
         content: `
@@ -375,13 +370,13 @@
         ]
       },
       {
-        id: 'property-rules',
+        id: 'property-comms',
         title: 'Property rules and communications',
         minutes: 6,
         content: `
-          <p>This induction applies to <strong>Consentes</strong>, <strong>Gerawin</strong> and <strong>Mt Myrtle</strong>.</p>
+          <p>This induction applies to <strong>Consentes, Gerawin</strong> and <strong>Mt Myrtle</strong>.</p>
           <ul>
-            <li><strong>UHF channel:</strong> Channel <strong>18</strong>.</li>
+            <li><strong>UHF channel:</strong> Channel 18.</li>
             <li>If you need help, call early and be clear about location.</li>
             <li><strong>Emergency contacts:</strong> Paul Currin (0428 126 499), Nyssa Currin (0427 200 783).</li>
             <li>Emergency services: <strong>000</strong>.</li>
@@ -409,7 +404,7 @@
           <ul>
             <li>Fatigue increases risk. If you’re not fit to work safely, say so.</li>
             <li>Heat stress: take shade breaks, drink water, and pace yourself.</li>
-            <li>Signs of heat stress: headache, nausea, cramps, confusion, dizziness.</li>
+            <li>Signs: headache, nausea, cramps, confusion, dizziness.</li>
             <li>Never push through severe symptoms. Get help immediately.</li>
           </ul>
         `,
@@ -505,16 +500,14 @@
       },
       {
         id: 'emergency',
-        title: 'Emergency response and reporting',
+        title: 'Emergency response',
         minutes: 6,
         content: `
           <ul>
             <li>In an emergency: make the area safe (if possible), call for help, give location clearly.</li>
-            <li>Call emergency services when needed: <strong>000</strong>.</li>
+            <li>Call emergency services when needed (000 in Australia).</li>
             <li>Do not put yourself at risk to rescue someone.</li>
-            <li>Report all incidents and near misses to the supervisor/manager.</li>
-            <li><strong>Contacts:</strong> Paul Currin (0428 126 499), Nyssa Currin (0427 200 783).</li>
-            <li><strong>UHF:</strong> Channel <strong>18</strong>.</li>
+            <li>Report all incidents to the supervisor/manager.</li>
           </ul>
         `,
         questions: [
@@ -538,7 +531,7 @@
     let CURRENT_ROLE = 'worker';
 
     let activeIndex = 0;
-    let progressDoc = null; // { activeIndex, passed: {moduleId: {passed, percent, at}} , completedAt }
+    let progressDoc = null;
 
     // ---------- DOM ----------
     const authOverlay = $('#authOverlay');
@@ -600,16 +593,26 @@
       try{
         const snap = await db.collection('users').doc(docId).get();
         if (snap.exists){
-          const data = snap.data() || {};
-          CURRENT_ROLE = data.role || 'worker';
+          CURRENT_ROLE = (snap.data() || {}).role || 'worker';
         }
       }catch(e){
         console.error('loadCurrentUserRole failed', e);
       }
     }
 
+    auth.onAuthStateChanged(async user=>{
+      if (user){
+        showOverlay(false);
+        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+        await loadCurrentUserRole(user);
+        await initAfterAuth();
+      }else{
+        showOverlay(true);
+      }
+    });
+
     function isPassed(moduleId){
-      const p = (progressDoc && progressDoc.passed) ? progressDoc.passed[moduleId] : null;
+      const p = progressDoc?.passed?.[moduleId];
       return !!(p && p.passed);
     }
 
@@ -617,6 +620,14 @@
       let n = 0;
       MODULES.forEach(m => { if (isPassed(m.id)) n++; });
       return n;
+    }
+
+    function refreshTopPills(){
+      pillProgress.textContent = `Progress: ${passedCount()}/${MODULES.length}`;
+      const completed = !!(progressDoc && progressDoc.completedAt);
+      pillCompleted.textContent = `Completed: ${completed ? 'Yes' : 'No'}`;
+      pillCompleted.className = 'pill ' + (completed ? 'ok' : 'warn');
+      if (!progressDoc) pillScore.textContent = 'Latest score: —';
     }
 
     function setActive(index){
@@ -632,9 +643,7 @@
     function renderSidebar(){
       moduleList.innerHTML = MODULES.map((m, i)=>{
         const passed = isPassed(m.id);
-        const meta = passed
-          ? `<span class="pill ok">Passed</span>`
-          : `<span class="pill warn">Not passed</span>`;
+        const meta = passed ? `<span class="pill ok">Passed</span>` : `<span class="pill warn">Not passed</span>`;
         const extra = `<span class="pill">${m.minutes} min</span>`;
         return `
           <div class="module-item ${i===activeIndex?'active':''}" data-idx="${i}">
@@ -705,14 +714,13 @@
       const m = MODULES[activeIndex];
       const ans = getSelectedAnswers();
       let correct = 0;
-      let total = m.questions.length;
+      const total = m.questions.length;
 
       for (let i=0; i<total; i++){
         if (ans[i] === m.questions[i].answerIndex) correct++;
       }
       const percent = total ? Math.round((correct/total)*100) : 0;
-      const passed = percent >= PASS_PERCENT;
-      return { percent, passed, correct, total };
+      return { percent, passed: percent >= PASS_PERCENT, correct, total };
     }
 
     resetQuizBtn.onclick = ()=>{
@@ -746,7 +754,6 @@
         : `Not passed (${result.correct}/${result.total}). Review the module and try again.`;
 
       await saveProgressNow();
-
       renderSidebar();
       refreshTopPills();
 
@@ -758,23 +765,11 @@
     prevBtn.onclick = ()=> setActive(activeIndex - 1);
     nextBtn.onclick = ()=> setActive(activeIndex + 1);
 
-    function refreshTopPills(){
-      pillProgress.textContent = `Progress: ${passedCount()}/${MODULES.length}`;
-      const completed = !!(progressDoc && progressDoc.completedAt);
-      pillCompleted.textContent = `Completed: ${completed ? 'Yes' : 'No'}`;
-      pillCompleted.className = 'pill ' + (completed ? 'ok' : 'warn');
-      if (!progressDoc) pillScore.textContent = 'Latest score: —';
-    }
-
     async function loadProgress(){
       if (!CURRENT_UID) return;
       const ref = db.collection('inductionProgress').doc(CURRENT_UID);
       const snap = await ref.get();
-      if (snap.exists){
-        progressDoc = snap.data() || null;
-      }else{
-        progressDoc = { activeIndex: 0, passed: {}, completedAt: null };
-      }
+      progressDoc = snap.exists ? (snap.data() || null) : { activeIndex: 0, passed: {}, completedAt: null };
       const idx = Number(progressDoc.activeIndex || 0) || 0;
       activeIndex = Math.max(0, Math.min(MODULES.length - 1, idx));
     }
@@ -789,16 +784,15 @@
       if (!CURRENT_UID) return;
       try{
         const ref = db.collection('inductionProgress').doc(CURRENT_UID);
-        const payload = {
+        await ref.set({
           uid: CURRENT_UID,
           email: CURRENT_EMAIL || null,
           role: CURRENT_ROLE || null,
           activeIndex: activeIndex,
-          passed: (progressDoc && progressDoc.passed) ? progressDoc.passed : {},
-          completedAt: (progressDoc && progressDoc.completedAt) ? progressDoc.completedAt : null,
+          passed: progressDoc?.passed || {},
+          completedAt: progressDoc?.completedAt || null,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await ref.set(payload, {merge:true});
+        }, {merge:true});
       }catch(e){
         console.error('saveProgressNow failed', e);
       }
@@ -811,25 +805,17 @@
         progressDoc.completedAt = nowIso;
         await saveProgressNow();
 
-        const compRef = db.collection('inductionCompletions').doc(CURRENT_UID);
-        await compRef.set({
+        await db.collection('inductionCompletions').doc(CURRENT_UID).set({
           uid: CURRENT_UID,
           email: CURRENT_EMAIL || null,
           role: CURRENT_ROLE || null,
           completedAt: nowIso,
-          version: 'v1-consentes-gerawin-mtmyrtle',
-          properties: ['Consentes','Gerawin','Mt Myrtle'],
-          uhfChannel: '18',
-          contacts: [
-            { name:'Paul Currin', phone:'0428 126 499' },
-            { name:'Nyssa Currin', phone:'0427 200 783' }
-          ],
-          statement: 'Everyone goes home safe. Safety is key.',
+          version: 'v1',
           modules: MODULES.map(m => ({
             id: m.id,
             title: m.title,
             minutes: m.minutes,
-            result: (progressDoc.passed && progressDoc.passed[m.id]) ? progressDoc.passed[m.id] : null
+            result: progressDoc?.passed?.[m.id] || null
           })),
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -866,19 +852,10 @@
               <div><strong>${escapeHtml(completedAt)}</strong></div>
             </div>
             <div style="min-width:260px;">
-              <div class="small muted">UHF</div>
-              <div><strong>Channel ${escapeHtml(d.uhfChannel || '18')}</strong></div>
+              <div class="small muted">Induction version</div>
+              <div><strong>${escapeHtml(d.version || 'v1')}</strong></div>
             </div>
           </div>
-
-          <div class="notice" style="margin-top:10px;">
-            <div><strong>Properties:</strong> ${(d.properties||[]).map(escapeHtml).join(', ') || '—'}</div>
-            <div style="margin-top:6px;"><strong>Non-negotiable:</strong> ${escapeHtml(d.statement || 'Everyone goes home safe. Safety is key.')}</div>
-            <div style="margin-top:6px;"><strong>Contacts:</strong>
-              ${(d.contacts||[]).map(c => `${escapeHtml(c.name)} (${escapeHtml(c.phone)})`).join(' • ') || '—'}
-            </div>
-          </div>
-
           <div style="margin-top:10px;">
             <div class="small muted">Module results</div>
             <ul>
@@ -890,15 +867,13 @@
               }).join('')}
             </ul>
           </div>
-
           <div class="notice" style="margin-top:10px;">
             <div class="small muted">
-              This confirms the user completed the SkyFarm induction modules and quizzes.
+              This certificate confirms the user completed the induction modules and quizzes in SkyFarm.
               It does not replace task-specific training or supervision.
             </div>
           </div>
         `;
-
         certificateCard.style.display = 'block';
       }catch(e){
         console.error('renderCertificate failed', e);
@@ -922,18 +897,6 @@
         setStatus('Ready');
       }
     }
-
-    auth.onAuthStateChanged(async user=>{
-      if (user){
-        showOverlay(false);
-        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
-        await loadCurrentUserRole(user);
-        await initAfterAuth();
-      }else{
-        setStatus('Not signed in', 'danger');
-        showOverlay(true);
-      }
-    });
 
     window.addEventListener('load', ()=> setStatus('Ready'));
   </script>
