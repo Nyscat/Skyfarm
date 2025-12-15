@@ -5,10 +5,14 @@
   <title>SkyFarm — Rainfall</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
+  <!-- Shared header styles -->
+  <link rel="stylesheet" href="skyfarm-shared.css">
+
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
   <!-- XLSX for Excel parsing in the browser -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -36,65 +40,9 @@
     }
     a{text-decoration:none;color:inherit;}
     button{cursor:pointer;}
-
-    /* Header */
-    #sf-header{position:sticky;top:0;z-index:20;}
-    #sf-header .bar{
-      display:flex;
-      flex-wrap:wrap;
-      align-items:center;
-      gap:10px;
-      padding:8px 12px;
-      background:#fff;
-      border-bottom:1px solid var(--line);
-    }
-    #sf-header .brand{
-      font-weight:700;
-      color:var(--brand);
-      display:flex;
-      align-items:center;
-      gap:6px;
-    }
-    #sf-header nav a{
-      margin-right:10px;
-      font-weight:600;
-      color:var(--brand);
-      font-size:.9rem;
-    }
-    #sf-header nav a[aria-current="page"]{text-decoration:underline;}
-    .spacer{flex:1;}
     .muted{color:var(--muted);}
     .small{font-size:.8rem;}
     .hidden{display:none;}
-
-    /* DB menu */
-    .nav-db{position:relative;}
-    .nav-db button{
-      font-size:.85rem;
-      padding:5px 10px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:#fff;
-    }
-    .db-menu{
-      position:absolute;
-      top:100%;
-      left:0;
-      margin-top:4px;
-      background:#fff;
-      border-radius:12px;
-      border:1px solid var(--line);
-      box-shadow:0 10px 25px rgba(15,23,42,.16);
-      padding:4px 0;
-      min-width:180px;
-      z-index:30;
-    }
-    .db-menu a{
-      display:block;
-      padding:6px 10px;
-      font-size:.85rem;
-    }
-    .db-menu a:hover{background:#f1f5f9;}
 
     /* Layout */
     .wrap{
@@ -235,7 +183,7 @@
       align-items:center;
       justify-content:center;
       background:rgba(15,23,42,.08);
-      z-index:40;
+      z-index:2000; /* higher than header */
     }
     #authCard{
       width:min(520px,92vw);
@@ -253,751 +201,642 @@
     }
   </style>
 </head>
+
 <body>
+  <!-- Shared header mount point -->
+  <div id="sf-header-root"></div>
 
-<!-- Header -->
-<div id="sf-header">
-  <div class="bar">
-    <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
-  <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-       alt="SkyFarm logo"
-       style="height:28px;width:auto;border-radius:6px;">
-  <span>SkyFarm</span>
-</a>
-    <nav>
-      <a href="skyfarm-diary.html">Diary</a>
-      <a href="skyfarm-map.html">Map</a>
-      <a href="skyfarm-rain.html" aria-current="page">Rain</a>
-      <a href="skyfarm-hours.html">Hours</a>
-    </nav>
-    <div class="nav-db">
-      <button id="dbMenuBtn" type="button">Database ▾</button>
-      <div id="dbMenu" class="db-menu hidden">
-        <a href="skyfarm-livestock.html">Livestock</a>
-        <a href="skyfarm-chemical.html">Chemicals</a>
-        <a href="skyfarm-seeds.html">Seeds</a>
-        <a href="skyfarm-fodder.html">Fodder</a>
-        <a href="skyfarm-barcode.html">Barcode scanner</a>
-        <a href="skyfarm-users.html">Users &amp; roles</a>
+  <div class="wrap">
+    <h1>Rainfall</h1>
+
+    <!-- Gauge / year selector -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Gauge</label>
+          <select id="gaugeSel">
+            <option value="">Loading gauges…</option>
+          </select>
+        </div>
+        <div>
+          <label>Year</label>
+          <select id="yearSel"></select>
+        </div>
+        <button id="reloadBtn" class="btn" type="button">Reload</button>
+        <button id="printBtn" class="btn primary" type="button">Print / PDF</button>
+        <span style="flex:1;"></span>
+        <span id="status" class="muted small">Loading…</span>
+      </div>
+      <div id="gaugeInfo" class="muted small" style="margin-top:4px;"></div>
+    </div>
+
+    <!-- Hidden historic import card, only if ?import=1 and signed in -->
+    <div id="importCard" class="card" style="display:none;">
+      <h2 style="margin-top:0;font-size:1rem;">Historic rainfall import</h2>
+      <p class="muted small">
+        Admin only. Select <strong>Consentes House - Rainfall.xlsx</strong> then import into the selected gauge.
+      </p>
+      <div class="row">
+        <div>
+          <label>Workbook</label>
+          <input id="importFile" type="file" accept=".xlsx,.xls" />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="runImportBtn" class="btn primary" type="button">Import to Firestore</button>
+        </div>
+        <span id="importStatus" class="muted small"></span>
       </div>
     </div>
-    <span class="spacer"></span>
-    <span id="authWho" class="muted small">Connecting…</span>
-    <button id="signOutBtn" class="btn danger hidden" type="button">Sign out</button>
-  </div>
-</div>
 
-<div class="wrap">
-  <h1>Rainfall</h1>
-
-  <!-- Gauge / year selector -->
-  <div class="card">
-    <div class="row">
-      <div>
-        <label>Gauge</label>
-        <select id="gaugeSel">
-          <option value="">Loading gauges…</option>
-        </select>
+    <!-- Main table -->
+    <div class="card">
+      <div style="overflow-x:auto;">
+        <table>
+          <thead id="rainHead"></thead>
+          <tbody id="rainBody">
+            <tr><td colspan="13">Loading…</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div>
-        <label>Year</label>
-        <select id="yearSel"></select>
-      </div>
-      <button id="reloadBtn" class="btn" type="button">Reload</button>
-      <button id="printBtn" class="btn primary" type="button">Print / PDF</button>
-      <span class="spacer"></span>
-      <span id="status" class="muted small">Loading…</span>
     </div>
-    <div id="gaugeInfo" class="muted small" style="margin-top:4px;"></div>
-  </div>
 
-  <!-- Hidden historic import card, only if ?import=1 and signed in -->
-  <div id="importCard" class="card" style="display:none;">
-    <h2 style="margin-top:0;font-size:1rem;">Historic rainfall import</h2>
-    <p class="muted small">
-      Admin only. Select <strong>Consentes House - Rainfall.xlsx</strong> then import into the selected gauge.
-    </p>
-    <div class="row">
-      <div>
-        <label>Workbook</label>
-        <input id="importFile" type="file" accept=".xlsx,.xls" />
+    <!-- Summary / climatology -->
+    <div id="summary" class="summary">
+      <div class="muted small">
+        Monthly and long-term rainfall for the selected gauge and year.
       </div>
-      <div>
-        <label>&nbsp;</label>
-        <button id="runImportBtn" class="btn primary" type="button">Import to Firestore</button>
+      <div id="summaryContent" class="summary-grid small">
+        <div>Loading climatology…</div>
       </div>
-      <span id="importStatus" class="muted small"></span>
     </div>
   </div>
 
-  <!-- Main table -->
-  <div class="card">
-    <div style="overflow-x:auto;">
-      <table>
-        <thead id="rainHead"></thead>
-        <tbody id="rainBody">
-          <tr><td colspan="13">Loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Summary / climatology -->
-  <div id="summary" class="summary">
-    <div class="muted small">
-      Monthly and long-term rainfall for the selected gauge and year.
-    </div>
-    <div id="summaryContent" class="summary-grid small">
-      <div>Loading climatology…</div>
-    </div>
-  </div>
-</div>
-
-<!-- Auth overlay -->
-<div id="authOverlay">
-  <div id="authCard">
-    <h2>Sign in to SkyFarm</h2>
-    <p class="muted small" style="margin-bottom:8px;">
-      Email &amp; password only. Editing rain and importing history require sign-in.
-    </p>
-    <div class="row" style="margin-bottom:6px;">
-      <div style="flex:1;min-width:220px;">
-        <label>Email</label>
-        <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com" />
+  <!-- Auth overlay -->
+  <div id="authOverlay">
+    <div id="authCard">
+      <h2>Sign in to SkyFarm</h2>
+      <p class="muted small" style="margin-bottom:8px;">
+        Email &amp; password only. Editing rain and importing history require sign-in.
+      </p>
+      <div class="row" style="margin-bottom:6px;">
+        <div style="flex:1;min-width:220px;">
+          <label>Email</label>
+          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com" />
+        </div>
+        <div style="flex:1;min-width:180px;">
+          <label>Password</label>
+          <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
       </div>
-      <div style="flex:1;min-width:180px;">
-        <label>Password</label>
-        <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••" />
+      <div class="row" style="justify-content:flex-end;">
+        <button id="signInBtn" class="btn primary" type="button">Sign in</button>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+        <span id="authMsg" class="muted small" style="margin-left:8px;"></span>
       </div>
     </div>
-    <div class="row" style="justify-content:flex-end;">
-      <button id="signInBtn" class="btn primary" type="button">Sign in</button>
-      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
-      <span id="authMsg" class="muted small" style="margin-left:8px;"></span>
-    </div>
   </div>
-</div>
 
-<script>
-  // ---------- Firebase init ----------
-  const firebaseConfig = {
-    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-    authDomain: "consentes-pastoral.firebaseapp.com",
-    projectId: "consentes-pastoral",
-    appId: "1:494858780013:web:d87497b370c82eeab06e64"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db   = firebase.firestore();
-  const auth = firebase.auth();
+  <!-- Shared header script -->
+  <script src="skyfarm-header.js"></script>
 
-  const $ = s => document.querySelector(s);
+  <script>
+    // ---------- Firebase init ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+      authDomain: "consentes-pastoral.firebaseapp.com",
+      projectId: "consentes-pastoral",
+      appId: "1:494858780013:web:d87497b370c82eeab06e64"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db   = firebase.firestore();
+    const auth = firebase.auth();
 
-  const statusEl        = $('#status');
-  const rainHead        = $('#rainHead');
-  const rainBody        = $('#rainBody');
-  const summaryContent  = $('#summaryContent');
-  const gaugeInfo       = $('#gaugeInfo');
+    // Mount shared header AFTER firebase exists (prevents "Checking sign-in..." sticking)
+    try { window.SkyFarmHeader && SkyFarmHeader.mount(); } catch(e){ console.warn(e); }
 
-  const authOverlay     = $('#authOverlay');
-  const authWho         = $('#authWho');
-  const signOutBtn      = $('#signOutBtn');
-  const signInBtn       = $('#signInBtn');
-  const closeOverlayBtn = $('#closeOverlayBtn');
+    const $ = s => document.querySelector(s);
 
-  const gaugeSel  = $('#gaugeSel');
-  const yearSel   = $('#yearSel');
-  const reloadBtn = $('#reloadBtn');
-  const printBtn  = $('#printBtn');
+    const statusEl        = $('#status');
+    const rainHead        = $('#rainHead');
+    const rainBody        = $('#rainBody');
+    const summaryContent  = $('#summaryContent');
+    const gaugeInfo       = $('#gaugeInfo');
 
-  const importCard   = $('#importCard');
-  const importFile   = $('#importFile');
-  const importBtn    = $('#runImportBtn');
-  const importStatus = $('#importStatus');
-  const showImport   = new URLSearchParams(location.search).get('import') === '1';
+    const authOverlay     = $('#authOverlay');
+    const signInBtn       = $('#signInBtn');
+    const closeOverlayBtn = $('#closeOverlayBtn');
 
-  const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
-  const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
+    const gaugeSel  = $('#gaugeSel');
+    const yearSel   = $('#yearSel');
+    const reloadBtn = $('#reloadBtn');
+    const printBtn  = $('#printBtn');
 
-  let propertiesById = new Map();
-  let gauges = [];
-  let currentGauge = null;
-  let currentYear  = null;
-  let allowEditRain = false;
-  let climatology   = null;  // loaded from consentes-house-rain.json
+    const importCard   = $('#importCard');
+    const importFile   = $('#importFile');
+    const importBtn    = $('#runImportBtn');
+    const importStatus = $('#importStatus');
+    const showImport   = new URLSearchParams(location.search).get('import') === '1';
 
-  function setStatus(msg, warn){
-    statusEl.textContent = msg || '';
-    statusEl.classList.toggle('status-warn', !!warn);
-  }
-  function setImportStatus(msg){ if (importStatus) importStatus.textContent = msg || ''; }
-  function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+    const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
+    const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
 
-  // DB menu
-  (function(){
-    const btn = $('#dbMenuBtn');
-    const menu = $('#dbMenu');
-    if (!btn || !menu) return;
-    btn.onclick = e => { e.stopPropagation(); menu.classList.toggle('hidden'); };
-    document.addEventListener('click', e=>{
-      if (!menu.contains(e.target) && e.target !== btn){
-        menu.classList.add('hidden');
-      }
-    });
-  })();
+    let propertiesById = new Map();
+    let gauges = [];
+    let currentGauge = null;
+    let currentYear  = null;
+    let allowEditRain = false;
+    let climatology   = null;  // loaded from consentes-house-rain.json
 
-  // Auth events
-  signInBtn.onclick = async ()=>{
-    const email = $('#siEmail').value.trim();
-    const pass  = $('#siPass').value;
-    const msgEl = $('#authMsg');
-    if (!email || !pass){
-      msgEl.textContent = 'Enter email and password.';
-      return;
+    function setStatus(msg, warn){
+      statusEl.textContent = msg || '';
+      statusEl.classList.toggle('status-warn', !!warn);
     }
-    msgEl.textContent = 'Signing in…';
-    try{
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      await auth.signInWithEmailAndPassword(email, pass);
-      msgEl.textContent = 'Signed in.';
-      showOverlay(false);
-    }catch(e){
-      console.error(e);
-      msgEl.textContent = e && e.message ? e.message : 'Sign-in failed.';
-    }
-  };
-  closeOverlayBtn.onclick = ()=> showOverlay(false);
-  signOutBtn.onclick = async ()=>{
-    try{ await auth.signOut(); }catch(e){}
-    location.reload();
-  };
+    function setImportStatus(msg){ if (importStatus) importStatus.textContent = msg || ''; }
+    function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
 
-  auth.onAuthStateChanged(async user=>{
-    if (user){
-      allowEditRain = true;
-      authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
-      signOutBtn.classList.remove('hidden');
-      showOverlay(false);
-      if (showImport && importCard) importCard.style.display = 'block';
-      try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
-      await initPage();
-    }else{
-      allowEditRain = false;
-      authWho.textContent = 'Not signed in';
-      signOutBtn.classList.add('hidden');
-      if (importCard) importCard.style.display = 'none';
-      showOverlay(true);
-      setStatus('Please sign in', true);
-    }
-  });
-
-  async function initPage(){
-    setStatus('Loading gauges…');
-    await loadProperties();
-    await loadGauges();
-    initYears();
-    await loadClimatology();
-    setStatus('Ready');
-    if (gaugeSel.value) await loadRain();
-  }
-
-  async function loadProperties(){
-    propertiesById.clear();
-    const snap = await db.collection('properties').get();
-    snap.forEach(doc=>{
-      const d = doc.data() || {};
-      propertiesById.set(doc.id, d.name || '(Property)');
-    });
-  }
-
-  async function loadGauges(){
-    gauges = [];
-    const snap = await db.collection('gauges').get();
-    snap.forEach(doc=>{
-      const d = doc.data() || {};
-      if (d.active === false) return;
-      gauges.push({
-        id: doc.id,
-        name: d.name || '(Gauge)',
-        propertyId: d.propertyId || null
-      });
-    });
-
-    gauges.sort((a,b)=>{
-      const pa = propertiesById.get(a.propertyId) || '';
-      const pb = propertiesById.get(b.propertyId) || '';
-      if (pa !== pb) return pa.localeCompare(pb);
-      return a.name.localeCompare(b.name);
-    });
-
-    gaugeSel.innerHTML = '';
-    const opt0 = document.createElement('option');
-    opt0.value = '';
-    opt0.textContent = 'Select gauge…';
-    gaugeSel.appendChild(opt0);
-
-    gauges.forEach(g=>{
-      const opt = document.createElement('option');
-      opt.value = g.id;
-      const propName = propertiesById.get(g.propertyId) || '';
-      opt.textContent = propName ? `${propName} — ${g.name}` : g.name;
-      gaugeSel.appendChild(opt);
-    });
-
-    const savedGaugeId = localStorage.getItem(ACTIVE_GAUGE_KEY) || '';
-    if (savedGaugeId){
-      const found = gauges.find(g=>g.id === savedGaugeId);
-      if (found){
-        gaugeSel.value = savedGaugeId;
-        currentGauge = found;
-      }
-    }
-    if (!currentGauge && gauges.length){
-      currentGauge = gauges[0];
-      gaugeSel.value = currentGauge.id;
-    }
-    updateGaugeInfo();
-  }
-
-  function initYears(){
-    const now = new Date();
-    const thisYear = now.getFullYear();
-    const minYear = thisYear - 40;
-
-    yearSel.innerHTML = '';
-    for (let y=thisYear; y>=minYear; y--){
-      const opt = document.createElement('option');
-      opt.value = y;
-      opt.textContent = String(y);
-      yearSel.appendChild(opt);
-    }
-    const savedYear = parseInt(localStorage.getItem(ACTIVE_YEAR_KEY) || '',10);
-    if (savedYear && savedYear >= minYear && savedYear <= thisYear){
-      yearSel.value = savedYear;
-    }else{
-      yearSel.value = thisYear;
-    }
-  }
-
-  function updateGaugeInfo(){
-    if (!currentGauge){
-      gaugeInfo.textContent = '';
-      return;
-    }
-    const propName = propertiesById.get(currentGauge.propertyId) || '';
-    gaugeInfo.textContent = propName
-      ? `Gauge "${currentGauge.name}" on ${propName}.`
-      : `Gauge "${currentGauge.name}".`;
-  }
-
-  function makeEmptyYear(){
-    const days = [];
-    for (let d=0; d<31; d++) days.push(new Array(12).fill(null));
-    return days;
-  }
-
-  function parseDateInfo(docId, data){
-    const raw = data.dateISO || data.date || docId || '';
-    if (typeof raw !== 'string') return null;
-    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return null;
-    const year  = parseInt(m[1],10);
-    const month = parseInt(m[2],10);
-    const day   = parseInt(m[3],10);
-    if (!year || !month || !day) return null;
-    return { year, month, day };
-  }
-
-  function extractMm(data){
-    const v = data.mm ?? data.rainMm ?? data.amount ?? data.total ?? data.rainTotal ?? 0;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  async function updateRainDoc(gaugeId, year, month, day, mm){
-    const dayStr   = String(day).padStart(2,'0');
-    const monthStr = String(month).padStart(2,'0');
-    const docId = `${year}-${monthStr}-${dayStr}`;
-    const ref = db.collection('gauges').doc(gaugeId).collection('daily').doc(docId);
-
-    if (mm == null){
-      try{
-        await ref.delete();
-      }catch(e){
-        console.error('Failed to delete rain doc', e);
-      }
-    }else{
-      const n = Number(mm);
-      if (!Number.isFinite(n) || n < 0) throw new Error('Rainfall must be a non-negative number');
-      await ref.set({
-        mm: n,
-        dateISO: docId,
-        source: 'manualEdit',
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, {merge:true});
-    }
-  }
-
-  async function loadRain(){
-    if (!currentGauge){
-      setStatus('No gauge selected', true);
-      return;
-    }
-    const year = parseInt(yearSel.value,10);
-    if (!year){
-      setStatus('Invalid year', true);
-      return;
-    }
-    currentYear = year;
-
-    setStatus('Loading rainfall…');
-    rainHead.innerHTML = '';
-    rainBody.innerHTML = '<tr><td colspan="13">Loading…</td></tr>';
-
-    try{
-      const baseRef = db.collection('gauges').doc(currentGauge.id).collection('daily');
-      const snap = await baseRef.get();
-      const grid = makeEmptyYear();
-
-      snap.forEach(doc=>{
-        const data = doc.data() || {};
-        const info = parseDateInfo(doc.id, data);
-        if (!info || info.year !== year) return;
-        const mm = extractMm(data);
-        if (!Number.isFinite(mm)) return;
-        const dIdx = info.day - 1;
-        const mIdx = info.month - 1;
-        if (dIdx < 0 || dIdx >= 31 || mIdx < 0 || mIdx >= 12) return;
-        grid[dIdx][mIdx] = (grid[dIdx][mIdx] || 0) + mm;
-      });
-
-      const stats = renderTable(grid);
-      setStatus('Loaded');
-      updateSummary(year, stats);
-    }catch(e){
-      console.error(e);
-      rainBody.innerHTML = '<tr><td colspan="13">Error loading rainfall.</td></tr>';
-      setStatus('Error loading rainfall.', true);
-    }
-  }
-
-  function renderTable(grid){
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-    let headHtml = '<tr><th>Day</th>';
-    for (let m=0; m<12; m++) headHtml += `<th>${months[m]}</th>`;
-    headHtml += '</tr>';
-    rainHead.innerHTML = headHtml;
-
-    const monthTotals    = new Array(12).fill(0);
-    const monthRainDays  = new Array(12).fill(0); // this year only, >= 0.1 mm
-
-    function fmt(v){
-      if (v == null || !Number.isFinite(v)) return '';
-      const n = Number(v);
-      return (Math.abs(n % 1) < 0.001) ? n.toFixed(0) : n.toFixed(1);
-    }
-
-    let bodyHtml = '';
-    const canEdit = allowEditRain && !!currentGauge && !!currentYear;
-
-    for (let d=0; d<31; d++){
-      const day = d + 1;
-      bodyHtml += `<tr><td>${day}</td>`;
-      for (let m=0; m<12; m++){
-        const v = grid[d][m];
-        if (v != null && Number.isFinite(v)){
-          monthTotals[m] += v;
-          if (v >= 0.1) monthRainDays[m] += 1;
-        }
-        const mmText = fmt(v);
-        const cls = canEdit ? ' class="rain-cell-editable"' : '';
-        const dayAttr   = day;
-        const monthAttr = m + 1;
-        bodyHtml += `<td data-day="${dayAttr}" data-month="${monthAttr}"${cls}>${mmText}</td>`;
-      }
-      bodyHtml += '</tr>';
-    }
-
-    // Monthly totals row
-    bodyHtml += '<tr class="total-row"><td>Total rain (mm)</td>';
-    for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(monthTotals[m])}</td>`;
-    bodyHtml += '</tr>';
-
-    // Cumulative row
-    const cum = new Array(12).fill(0);
-    for (let m=0; m<12; m++){
-      cum[m] = (m === 0 ? monthTotals[m] : cum[m-1] + monthTotals[m]);
-    }
-    bodyHtml += '<tr class="cum-row"><td>Cumulative total (mm)</td>';
-    for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(cum[m])}</td>`;
-    bodyHtml += '</tr>';
-
-    // Rain days row (this year)
-    bodyHtml += '<tr><td>Rain days (>=0.1 mm)</td>';
-    for (let m=0; m<12; m++) bodyHtml += `<td>${monthRainDays[m] || ''}</td>`;
-    bodyHtml += '</tr>';
-
-    rainBody.innerHTML = bodyHtml;
-
-    if (canEdit){
-      const gaugeId = currentGauge.id;
-      const year    = currentYear;
-      const cells = rainBody.querySelectorAll('td.rain-cell-editable');
-      cells.forEach(td=>{
-        td.addEventListener('click', async ()=>{
-          const day   = parseInt(td.dataset.day,10);
-          const month = parseInt(td.dataset.month,10);
-          if (!day || !month) return;
-          const existing = td.textContent.trim();
-          const label = `${day}/${month}/${year}`;
-          const input = window.prompt(`Rainfall for ${label} (mm). Leave blank to clear.`, existing);
-          if (input === null) return;
-          const trimmed = input.trim();
-          try{
-            if (!trimmed){
-              await updateRainDoc(gaugeId, year, month, day, null);
-            }else{
-              const n = Number(trimmed);
-              if (!Number.isFinite(n) || n < 0){
-                alert('Enter a non-negative number (mm).');
-                return;
-              }
-              await updateRainDoc(gaugeId, year, month, day, n);
-            }
-            await loadRain();
-          }catch(e){
-            console.error(e);
-            alert('Failed to save rainfall entry. Please try again.');
-          }
-        });
-      });
-    }
-
-    return { monthTotals, monthRainDays };
-  }
-
-  // Load climatology JSON
-  async function loadClimatology(){
-    try{
-      const resp = await fetch('consentes-house-rain.json', {cache:'no-store'});
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      climatology = await resp.json();
-    }catch(e){
-      console.error('Failed to load consentes-house-rain.json', e);
-      climatology = null;
-      if (summaryContent){
-        summaryContent.textContent = 'Long-term averages file not found or unreadable.';
-      }
-    }
-  }
-
-  function updateSummary(year, stats){
-    if (!summaryContent){
-      return;
-    }
-    const monthTotalsThisYear   = stats?.monthTotals   || [];
-    const rainDaysThisYear      = stats?.monthRainDays || [];
-
-    if (!currentGauge){
-      summaryContent.textContent = 'Select a gauge and year to see summary.';
-      return;
-    }
-    if (!climatology || !climatology.longTerm){
-      summaryContent.textContent = 'Long-term averages not available. Create consentes-house-rain.json.';
-      return;
-    }
-
-    const lt = climatology.longTerm;
-    const ltaMonthly   = Array.isArray(lt.monthly)          ? lt.monthly          : [];
-    const ltaRainDays  = Array.isArray(lt.monthlyRainDays)  ? lt.monthlyRainDays  : null;
-    const ltaMedian    = Array.isArray(lt.monthlyMedian)    ? lt.monthlyMedian    : null;
-    const ltaP10       = Array.isArray(lt.monthlyP10)       ? lt.monthlyP10       : null;
-    const ltaP90       = Array.isArray(lt.monthlyP90)       ? lt.monthlyP90       : null;
-    const seasons      = lt.seasons || lt.seasonal || null;
-    const ltaAnnual    = (typeof lt.annual === 'number') ? lt.annual : null;
-    const rainDayThreshold = (typeof lt.rainDayThresholdMm === 'number') ? lt.rainDayThresholdMm : null;
-    const yearsList    = Array.isArray(lt.years) ? lt.years : null;
-
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-    function fmt1(v){
-      if (v == null || !Number.isFinite(v)) return '—';
-      return Number(v).toFixed(1);
-    }
-    function fmt0(v){
-      if (v == null || !Number.isFinite(v)) return '—';
-      return String(Math.round(Number(v)));
-    }
-    function fmtPct(v){
-      if (v == null || !Number.isFinite(v)) return '—';
-      return Number(v).toFixed(0) + '%';
-    }
-
-    const thisYearTotal = monthTotalsThisYear.reduce((a,b)=>a+(b||0),0);
-    const yearPct = (ltaAnnual && ltaAnnual>0) ? (thisYearTotal / ltaAnnual * 100) : null;
-
-    let html = '';
-
-    // Overall year card
-    html += `<div class="summary-item">
-      <strong>${year} total</strong>
-      <div>This year: ${fmt1(thisYearTotal)} mm</div>
-      <div>Long-term annual: ${fmt1(ltaAnnual)} mm</div>
-      <div>Year vs avg: ${fmtPct(yearPct)}</div>
-      ${yearsList ? `<div class="muted small">Base period: ${yearsList[0]}–${yearsList[yearsList.length-1]} (${yearsList.length} yrs)</div>` : ''}
-    </div>`;
-
-    // Seasonal cards if provided in JSON
-    if (seasons && typeof seasons === 'object'){
-      Object.keys(seasons).forEach(name=>{
-        const s = seasons[name] || {};
-        const mean   = typeof s.mean   === 'number' ? s.mean   : null;
-        const median = typeof s.median === 'number' ? s.median : null;
-        const p10    = typeof s.p10    === 'number' ? s.p10    : null;
-        const p90    = typeof s.p90    === 'number' ? s.p90    : null;
-
-        html += `<div class="summary-item">
-          <strong>${name}</strong>
-          <div>Mean: ${fmt1(mean)} mm</div>
-          <div>Median: ${fmt1(median)} mm</div>
-          <div>P10 dry: ${fmt1(p10)} mm</div>
-          <div>P90 wet: ${fmt1(p90)} mm</div>
-        </div>`;
-      });
-    }
-
-    // Monthly cards
-    for (let m=0; m<12; m++){
-      const thisM   = monthTotalsThisYear[m] || 0;
-      const avgM    = (typeof ltaMonthly[m] === 'number') ? ltaMonthly[m] : null;
-      const pct     = (avgM && avgM>0) ? (thisM / avgM * 100) : null;
-
-      const rainDaysAvg = ltaRainDays && typeof ltaRainDays[m] === 'number'
-        ? ltaRainDays[m]
-        : null;
-      const medianM = ltaMedian && typeof ltaMedian[m] === 'number'
-        ? ltaMedian[m]
-        : null;
-      const p10M    = ltaP10 && typeof ltaP10[m] === 'number'
-        ? ltaP10[m]
-        : null;
-      const p90M    = ltaP90 && typeof ltaP90[m] === 'number'
-        ? ltaP90[m]
-        : null;
-
-      const thisRainDays = rainDaysThisYear[m] || 0;
-
-      let cls = '';
-      if (pct != null){
-        if (pct < 60) cls = 'summary-bad';
-        else if (pct > 140) cls = 'summary-good';
-      }
-
-      html += `<div class="summary-item ${cls}">
-        <strong>${months[m]}</strong>
-        <div>This year: ${fmt1(thisM)} mm</div>
-        <div>Average: ${fmt1(avgM)} mm</div>
-        <div>Pct of avg: ${fmtPct(pct)}</div>
-        <div>Rain days this year: ${fmt0(thisRainDays)}</div>
-        <div>Avg rain days: ${rainDaysAvg != null ? rainDaysAvg.toFixed(1) : '—'}${rainDayThreshold!=null ? ` (≥${rainDayThreshold} mm)` : ''}</div>
-        ${medianM!=null ? `<div>Median: ${fmt1(medianM)} mm</div>` : ''}
-        ${p10M!=null    ? `<div>P10 dry: ${fmt1(p10M)} mm</div>`   : ''}
-        ${p90M!=null    ? `<div>P90 wet: ${fmt1(p90M)} mm</div>`   : ''}
-      </div>`;
-    }
-
-    summaryContent.innerHTML = html;
-  }
-
-  // Reload / print
-  reloadBtn.onclick = async ()=>{
-    if (!gaugeSel.value) return;
-    const year = parseInt(yearSel.value,10);
-    if (year) localStorage.setItem(ACTIVE_YEAR_KEY, String(year));
-    localStorage.setItem(ACTIVE_GAUGE_KEY, gaugeSel.value);
-    const found = gauges.find(g=>g.id === gaugeSel.value);
-    currentGauge = found || null;
-    updateGaugeInfo();
-    await loadRain();
-  };
-  gaugeSel.onchange = ()=> reloadBtn.click();
-  yearSel.onchange  = ()=> reloadBtn.click();
-  printBtn.onclick  = ()=> window.print();
-
-  // Import workbook → Firestore
-  if (importBtn){
-    importBtn.onclick = async ()=>{
-      const file = importFile.files[0];
-      if (!file){
-        setImportStatus('Choose an .xlsx file first.');
+    // Auth events
+    signInBtn.onclick = async ()=>{
+      const email = $('#siEmail').value.trim();
+      const pass  = $('#siPass').value;
+      const msgEl = $('#authMsg');
+      if (!email || !pass){
+        msgEl.textContent = 'Enter email and password.';
         return;
       }
-      if (!currentGauge){
-        setImportStatus('Select a gauge to import into.');
-        return;
-      }
+      msgEl.textContent = 'Signing in…';
       try{
-        setImportStatus('Reading workbook…');
-        const data = await file.arrayBuffer();
-        const wb = XLSX.read(data, {type:'array'});
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        if (!sheet) throw new Error('No first sheet found.');
-        const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
-        await importWorkbookRows(currentGauge.id, rows);
-        setImportStatus('Import complete. Reload to see new totals.');
-        await loadRain();
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithEmailAndPassword(email, pass);
+        msgEl.textContent = 'Signed in.';
+        showOverlay(false);
       }catch(e){
         console.error(e);
-        setImportStatus('Import failed: ' + (e && e.message ? e.message : e));
+        msgEl.textContent = e && e.message ? e.message : 'Sign-in failed.';
       }
     };
-  }
+    closeOverlayBtn.onclick = ()=> showOverlay(false);
 
-  async function importWorkbookRows(gaugeId, rows){
-    const headerRow = rows[0] || [];
-    const yearIndex  = headerRow.findIndex(c=>String(c).toLowerCase().includes('year'));
-    const monthIndex = headerRow.findIndex(c=>String(c).toLowerCase().includes('month'));
-    const dayIndex   = headerRow.findIndex(c=>String(c).toLowerCase().includes('day'));
-    const mmIndex    = headerRow.findIndex(c=>String(c).toLowerCase().includes('rain'));
+    auth.onAuthStateChanged(async user=>{
+      if (user){
+        allowEditRain = true;
+        showOverlay(false);
+        if (showImport && importCard) importCard.style.display = 'block';
+        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+        await initPage();
+      }else{
+        allowEditRain = false;
+        if (importCard) importCard.style.display = 'none';
+        showOverlay(true);
+        setStatus('Please sign in', true);
+      }
+    });
 
-    if (yearIndex < 0 || monthIndex < 0 || dayIndex < 0 || mmIndex < 0){
-      throw new Error('Could not find Year / Month / Day / Rain columns in header row.');
+    async function initPage(){
+      setStatus('Loading gauges…');
+      await loadProperties();
+      await loadGauges();
+      initYears();
+      await loadClimatology();
+      setStatus('Ready');
+      if (gaugeSel.value) await loadRain();
     }
 
-    const baseRef = db.collection('gauges').doc(gaugeId).collection('daily');
-    let batch = db.batch();
-    let imported = 0;
+    async function loadProperties(){
+      propertiesById.clear();
+      const snap = await db.collection('properties').get();
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        propertiesById.set(doc.id, d.name || '(Property)');
+      });
+    }
 
-    for (let i=1; i<rows.length; i++){
-      const r = rows[i] || [];
-      const year  = Number(r[yearIndex]);
-      const month = Number(r[monthIndex]);
-      const day   = Number(r[dayIndex]);
-      const mm    = Number(r[mmIndex]);
-      if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(mm)) continue;
-      if (year < 1900 || year > 3000) continue;
-      if (month < 1 || month > 12) continue;
-      if (day < 1 || day > 31) continue;
+    async function loadGauges(){
+      gauges = [];
+      const snap = await db.collection('gauges').get();
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        if (d.active === false) return;
+        gauges.push({
+          id: doc.id,
+          name: d.name || '(Gauge)',
+          propertyId: d.propertyId || null
+        });
+      });
 
-      const dStr = String(day).padStart(2,'0');
-      const mStr = String(month).padStart(2,'0');
-      const docId = `${year}-${mStr}-${dStr}`;
-      const ref = baseRef.doc(docId);
-      batch.set(ref,{
-        mm,
-        dateISO: docId,
-        source: 'excelImport'
-      }, {merge:true});
-      imported++;
-      if (imported % 400 === 0){
-        await batch.commit();
-        batch = db.batch();
+      gauges.sort((a,b)=>{
+        const pa = propertiesById.get(a.propertyId) || '';
+        const pb = propertiesById.get(b.propertyId) || '';
+        if (pa !== pb) return pa.localeCompare(pb);
+        return a.name.localeCompare(b.name);
+      });
+
+      gaugeSel.innerHTML = '';
+      const opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = 'Select gauge…';
+      gaugeSel.appendChild(opt0);
+
+      gauges.forEach(g=>{
+        const opt = document.createElement('option');
+        opt.value = g.id;
+        const propName = propertiesById.get(g.propertyId) || '';
+        opt.textContent = propName ? `${propName} — ${g.name}` : g.name;
+        gaugeSel.appendChild(opt);
+      });
+
+      const savedGaugeId = localStorage.getItem(ACTIVE_GAUGE_KEY) || '';
+      if (savedGaugeId){
+        const found = gauges.find(g=>g.id === savedGaugeId);
+        if (found){
+          gaugeSel.value = savedGaugeId;
+          currentGauge = found;
+        }
+      }
+      if (!currentGauge && gauges.length){
+        currentGauge = gauges[0];
+        gaugeSel.value = currentGauge.id;
+      }
+      updateGaugeInfo();
+    }
+
+    function initYears(){
+      const now = new Date();
+      const thisYear = now.getFullYear();
+      const minYear = thisYear - 40;
+
+      yearSel.innerHTML = '';
+      for (let y=thisYear; y>=minYear; y--){
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = String(y);
+        yearSel.appendChild(opt);
+      }
+      const savedYear = parseInt(localStorage.getItem(ACTIVE_YEAR_KEY) || '',10);
+      if (savedYear && savedYear >= minYear && savedYear <= thisYear){
+        yearSel.value = savedYear;
+      }else{
+        yearSel.value = thisYear;
       }
     }
-    if (imported > 0){
-      await batch.commit();
+
+    function updateGaugeInfo(){
+      if (!currentGauge){
+        gaugeInfo.textContent = '';
+        return;
+      }
+      const propName = propertiesById.get(currentGauge.propertyId) || '';
+      gaugeInfo.textContent = propName
+        ? `Gauge "${currentGauge.name}" on ${propName}.`
+        : `Gauge "${currentGauge.name}".`;
     }
-  }
-</script>
+
+    function makeEmptyYear(){
+      const days = [];
+      for (let d=0; d<31; d++) days.push(new Array(12).fill(null));
+      return days;
+    }
+
+    function parseDateInfo(docId, data){
+      const raw = data.dateISO || data.date || docId || '';
+      if (typeof raw !== 'string') return null;
+      const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m) return null;
+      const year  = parseInt(m[1],10);
+      const month = parseInt(m[2],10);
+      const day   = parseInt(m[3],10);
+      if (!year || !month || !day) return null;
+      return { year, month, day };
+    }
+
+    function extractMm(data){
+      const v = data.mm ?? data.rainMm ?? data.amount ?? data.total ?? data.rainTotal ?? 0;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    async function updateRainDoc(gaugeId, year, month, day, mm){
+      const dayStr   = String(day).padStart(2,'0');
+      const monthStr = String(month).padStart(2,'0');
+      const docId = `${year}-${monthStr}-${dayStr}`;
+      const ref = db.collection('gauges').doc(gaugeId).collection('daily').doc(docId);
+
+      if (mm == null){
+        try{ await ref.delete(); }catch(e){ console.error('Failed to delete rain doc', e); }
+      }else{
+        const n = Number(mm);
+        if (!Number.isFinite(n) || n < 0) throw new Error('Rainfall must be a non-negative number');
+        await ref.set({
+          mm: n,
+          dateISO: docId,
+          source: 'manualEdit',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+      }
+    }
+
+    async function loadRain(){
+      if (!currentGauge){ setStatus('No gauge selected', true); return; }
+      const year = parseInt(yearSel.value,10);
+      if (!year){ setStatus('Invalid year', true); return; }
+      currentYear = year;
+
+      setStatus('Loading rainfall…');
+      rainHead.innerHTML = '';
+      rainBody.innerHTML = '<tr><td colspan="13">Loading…</td></tr>';
+
+      try{
+        const baseRef = db.collection('gauges').doc(currentGauge.id).collection('daily');
+        const snap = await baseRef.get();
+        const grid = makeEmptyYear();
+
+        snap.forEach(doc=>{
+          const data = doc.data() || {};
+          const info = parseDateInfo(doc.id, data);
+          if (!info || info.year !== year) return;
+          const mm = extractMm(data);
+          const dIdx = info.day - 1;
+          const mIdx = info.month - 1;
+          if (dIdx < 0 || dIdx >= 31 || mIdx < 0 || mIdx >= 12) return;
+          grid[dIdx][mIdx] = (grid[dIdx][mIdx] || 0) + mm;
+        });
+
+        const stats = renderTable(grid);
+        setStatus('Loaded');
+        updateSummary(year, stats);
+      }catch(e){
+        console.error(e);
+        rainBody.innerHTML = '<tr><td colspan="13">Error loading rainfall.</td></tr>';
+        setStatus('Error loading rainfall.', true);
+      }
+    }
+
+    function renderTable(grid){
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+      let headHtml = '<tr><th>Day</th>';
+      for (let m=0; m<12; m++) headHtml += `<th>${months[m]}</th>`;
+      headHtml += '</tr>';
+      rainHead.innerHTML = headHtml;
+
+      const monthTotals    = new Array(12).fill(0);
+      const monthRainDays  = new Array(12).fill(0);
+
+      function fmt(v){
+        if (v == null || !Number.isFinite(v)) return '';
+        const n = Number(v);
+        return (Math.abs(n % 1) < 0.001) ? n.toFixed(0) : n.toFixed(1);
+      }
+
+      let bodyHtml = '';
+      const canEdit = allowEditRain && !!currentGauge && !!currentYear;
+
+      for (let d=0; d<31; d++){
+        const day = d + 1;
+        bodyHtml += `<tr><td>${day}</td>`;
+        for (let m=0; m<12; m++){
+          const v = grid[d][m];
+          if (v != null && Number.isFinite(v)){
+            monthTotals[m] += v;
+            if (v >= 0.1) monthRainDays[m] += 1;
+          }
+          const mmText = fmt(v);
+          const cls = canEdit ? ' class="rain-cell-editable"' : '';
+          bodyHtml += `<td data-day="${day}" data-month="${m+1}"${cls}>${mmText}</td>`;
+        }
+        bodyHtml += '</tr>';
+      }
+
+      bodyHtml += '<tr class="total-row"><td>Total rain (mm)</td>';
+      for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(monthTotals[m])}</td>`;
+      bodyHtml += '</tr>';
+
+      const cum = new Array(12).fill(0);
+      for (let m=0; m<12; m++) cum[m] = (m === 0 ? monthTotals[m] : cum[m-1] + monthTotals[m]);
+      bodyHtml += '<tr class="cum-row"><td>Cumulative total (mm)</td>';
+      for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(cum[m])}</td>`;
+      bodyHtml += '</tr>';
+
+      bodyHtml += '<tr><td>Rain days (>=0.1 mm)</td>';
+      for (let m=0; m<12; m++) bodyHtml += `<td>${monthRainDays[m] || ''}</td>`;
+      bodyHtml += '</tr>';
+
+      rainBody.innerHTML = bodyHtml;
+
+      if (canEdit){
+        const gaugeId = currentGauge.id;
+        const year    = currentYear;
+        const cells = rainBody.querySelectorAll('td.rain-cell-editable');
+        cells.forEach(td=>{
+          td.addEventListener('click', async ()=>{
+            const day   = parseInt(td.dataset.day,10);
+            const month = parseInt(td.dataset.month,10);
+            if (!day || !month) return;
+
+            const existing = td.textContent.trim();
+            const label = `${day}/${month}/${year}`;
+            const input = window.prompt(`Rainfall for ${label} (mm). Leave blank to clear.`, existing);
+            if (input === null) return;
+
+            const trimmed = input.trim();
+            try{
+              if (!trimmed){
+                await updateRainDoc(gaugeId, year, month, day, null);
+              }else{
+                const n = Number(trimmed);
+                if (!Number.isFinite(n) || n < 0){ alert('Enter a non-negative number (mm).'); return; }
+                await updateRainDoc(gaugeId, year, month, day, n);
+              }
+              await loadRain();
+            }catch(e){
+              console.error(e);
+              alert('Failed to save rainfall entry. Please try again.');
+            }
+          });
+        });
+      }
+
+      return { monthTotals, monthRainDays };
+    }
+
+    async function loadClimatology(){
+      try{
+        const resp = await fetch('consentes-house-rain.json', {cache:'no-store'});
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        climatology = await resp.json();
+      }catch(e){
+        console.error('Failed to load consentes-house-rain.json', e);
+        climatology = null;
+        if (summaryContent) summaryContent.textContent = 'Long-term averages file not found or unreadable.';
+      }
+    }
+
+    function updateSummary(year, stats){
+      if (!summaryContent) return;
+
+      const monthTotalsThisYear   = stats?.monthTotals   || [];
+      const rainDaysThisYear      = stats?.monthRainDays || [];
+
+      if (!currentGauge){
+        summaryContent.textContent = 'Select a gauge and year to see summary.';
+        return;
+      }
+      if (!climatology || !climatology.longTerm){
+        summaryContent.textContent = 'Long-term averages not available. Create consentes-house-rain.json.';
+        return;
+      }
+
+      const lt = climatology.longTerm;
+      const ltaMonthly   = Array.isArray(lt.monthly) ? lt.monthly : [];
+      const ltaRainDays  = Array.isArray(lt.monthlyRainDays) ? lt.monthlyRainDays : null;
+      const ltaMedian    = Array.isArray(lt.monthlyMedian) ? lt.monthlyMedian : null;
+      const ltaP10       = Array.isArray(lt.monthlyP10) ? lt.monthlyP10 : null;
+      const ltaP90       = Array.isArray(lt.monthlyP90) ? lt.monthlyP90 : null;
+      const seasons      = lt.seasons || lt.seasonal || null;
+      const ltaAnnual    = (typeof lt.annual === 'number') ? lt.annual : null;
+      const rainDayThreshold = (typeof lt.rainDayThresholdMm === 'number') ? lt.rainDayThresholdMm : null;
+      const yearsList    = Array.isArray(lt.years) ? lt.years : null;
+
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+      function fmt1(v){ return (v == null || !Number.isFinite(v)) ? '—' : Number(v).toFixed(1); }
+      function fmt0(v){ return (v == null || !Number.isFinite(v)) ? '—' : String(Math.round(Number(v))); }
+      function fmtPct(v){ return (v == null || !Number.isFinite(v)) ? '—' : Number(v).toFixed(0) + '%'; }
+
+      const thisYearTotal = monthTotalsThisYear.reduce((a,b)=>a+(b||0),0);
+      const yearPct = (ltaAnnual && ltaAnnual>0) ? (thisYearTotal / ltaAnnual * 100) : null;
+
+      let html = '';
+      html += `<div class="summary-item">
+        <strong>${year} total</strong>
+        <div>This year: ${fmt1(thisYearTotal)} mm</div>
+        <div>Long-term annual: ${fmt1(ltaAnnual)} mm</div>
+        <div>Year vs avg: ${fmtPct(yearPct)}</div>
+        ${yearsList ? `<div class="muted small">Base period: ${yearsList[0]}–${yearsList[yearsList.length-1]} (${yearsList.length} yrs)</div>` : ''}
+      </div>`;
+
+      if (seasons && typeof seasons === 'object'){
+        Object.keys(seasons).forEach(name=>{
+          const s = seasons[name] || {};
+          html += `<div class="summary-item">
+            <strong>${name}</strong>
+            <div>Mean: ${fmt1(s.mean)}</div>
+            <div>Median: ${fmt1(s.median)}</div>
+            <div>P10 dry: ${fmt1(s.p10)}</div>
+            <div>P90 wet: ${fmt1(s.p90)}</div>
+          </div>`;
+        });
+      }
+
+      for (let m=0; m<12; m++){
+        const thisM   = monthTotalsThisYear[m] || 0;
+        const avgM    = (typeof ltaMonthly[m] === 'number') ? ltaMonthly[m] : null;
+        const pct     = (avgM && avgM>0) ? (thisM / avgM * 100) : null;
+
+        const rainDaysAvg = ltaRainDays && typeof ltaRainDays[m] === 'number' ? ltaRainDays[m] : null;
+        const medianM = ltaMedian && typeof ltaMedian[m] === 'number' ? ltaMedian[m] : null;
+        const p10M    = ltaP10 && typeof ltaP10[m] === 'number' ? ltaP10[m] : null;
+        const p90M    = ltaP90 && typeof ltaP90[m] === 'number' ? ltaP90[m] : null;
+
+        const thisRainDays = rainDaysThisYear[m] || 0;
+
+        let cls = '';
+        if (pct != null){
+          if (pct < 60) cls = 'summary-bad';
+          else if (pct > 140) cls = 'summary-good';
+        }
+
+        html += `<div class="summary-item ${cls}">
+          <strong>${months[m]}</strong>
+          <div>This year: ${fmt1(thisM)} mm</div>
+          <div>Average: ${fmt1(avgM)} mm</div>
+          <div>Pct of avg: ${fmtPct(pct)}</div>
+          <div>Rain days this year: ${fmt0(thisRainDays)}</div>
+          <div>Avg rain days: ${rainDaysAvg != null ? rainDaysAvg.toFixed(1) : '—'}${rainDayThreshold!=null ? ` (≥${rainDayThreshold} mm)` : ''}</div>
+          ${medianM!=null ? `<div>Median: ${fmt1(medianM)} mm</div>` : ''}
+          ${p10M!=null    ? `<div>P10 dry: ${fmt1(p10M)} mm</div>` : ''}
+          ${p90M!=null    ? `<div>P90 wet: ${fmt1(p90M)} mm</div>` : ''}
+        </div>`;
+      }
+
+      summaryContent.innerHTML = html;
+    }
+
+    reloadBtn.onclick = async ()=>{
+      if (!gaugeSel.value) return;
+      const year = parseInt(yearSel.value,10);
+      if (year) localStorage.setItem(ACTIVE_YEAR_KEY, String(year));
+      localStorage.setItem(ACTIVE_GAUGE_KEY, gaugeSel.value);
+      currentGauge = gauges.find(g=>g.id === gaugeSel.value) || null;
+      updateGaugeInfo();
+      await loadRain();
+    };
+    gaugeSel.onchange = ()=> reloadBtn.click();
+    yearSel.onchange  = ()=> reloadBtn.click();
+    printBtn.onclick  = ()=> window.print();
+
+    if (importBtn){
+      importBtn.onclick = async ()=>{
+        const file = importFile.files[0];
+        if (!file){ setImportStatus('Choose an .xlsx file first.'); return; }
+        if (!currentGauge){ setImportStatus('Select a gauge to import into.'); return; }
+        try{
+          setImportStatus('Reading workbook…');
+          const data = await file.arrayBuffer();
+          const wb = XLSX.read(data, {type:'array'});
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          if (!sheet) throw new Error('No first sheet found.');
+          const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+          await importWorkbookRows(currentGauge.id, rows);
+          setImportStatus('Import complete. Reload to see new totals.');
+          await loadRain();
+        }catch(e){
+          console.error(e);
+          setImportStatus('Import failed: ' + (e && e.message ? e.message : e));
+        }
+      };
+    }
+
+    async function importWorkbookRows(gaugeId, rows){
+      const headerRow = rows[0] || [];
+      const yearIndex  = headerRow.findIndex(c=>String(c).toLowerCase().includes('year'));
+      const monthIndex = headerRow.findIndex(c=>String(c).toLowerCase().includes('month'));
+      const dayIndex   = headerRow.findIndex(c=>String(c).toLowerCase().includes('day'));
+      const mmIndex    = headerRow.findIndex(c=>String(c).toLowerCase().includes('rain'));
+
+      if (yearIndex < 0 || monthIndex < 0 || dayIndex < 0 || mmIndex < 0){
+        throw new Error('Could not find Year / Month / Day / Rain columns in header row.');
+      }
+
+      const baseRef = db.collection('gauges').doc(gaugeId).collection('daily');
+      let batch = db.batch();
+      let imported = 0;
+
+      for (let i=1; i<rows.length; i++){
+        const r = rows[i] || [];
+        const year  = Number(r[yearIndex]);
+        const month = Number(r[monthIndex]);
+        const day   = Number(r[dayIndex]);
+        const mm    = Number(r[mmIndex]);
+        if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(mm)) continue;
+        if (year < 1900 || year > 3000) continue;
+        if (month < 1 || month > 12) continue;
+        if (day < 1 || day > 31) continue;
+
+        const dStr = String(day).padStart(2,'0');
+        const mStr = String(month).padStart(2,'0');
+        const docId = `${year}-${mStr}-${dStr}`;
+        const ref = baseRef.doc(docId);
+
+        batch.set(ref, { mm, dateISO: docId, source:'excelImport' }, {merge:true});
+        imported++;
+        if (imported % 400 === 0){
+          await batch.commit();
+          batch = db.batch();
+        }
+      }
+      if (imported > 0) await batch.commit();
+    }
+  </script>
 </body>
 </html>
