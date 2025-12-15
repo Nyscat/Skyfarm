@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SkyFarm — Induction Admin</title>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6fbf8;
+      --card:#ffffff;
+      --line:#e2e8f0;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --accent:#047857;
+      --danger:#b91c1c;
+      --warn:#b45309;
+      --ok:#166534;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      -webkit-font-smoothing:antialiased;
+    }
+    a{color:#0f766e;text-decoration:none;}
+    a:hover{text-decoration:underline;}
+
+    /* Header */
+    #sf-header{
+      position:sticky; top:0; z-index:40;
+      background:rgba(255,255,255,.96);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid rgba(148,163,184,.4);
+    }
+    #sf-header .bar{
+      max-width:1200px; margin:0 auto; padding:8px 14px;
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    #sf-header .brand{
+      font-weight:600; font-size:1rem; padding:4px 10px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);
+      color:#ecfdf3;
+      box-shadow:0 10px 20px rgba(15,23,42,.25);
+      display:flex; align-items:center; gap:8px;
+    }
+    #sf-header nav a{
+      padding:4px 10px; border-radius:999px; font-size:.85rem;
+      color:#0f172a; text-decoration:none;
+    }
+    #sf-header nav a[aria-current="page"]{
+      background:#e0f2fe;
+      font-weight:500;
+    }
+    .nav-db{position:relative;}
+    .spacer{flex:1;}
+    .muted{color:var(--muted);}
+    .small{font-size:.85rem;}
+    .status-warn{color:var(--danger);}
+    .status-ok{color:var(--ok);}
+
+    .btn{
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      padding:6px 12px;
+      font-size:.82rem;
+      background:#fff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .btn.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#ecfdf3;
+    }
+    .btn.danger{
+      border-color:#ef4444;
+      color:#ef4444;
+      background:#fff;
+    }
+    .btn.small{ padding:4px 10px; font-size:.78rem; }
+    .btn[disabled]{opacity:.5;cursor:default;}
+
+    .db-menu{
+      position:absolute; top:100%; right:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      min-width:180px;
+      padding:4px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.12);
+      z-index:20;
+    }
+    .db-menu a{
+      display:block;
+      padding:6px 12px;
+      font-size:.9rem;
+      color:#0f172a;
+      text-decoration:none;
+    }
+    .db-menu a:hover{background:#f1f5f9;}
+    .hidden{display:none;}
+
+    .wrap{ max-width:1200px; margin:0 auto; padding:12px; }
+    h1{ margin:10px 0; font-size:1.5rem; }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      margin:10px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.04);
+    }
+    .row{
+      display:flex; flex-wrap:wrap; gap:10px;
+      align-items:center; margin:6px 0;
+    }
+    label{ display:block; font-size:.8rem; color:#475569; margin-bottom:3px; }
+    input,select{
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:6px 8px;
+      font-size:.85rem;
+      font-family:inherit;
+      background:#fff;
+    }
+    input:focus,select:focus{
+      outline:none;
+      border-color:#2563eb;
+      box-shadow:0 0 0 1px rgba(37,99,235,.2);
+    }
+
+    table{ width:100%; border-collapse:collapse; font-size:.82rem; }
+    th,td{ border-bottom:1px solid #e5e7eb; padding:7px 6px; text-align:left; vertical-align:top; }
+    th{ background:#f9fafb; color:#374151; }
+    tr:nth-child(even) td{ background:#f9fafb; }
+    .nowrap{ white-space:nowrap; }
+    .table-scroll{ width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+    .pill{
+      display:inline-block;
+      padding:2px 7px;
+      border-radius:999px;
+      font-size:.75rem;
+      background:#e5f3ff;
+      border:1px solid #bfdbfe;
+      margin-right:4px;
+      white-space:nowrap;
+    }
+    .pill.ok{background:#ecfdf5;border-color:#bbf7d0;color:#166534;}
+    .pill.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+    .pill.bad{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+
+    .notice{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background:#f9fafb;
+    }
+
+    /* Auth overlay */
+    #authOverlay{
+      position:fixed; inset:0;
+      background:radial-gradient(circle at top,#020617 0,rgba(15,23,42,.94) 40%,rgba(15,23,42,.97) 100%);
+      display:none; align-items:center; justify-content:center;
+      z-index:50;
+    }
+    #authCard{
+      width:min(520px,92vw);
+      background:#fff;
+      border-radius:16px;
+      border:1px solid var(--line);
+      padding:20px;
+    }
+    #authCard h2{margin:0 0 8px;}
+
+    @media print{
+      #sf-header,.no-print{display:none!important;}
+      body{background:#fff;}
+      .wrap{padding:8px;}
+      .card{box-shadow:none;border:none;margin:6px 0;}
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <div id="sf-header">
+    <div class="bar">
+      <a class="brand" href="skyfarm-diary.html">
+        <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
+             alt="SkyFarm logo"
+             style="height:28px;width:auto;border-radius:6px;">
+        <span>SkyFarm</span>
+      </a>
+      <nav>
+        <a href="skyfarm-diary.html">Diary</a>
+        <a href="skyfarm-map.html">Map</a>
+        <a href="skyfarm-rain.html">Rain</a>
+        <a href="skyfarm-hours.html">Hours</a>
+        <a href="skyfarm-induction.html">Induction</a>
+        <a href="skyfarm-induction-admin.html" aria-current="page">Induction Admin</a>
+      </nav>
+      <div class="nav-db">
+        <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
+        <div id="dbMenu" class="db-menu hidden">
+          <a href="skyfarm-livestock.html">Livestock</a>
+          <a href="skyfarm-chemical.html">Chemicals</a>
+          <a href="skyfarm-seeds.html">Seeds</a>
+          <a href="skyfarm-fodder.html">Fodder</a>
+          <a href="skyfarm-barcode.html">Barcode scanner</a>
+          <a href="skyfarm-users.html">Users &amp; roles</a>
+        </div>
+      </div>
+      <span class="spacer"></span>
+      <span id="authWho" class="muted small">Checking sign-in…</span>
+      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <h1>Induction Admin</h1>
+
+    <div class="card no-print">
+      <div class="row">
+        <div class="notice" style="flex:1;min-width:280px">
+          <div class="small muted">
+            Managers/Admins only. This page lists completion records saved in <code>inductionCompletions</code>.
+          </div>
+        </div>
+        <span class="spacer"></span>
+        <div id="status" class="muted small">Loading…</div>
+      </div>
+
+      <div id="accessDenied" class="notice" style="display:none;border-color:#fecaca;background:#fef2f2;">
+        <strong>Access denied.</strong>
+        <div class="small muted" style="margin-top:4px;">
+          Your role is <span id="roleLabel"></span>. Only manager/admin can view this page.
+        </div>
+      </div>
+
+      <div id="controls" style="display:none;">
+        <div class="row">
+          <div>
+            <label>Search (email contains)</label>
+            <input id="searchEmail" placeholder="e.g. jack@" style="width:240px;"/>
+          </div>
+          <div>
+            <label>Version</label>
+            <select id="versionSel" style="width:180px;">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div>
+            <label>Completed since</label>
+            <input id="sinceInp" type="date" style="width:170px;"/>
+          </div>
+          <div>
+            <label class="small">&nbsp;</label>
+            <button class="btn small" id="refreshBtn" type="button">Refresh</button>
+          </div>
+          <span class="spacer"></span>
+          <button class="btn small" id="exportBtn" type="button">Export CSV</button>
+          <button class="btn small" id="printBtn" type="button">Print</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="tableCard" style="display:none;">
+      <div class="row">
+        <strong>Completions</strong>
+        <span class="spacer"></span>
+        <span class="muted small" id="countLabel"></span>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th class="nowrap">Completed</th>
+              <th>Role</th>
+              <th>Version</th>
+              <th>Module results</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="5" class="muted small">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth overlay -->
+  <div id="authOverlay">
+    <div id="authCard">
+      <h2>Sign in to SkyFarm</h2>
+      <p class="small muted">Email &amp; password only.</p>
+      <div class="row">
+        <div style="flex:1;min-width:240px">
+          <label>Email</label>
+          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label>Password</label>
+          <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
+        </div>
+      </div>
+      <div class="row">
+        <button id="signInBtn" class="btn primary" type="button">Sign in</button>
+        <span id="authMsg" class="muted small"></span>
+        <span class="spacer"></span>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Firebase init ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+      authDomain: "consentes-pastoral.firebaseapp.com",
+      projectId: "consentes-pastoral",
+      appId: "1:494858780013:web:d87497b370c82eeab06e64"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ---------- Helpers ----------
+    const $  = s => document.querySelector(s);
+    const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function setStatus(msg, kind){
+      const el = $('#status');
+      el.textContent = msg || '';
+      el.classList.toggle('status-warn', kind === 'danger');
+      el.classList.toggle('status-ok', kind === 'ok');
+    }
+
+    function show(el, on){ el.style.display = on ? '' : 'none'; }
+
+    function toLocalString(iso){
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso);
+      return d.toLocaleString();
+    }
+
+    function csvEscape(v){
+      const s = String(v ?? '');
+      if (s.includes('"') || s.includes(',') || s.includes('\n')) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    }
+
+    function downloadText(filename, text){
+      const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // ---------- State ----------
+    let CURRENT_UID = null;
+    let CURRENT_EMAIL = null;
+    let CURRENT_ROLE = 'worker';
+
+    let ALL_ROWS = [];      // raw
+    let FILTERED_ROWS = []; // filtered
+    let VERSIONS = new Set();
+
+    // ---------- DOM ----------
+    const authOverlay = $('#authOverlay');
+    const authWho = $('#authWho');
+    const signOutBtn = $('#signOutBtn');
+
+    const accessDenied = $('#accessDenied');
+    const roleLabel = $('#roleLabel');
+    const controls = $('#controls');
+    const tableCard = $('#tableCard');
+    const tbody = $('#tbody');
+    const countLabel = $('#countLabel');
+
+    const searchEmail = $('#searchEmail');
+    const versionSel = $('#versionSel');
+    const sinceInp = $('#sinceInp');
+    const refreshBtn = $('#refreshBtn');
+    const exportBtn = $('#exportBtn');
+    const printBtn = $('#printBtn');
+
+    const dbMenuBtn = $('#dbMenuBtn');
+    const dbMenu = $('#dbMenu');
+
+    // Header DB menu
+    if (dbMenuBtn && dbMenu){
+      dbMenuBtn.onclick = e => { e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
+      document.addEventListener('click', e=>{
+        if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
+      });
+    }
+
+    // Auth controls
+    const siEmail = $('#siEmail');
+    const siPass = $('#siPass');
+    const signInBtn = $('#signInBtn');
+    const authMsg = $('#authMsg');
+    const closeOverlayBtn = $('#closeOverlayBtn');
+
+    function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+
+    signInBtn.onclick = async ()=>{
+      const email = (siEmail.value || '').trim();
+      const pass  = siPass.value || '';
+      if (!email || !pass){
+        authMsg.textContent = 'Enter email and password.';
+        return;
+      }
+      authMsg.textContent = 'Signing in…';
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithEmailAndPassword(email, pass);
+        authMsg.textContent = 'Signed in.';
+        showOverlay(false);
+      }catch(e){
+        console.error(e);
+        authMsg.textContent = e.message || 'Sign-in failed.';
+      }
+    };
+    closeOverlayBtn.onclick = ()=> showOverlay(false);
+    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+    async function loadCurrentUserRole(user){
+      CURRENT_UID = user?.uid || null;
+      CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
+      CURRENT_ROLE = 'worker';
+
+      if (!CURRENT_EMAIL) return;
+      const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
+      try{
+        const snap = await db.collection('users').doc(docId).get();
+        if (snap.exists){
+          const data = snap.data() || {};
+          CURRENT_ROLE = data.role || 'worker';
+        }
+      }catch(e){
+        console.error('loadCurrentUserRole failed', e);
+      }
+    }
+
+    auth.onAuthStateChanged(async user=>{
+      if (user){
+        authWho.textContent = user.email || 'Signed in';
+        signOutBtn.classList.remove('hidden');
+        showOverlay(false);
+        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+        await loadCurrentUserRole(user);
+        await initAfterAuth();
+      }else{
+        authWho.textContent = 'Not signed in';
+        signOutBtn.classList.add('hidden');
+        showOverlay(true);
+      }
+    });
+
+    function isAdminOrManager(){
+      return CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'manager';
+    }
+
+    async function loadCompletions(){
+      setStatus('Loading completions…');
+      tbody.innerHTML = '<tr><td colspan="5" class="muted small">Loading…</td></tr>';
+
+      try{
+        // Simple read-all. If it grows big later, we paginate.
+        const snap = await db.collection('inductionCompletions').get();
+        const rows = [];
+        VERSIONS = new Set();
+
+        snap.forEach(doc=>{
+          const d = doc.data() || {};
+          const completedAt = d.completedAt || null;
+
+          VERSIONS.add(String(d.version || 'v1'));
+
+          rows.push({
+            uid: d.uid || doc.id,
+            email: (d.email || '').toLowerCase(),
+            role: d.role || '',
+            version: d.version || 'v1',
+            completedAt,
+            modules: Array.isArray(d.modules) ? d.modules : []
+          });
+        });
+
+        // sort by completedAt desc
+        rows.sort((a,b)=> String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
+
+        ALL_ROWS = rows;
+
+        // populate version filter
+        const versions = Array.from(VERSIONS).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+        const prev = versionSel.value || '';
+        versionSel.innerHTML = '<option value="">All</option>' +
+          versions.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+        if (prev && versions.includes(prev)) versionSel.value = prev;
+
+        applyFiltersAndRender();
+        setStatus('Ready', 'ok');
+      }catch(e){
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="5" class="muted small">Error loading completions (check console).</td></tr>';
+        setStatus('Load failed', 'danger');
+      }
+    }
+
+    function moduleSummary(mods){
+      if (!mods || !mods.length) return '';
+      // compact: Title: Passed (xx%)
+      return mods.map(m=>{
+        const title = m.title || m.id || '';
+        const res = m.result || null;
+        const passed = res && res.passed ? 'Passed' : 'Not passed';
+        const pct = res && typeof res.percent === 'number' ? `${res.percent}%` : '—';
+        const pillClass = (res && res.passed) ? 'ok' : 'bad';
+        return `<span class="pill ${pillClass}">${escapeHtml(title)}: ${escapeHtml(passed)} (${escapeHtml(pct)})</span>`;
+      }).join(' ');
+    }
+
+    function applyFiltersAndRender(){
+      const q = (searchEmail.value || '').trim().toLowerCase();
+      const v = (versionSel.value || '').trim();
+      const since = (sinceInp.value || '').trim(); // yyyy-mm-dd
+
+      FILTERED_ROWS = ALL_ROWS.filter(r=>{
+        if (q && !String(r.email || '').includes(q)) return false;
+        if (v && String(r.version || '') !== v) return false;
+        if (since){
+          // compare by date portion
+          const cd = String(r.completedAt || '').slice(0,10);
+          if (!cd) return false;
+          if (cd < since) return false;
+        }
+        return true;
+      });
+
+      countLabel.textContent = `${FILTERED_ROWS.length} record(s)`;
+
+      if (!FILTERED_ROWS.length){
+        tbody.innerHTML = '<tr><td colspan="5" class="muted small">No matching records.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = FILTERED_ROWS.map(r=>{
+        return `<tr>
+          <td>${escapeHtml(r.email || '')}</td>
+          <td class="nowrap">${escapeHtml(toLocalString(r.completedAt))}</td>
+          <td>${escapeHtml(r.role || '')}</td>
+          <td>${escapeHtml(r.version || '')}</td>
+          <td>${moduleSummary(r.modules)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function exportCsv(){
+      const rows = FILTERED_ROWS.length ? FILTERED_ROWS : ALL_ROWS;
+
+      // Flatten to one row per completion (module details collapsed)
+      const header = [
+        'email','completedAt','role','version',
+        'modules' // "Module=Passed(%)|Module=Passed(%)"
+      ].join(',');
+
+      const lines = rows.map(r=>{
+        const modules = (r.modules || []).map(m=>{
+          const title = m.title || m.id || '';
+          const res = m.result || {};
+          const passed = res.passed ? 'Passed' : 'Not passed';
+          const pct = (typeof res.percent === 'number') ? `${res.percent}%` : '—';
+          return `${title}=${passed}(${pct})`;
+        }).join(' | ');
+
+        return [
+          csvEscape(r.email || ''),
+          csvEscape(r.completedAt || ''),
+          csvEscape(r.role || ''),
+          csvEscape(r.version || ''),
+          csvEscape(modules)
+        ].join(',');
+      });
+
+      const csv = [header, ...lines].join('\n');
+      const filename = `skyfarm_induction_completions_${new Date().toISOString().slice(0,10)}.csv`;
+      downloadText(filename, csv);
+    }
+
+    async function initAfterAuth(){
+      setStatus('Checking access…');
+
+      if (!isAdminOrManager()){
+        roleLabel.textContent = CURRENT_ROLE || 'worker';
+        show(accessDenied, true);
+        show(controls, false);
+        show(tableCard, false);
+        setStatus('Access denied', 'danger');
+        return;
+      }
+
+      show(accessDenied, false);
+      show(controls, true);
+      show(tableCard, true);
+
+      // wire controls
+      refreshBtn.onclick = loadCompletions;
+      exportBtn.onclick = exportCsv;
+      printBtn.onclick = ()=> window.print();
+
+      searchEmail.oninput = applyFiltersAndRender;
+      versionSel.onchange = applyFiltersAndRender;
+      sinceInp.onchange = applyFiltersAndRender;
+
+      await loadCompletions();
+    }
+
+    // Kick off
+    window.addEventListener('load', ()=> setStatus('Ready'));
+  </script>
+</body>
+</html>
