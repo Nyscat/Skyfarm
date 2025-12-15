@@ -137,6 +137,9 @@
   <!-- Shared header mount point -->
   <div id="sf-header-root"></div>
 
+  <link rel="stylesheet" href="skyfarm-shared.css">
+<div id="sf-header-root"></div>
+  
   <div class="wrap">
     <div class="top-actions">
       <span id="authWho" class="muted">Checking sign-in…</span>
@@ -218,6 +221,11 @@
   // Mount the shared header AFTER firebase exists (prevents "Checking sign-in..." sticking)
   try{ window.SkyFarmHeader && SkyFarmHeader.mount(); }catch(e){ console.warn(e); }
 
+  <script src="skyfarm-header.js"></script>
+<script>
+  SkyFarmHeader.mount();
+</script>
+  
   /* ---------- Auth overlay ---------- */
   const authOverlay  = document.getElementById('authOverlay');
   const authWho      = document.getElementById('authWho');
