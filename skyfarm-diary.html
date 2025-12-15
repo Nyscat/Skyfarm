@@ -10,6 +10,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
+  <!-- Shared header CSS + JS -->
+  <link rel="stylesheet" href="skyfarm-shared.css">
+
   <style>
     :root{
       --bg:#f6fbf8;
@@ -30,98 +33,6 @@
     }
     a{color:#0f766e;text-decoration:none;}
     a:hover{text-decoration:underline;}
-
-    /* Header */
-    #sf-header{
-      position:sticky;
-      top:0;
-      z-index:40;
-      background:rgba(255,255,255,.96);
-      backdrop-filter:blur(18px);
-      border-bottom:1px solid rgba(148,163,184,.4);
-    }
-    #sf-header .bar{
-      max-width:1200px;
-      margin:0 auto;
-      padding:8px 14px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    #sf-header .brand{
-      font-weight:600;
-      font-size:1rem;
-      padding:4px 10px;
-      border-radius:999px;
-      background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);
-      color:#ecfdf3;
-      box-shadow:0 10px 20px rgba(15,23,42,.25);
-    }
-    #sf-header nav a{
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:.85rem;
-      color:#0f172a;
-      text-decoration:none;
-    }
-    #sf-header nav a[aria-current="page"]{
-      background:#e0f2fe;
-      font-weight:500;
-    }
-    .nav-db{position:relative;}
-    .spacer{flex:1;}
-    .muted{color:var(--muted);}
-    .small{font-size:.8rem;}
-    .status-warn{color:var(--danger);}
-
-    .btn{
-      border-radius:999px;
-      border:1px solid #cbd5e1;
-      padding:6px 12px;
-      font-size:.82rem;
-      background:#fff;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      gap:4px;
-    }
-    .btn.primary{
-      background:var(--accent);
-      border-color:var(--accent);
-      color:#ecfdf3;
-    }
-    .btn.danger{
-      border-color:#ef4444;
-      color:#ef4444;
-      background:#fff;
-    }
-    .btn.small{
-      padding:4px 10px;
-      font-size:.78rem;
-    }
-    .btn[disabled]{opacity:.5;cursor:default;}
-
-    .db-menu{
-      position:absolute;
-      top:100%;
-      right:0;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:10px;
-      min-width:180px;
-      padding:4px 0;
-      box-shadow:0 10px 25px rgba(15,23,42,.12);
-      z-index:20;
-    }
-    .db-menu a{
-      display:block;
-      padding:6px 12px;
-      font-size:.9rem;
-      color:#0f172a;
-      text-decoration:none;
-    }
-    .db-menu a:hover{background:#f1f5f9;}
-    .hidden{display:none;}
 
     .wrap{
       max-width:1200px;
@@ -179,6 +90,37 @@
       border:1px solid #bfdbfe;
       margin-right:4px;
     }
+
+    .muted{color:var(--muted);}
+    .small{font-size:.8rem;}
+    .status-warn{color:var(--danger);}
+
+    .btn{
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      padding:6px 12px;
+      font-size:.82rem;
+      background:#fff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .btn.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#ecfdf3;
+    }
+    .btn.danger{
+      border-color:#ef4444;
+      color:#ef4444;
+      background:#fff;
+    }
+    .btn.small{
+      padding:4px 10px;
+      font-size:.78rem;
+    }
+    .btn[disabled]{opacity:.5;cursor:default;}
 
     table{
       width:100%;
@@ -246,7 +188,6 @@
       .entries-cards{display:flex;}
       .row{flex-direction:column;align-items:flex-start;}
       .w220,.w160,.w120,.w90{width:100%;}
-      #sf-header .bar{flex-wrap:wrap;}
     }
     @media (min-width:801px){
       .table-desktop{display:block;}
@@ -272,8 +213,11 @@
     }
     #authCard h2{margin:0 0 8px;}
 
+    /* Hide Time input wrapper */
+    .hidden{display:none;}
+
     @media print{
-      #sf-header,.no-print{display:none!important;}
+      .no-print{display:none!important;}
       body{background:#fff;}
       .wrap{padding:8px;}
       .card{box-shadow:none;border:none;margin:6px 0;}
@@ -283,37 +227,10 @@
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div id="sf-header">
-    <div class="bar">
-      <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
-        <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-             alt="SkyFarm logo"
-             style="height:28px;width:auto;border-radius:6px;">
-        <span>SkyFarm</span>
-      </a>
-      <nav>
-        <a href="skyfarm-diary.html" aria-current="page">Diary</a>
-        <a href="skyfarm-map.html">Map</a>
-        <a href="skyfarm-rain.html">Rain</a>
-        <a href="skyfarm-hours.html">Hours</a>
-      </nav>
-      <div class="nav-db">
-        <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
-        <div id="dbMenu" class="db-menu hidden">
-          <a href="skyfarm-livestock.html">Livestock</a>
-          <a href="skyfarm-chemical.html">Chemicals</a>
-          <a href="skyfarm-seeds.html">Seeds</a>
-          <a href="skyfarm-fodder.html">Fodder</a>
-          <a href="skyfarm-barcode.html">Barcode scanner</a>
-          <a href="skyfarm-users.html">Users &amp; roles</a>
-        </div>
-      </div>
-      <span class="spacer"></span>
-      <span id="authWho" class="muted small">Checking sign-in…</span>
-      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
-    </div>
-  </div>
+  <!-- Shared header mount point -->
+  <div id="sf-header-root"></div>
+  <script src="skyfarm-header.js"></script>
+  <script>SkyFarmHeader.mount();</script>
 
   <div class="wrap">
     <h1>Diary</h1>
@@ -329,11 +246,13 @@
           <label>Date</label>
           <input id="dateInp" type="date" class="w160"/>
         </div>
+
         <!-- hide time from the UI but keep the input for sorting/storage -->
         <div id="timeWrap" class="hidden">
           <label>Time</label>
           <input id="timeInp" type="time" class="w120"/>
         </div>
+
         <div>
           <label>Activity</label>
           <select id="activitySel" class="w220">
@@ -352,8 +271,11 @@
             <option value="General">General</option>
           </select>
         </div>
-        <span class="spacer"></span>
+
+        <span class="spacer" style="flex:1;"></span>
+
         <div id="status" class="muted small">Ready</div>
+        <button id="pageSignOutBtn" class="btn small danger" type="button" style="display:none;">Sign out</button>
       </div>
 
       <div class="row">
@@ -537,7 +459,7 @@
           <label class="small">&nbsp;</label>
           <button id="refreshBtn" class="btn small" type="button">Refresh</button>
         </div>
-        <span class="spacer"></span>
+        <span class="spacer" style="flex:1;"></span>
         <button id="printBtn" class="btn small" type="button">Print / PDF</button>
       </div>
 
@@ -548,7 +470,6 @@
             <thead>
             <tr>
               <th>Date</th>
-              <!-- Time column removed from display -->
               <th>Property</th>
               <th>Paddock</th>
               <th>Activity</th>
@@ -561,7 +482,7 @@
             </tr>
             </thead>
             <tbody id="entriesBody">
-            <tr><td colspan="10" class="muted small">Loading…</td></tr>
+              <tr><td colspan="10" class="muted small">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -590,7 +511,7 @@
       <div class="row">
         <button id="signInBtn" class="btn primary" type="button">Sign in</button>
         <span id="authMsg" class="muted small"></span>
-        <span class="spacer"></span>
+        <span class="spacer" style="flex:1;"></span>
         <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
     </div>
@@ -633,9 +554,10 @@
 
     // ---------- Helpers ----------
     const $  = s => document.querySelector(s);
-    const $$ = s => Array.from(document.querySelectorAll(s));
     const todayISO = () => new Date().toISOString().slice(0,10);
-    const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
     function setStatus(msg, warn){
       const el = $('#status');
       el.textContent = msg || '';
@@ -714,24 +636,9 @@
     const entriesBody = $('#entriesBody');
     const entriesCards = $('#entriesCards');
 
+    // Auth overlay
     const authOverlay = $('#authOverlay');
-    const authWho = $('#authWho');
-    const signOutBtn = $('#signOutBtn');
-    const dbMenuBtn = $('#dbMenuBtn');
-    const dbMenu = $('#dbMenu');
-
-    // Header DB menu
-    if (dbMenuBtn && dbMenu){
-      dbMenuBtn.onclick = e => {
-        e.stopPropagation();
-        dbMenu.classList.toggle('hidden');
-      };
-      document.addEventListener('click', e=>{
-        if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn){
-          dbMenu.classList.add('hidden');
-        }
-      });
-    }
+    const pageSignOutBtn = $('#pageSignOutBtn');
 
     // Auth
     const siEmail = $('#siEmail');
@@ -761,7 +668,13 @@
       }
     };
     closeOverlayBtn.onclick = ()=> showOverlay(false);
-    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+    pageSignOutBtn.onclick = async ()=>{
+      try{
+        await auth.signOut();
+        location.reload();
+      }catch(e){}
+    };
 
     async function loadCurrentUserRole(user){
       CURRENT_USER = user;
@@ -789,15 +702,13 @@
 
     auth.onAuthStateChanged(async user=>{
       if (user){
-        authWho.textContent = user.email || 'Signed in';
-        signOutBtn.classList.remove('hidden');
         showOverlay(false);
+        pageSignOutBtn.style.display = '';
         try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
         await loadCurrentUserRole(user);
         await initAfterAuth();
       }else{
-        authWho.textContent = 'Not signed in';
-        signOutBtn.classList.add('hidden');
+        pageSignOutBtn.style.display = 'none';
         showOverlay(true);
       }
     });
@@ -1415,9 +1326,7 @@
         }else if (activity === 'Move stock' && paddockName && toPaddockName && species && klass && head){
           sideEffects.push(moveLivestockWithinProperty(propertyId, paddockName, toPaddockName, species, klass, head));
         }else if (activity === 'Transfer stock (Out)' && paddockName && transferPropertyId && species && klass && head){
-          // subtract from current paddock
           sideEffects.push(adjustLivestockLine(propertyId, paddockName, species, klass, -head));
-          // add to yards on destination property
           sideEffects.push((async ()=>{
             const yardName = await findYardNameForProperty(transferPropertyId);
             if (!yardName){
@@ -1427,7 +1336,6 @@
             await adjustLivestockLine(transferPropertyId, yardName, species, klass, +head);
           })());
         }
-        // Mustering: no stock change
 
         // Rainfall mirror
         if (activity === 'Rainfall' && gaugeId && rainfallMm){
@@ -1746,16 +1654,13 @@
 
         const d = snap.data();
 
-        // Populate modal fields
         editNotes.value = d.notes || '';
         editWeather.value = d.weather || '';
 
-        // Activity dropdown
         editActivity.innerHTML = SAFE_ACTIVITIES.map(a =>
           `<option value="${a}"${a===d.activity?' selected':''}>${a}</option>`
         ).join('');
 
-        // Show modal
         editModal.style.display = 'flex';
       }).catch(e=>{
         console.error(e);
@@ -1800,24 +1705,19 @@
       timeInp.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       filterYear.value = now.getFullYear();
 
-      // Load users for name lookup (use stored email + name from users & roles)
+      // Load users for name lookup
       try{
         const usersSnap = await db.collection('users').get();
         USERS = {};
         usersSnap.forEach(doc=>{
           const d = doc.data() || {};
-
-          // Email saved by skyfarm-users.html
           const email = String(d.email || '').toLowerCase();
           if (!email) return;
 
-          const fullName = (d.name || '').trim();      // e.g. "Nyssa"
+          const fullName = (d.name || '').trim();
           const firstName = fullName || email.split('@')[0];
 
-          USERS[email] = {
-            fullName,
-            firstName
-          };
+          USERS[email] = { fullName, firstName };
         });
       }catch(e){
         console.error('Loading users for names failed', e);
@@ -1876,10 +1776,7 @@
       await refreshEntries();
     }
 
-    // Kick off
-    window.addEventListener('load', ()=>{
-      setStatus('Ready');
-    });
+    window.addEventListener('load', ()=> setStatus('Ready'));
   </script>
 </body>
 </html>
