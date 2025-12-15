@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SkyFarm — Hours</title>
 
+  <!-- Shared header styles -->
+  <link rel="stylesheet" href="skyfarm-shared.css">
+
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -32,34 +35,9 @@
     a{color:#0f766e;text-decoration:none;}
     a:hover{text-decoration:underline;}
 
-    /* Header */
-    #sf-header{
-      position:sticky; top:0; z-index:40;
-      background:rgba(255,255,255,.96);
-      backdrop-filter:blur(18px);
-      border-bottom:1px solid rgba(148,163,184,.4);
-    }
-    #sf-header .bar{
-      max-width:1200px; margin:0 auto; padding:8px 14px;
-      display:flex; align-items:center; gap:10px;
-    }
-    #sf-header .brand{
-      font-weight:600; font-size:1rem; padding:4px 10px;
-      border-radius:999px;
-      background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);
-      color:#ecfdf3;
-      box-shadow:0 10px 20px rgba(15,23,42,.25);
-    }
-    #sf-header nav a{
-      padding:4px 10px; border-radius:999px; font-size:.85rem;
-      color:#0f172a; text-decoration:none;
-    }
-    #sf-header nav a[aria-current="page"]{
-      background:#e0f2fe;
-      font-weight:500;
-    }
-    .nav-db{position:relative;}
-    .spacer{flex:1;}
+    .wrap{ max-width:1200px; margin:0 auto; padding:12px; }
+    h1{ margin:10px 0; font-size:1.5rem; }
+
     .muted{color:var(--muted);}
     .small{font-size:.8rem;}
     .status-warn{color:var(--danger);}
@@ -89,26 +67,6 @@
     .btn.small{ padding:4px 10px; font-size:.78rem; }
     .btn[disabled]{opacity:.5;cursor:default;}
 
-    .db-menu{
-      position:absolute; top:100%; right:0;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:10px;
-      min-width:180px;
-      padding:4px 0;
-      box-shadow:0 10px 25px rgba(15,23,42,.12);
-      z-index:20;
-    }
-    .db-menu a{
-      display:block;
-      padding:6px 12px;
-      font-size:.9rem;
-      color:#0f172a;
-      text-decoration:none;
-    }
-    .db-menu a:hover{background:#f1f5f9;}
-    .hidden{display:none;}
-
     .wrap{ max-width:1200px; margin:0 auto; padding:12px; }
     h1{ margin:10px 0; font-size:1.5rem; }
 
@@ -133,7 +91,7 @@
       font-family:inherit;
       background:#fff;
     }
-    textarea{resize:vertical;min-height:40px;}
+    textarea{resize:vertical;min-height:40px; width:100%;}
     input:focus,select:focus,textarea:focus{
       outline:none;
       border-color:#2563eb;
@@ -187,8 +145,6 @@
       .entries-cards{display:flex;}
       .row{flex-direction:column;align-items:flex-start;}
       .w220,.w160,.w120,.w90{width:100%;}
-      #sf-header .bar{flex-wrap:wrap;}
-      #sf-header nav a{padding:4px 8px;}
     }
     @media (min-width:801px){
       .table-desktop{display:block;}
@@ -200,7 +156,7 @@
       position:fixed; inset:0;
       background:radial-gradient(circle at top,#020617 0,rgba(15,23,42,.94) 40%,rgba(15,23,42,.97) 100%);
       display:none; align-items:center; justify-content:center;
-      z-index:50;
+      z-index:2000;
     }
     #authCard{
       width:min(520px,92vw);
@@ -212,7 +168,7 @@
     #authCard h2{margin:0 0 8px;}
 
     @media print{
-      #sf-header,.no-print{display:none!important;}
+      .sf-header,.no-print{display:none!important;}
       body{background:#fff;}
       .wrap{padding:8px;}
       .card{box-shadow:none;border:none;margin:6px 0;}
@@ -223,37 +179,8 @@
 </head>
 
 <body>
-  <!-- Header -->
-  <div id="sf-header">
-    <div class="bar">
-      <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
-        <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-             alt="SkyFarm logo"
-             style="height:28px;width:auto;border-radius:6px;">
-        <span>SkyFarm</span>
-      </a>
-      <nav>
-        <a href="skyfarm-diary.html">Diary</a>
-        <a href="skyfarm-map.html">Map</a>
-        <a href="skyfarm-rain.html">Rain</a>
-        <a href="skyfarm-hours.html" aria-current="page">Hours</a>
-      </nav>
-      <div class="nav-db">
-        <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
-        <div id="dbMenu" class="db-menu hidden">
-          <a href="skyfarm-livestock.html">Livestock</a>
-          <a href="skyfarm-chemical.html">Chemicals</a>
-          <a href="skyfarm-seeds.html">Seeds</a>
-          <a href="skyfarm-fodder.html">Fodder</a>
-          <a href="skyfarm-barcode.html">Barcode scanner</a>
-          <a href="skyfarm-users.html">Users &amp; roles</a>
-        </div>
-      </div>
-      <span class="spacer"></span>
-      <span id="authWho" class="muted small">Checking sign-in…</span>
-      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
-    </div>
-  </div>
+  <!-- Shared header mount point -->
+  <div id="sf-header-root"></div>
 
   <div class="wrap">
     <h1>Hours</h1>
@@ -266,7 +193,7 @@
             Daily hours over 8 are shown as <strong>Potential OT</strong> only. Overtime is confirmed when the 4-week average is finalised.
           </div>
         </div>
-        <span class="spacer"></span>
+        <span style="flex:1;"></span>
         <div id="status" class="muted small">Ready</div>
       </div>
 
@@ -320,7 +247,7 @@
     <div class="card">
       <div class="row">
         <strong>Last 28 days (informational)</strong>
-        <span class="spacer"></span>
+        <span style="flex:1;"></span>
         <span class="muted small" id="windowLabel"></span>
       </div>
       <div class="row">
@@ -361,7 +288,7 @@
           <label class="small">&nbsp;</label>
           <button id="refreshBtn" class="btn small" type="button">Refresh</button>
         </div>
-        <span class="spacer"></span>
+        <span style="flex:1;"></span>
         <button id="printBtn" class="btn small" type="button">Print / PDF</button>
       </div>
 
@@ -411,11 +338,14 @@
       <div class="row">
         <button id="signInBtn" class="btn primary" type="button">Sign in</button>
         <span id="authMsg" class="muted small"></span>
-        <span class="spacer"></span>
+        <span style="flex:1;"></span>
         <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
     </div>
   </div>
+
+  <!-- Shared header script -->
+  <script src="skyfarm-header.js"></script>
 
   <script>
     // ---------- Firebase init ----------
@@ -428,6 +358,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+
+    // Mount shared header AFTER firebase exists
+    try { window.SkyFarmHeader && SkyFarmHeader.mount(); } catch(e){ console.warn(e); }
 
     // ---------- Helpers ----------
     const $  = s => document.querySelector(s);
@@ -507,21 +440,7 @@
     const entriesCards = $('#entriesCards');
 
     const authOverlay = $('#authOverlay');
-    const authWho = $('#authWho');
-    const signOutBtn = $('#signOutBtn');
-
-    const dbMenuBtn = $('#dbMenuBtn');
-    const dbMenu = $('#dbMenu');
-
-    // Header DB menu
-    if (dbMenuBtn && dbMenu){
-      dbMenuBtn.onclick = e => { e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
-      document.addEventListener('click', e=>{
-        if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
-      });
-    }
-
-    // Auth controls
+    const signOutBtn = document.getElementById('sf-signout-btn') || $('#signOutBtn'); // fallback if header exposes its own
     const siEmail = $('#siEmail');
     const siPass = $('#siPass');
     const signInBtn = $('#signInBtn');
@@ -530,6 +449,7 @@
 
     function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
 
+    // Auth controls
     signInBtn.onclick = async ()=>{
       const email = (siEmail.value || '').trim();
       const pass  = siPass.value || '';
@@ -549,7 +469,9 @@
       }
     };
     closeOverlayBtn.onclick = ()=> showOverlay(false);
-    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+    if (signOutBtn){
+      signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+    }
 
     async function loadCurrentUserRole(user){
       CURRENT_UID = user?.uid || null;
@@ -576,21 +498,16 @@
 
     auth.onAuthStateChanged(async user=>{
       if (user){
-        authWho.textContent = user.email || 'Signed in';
-        signOutBtn.classList.remove('hidden');
         showOverlay(false);
         try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
         await loadCurrentUserRole(user);
         await initAfterAuth();
       }else{
-        authWho.textContent = 'Not signed in';
-        signOutBtn.classList.add('hidden');
         showOverlay(true);
       }
     });
 
     async function loadUsers(){
-      // Used for labels + admin filters
       try{
         const usersSnap = await db.collection('users').get();
         USERS = {};
@@ -711,7 +628,6 @@
     }
 
     async function refreshWindowSummary(){
-      // last 28 days inclusive of today
       const end = new Date();
       const start = new Date();
       start.setDate(end.getDate() - 27);
@@ -721,7 +637,6 @@
       winLabel.textContent = `${startISO} → ${endISO}`;
 
       try{
-        // Fetch a wider set then filter client-side for role + prop
         const snap = await db.collection('hoursEntries')
           .where('date','>=',startISO)
           .where('date','<=',endISO)
@@ -730,7 +645,6 @@
         let rows = [];
         snap.forEach(doc => rows.push({id:doc.id, ...(doc.data()||{})}));
 
-        // visibility: workers only their entries
         if (CURRENT_ROLE === 'worker'){
           const uid = CURRENT_UID;
           const email = (CURRENT_EMAIL || '').toLowerCase();
@@ -775,16 +689,13 @@
         let rows = [];
         snap.forEach(doc => rows.push({id:doc.id, ...(doc.data()||{})}));
 
-        // build user filter options (admin/manager only)
         const isWorker = CURRENT_ROLE === 'worker';
         if (isWorker){
           userFilterWrap.style.display = 'none';
         }else{
           userFilterWrap.style.display = '';
           const userSet = new Set();
-          rows.forEach(r=>{
-            if (r.createdByEmail) userSet.add(userLabel(r.createdByEmail));
-          });
+          rows.forEach(r=>{ if (r.createdByEmail) userSet.add(userLabel(r.createdByEmail)); });
           const list = Array.from(userSet).filter(Boolean).sort((a,b)=>a.localeCompare(b));
           const prev = filterUserSel.value || '';
           filterUserSel.innerHTML = '<option value="">All users</option>' +
@@ -792,17 +703,12 @@
           if (prev && list.includes(prev)) filterUserSel.value = prev;
         }
 
-        // apply filters
         const yearFilter = parseInt(filterYear.value || '', 10) || null;
         const propFilter = filterPropSel.value || '';
         const selectedUser = (filterUserSel.value || '').trim();
 
-        if (yearFilter){
-          rows = rows.filter(r => String(r.date || '').slice(0,4) === String(yearFilter));
-        }
-        if (propFilter){
-          rows = rows.filter(r => r.propertyId === propFilter);
-        }
+        if (yearFilter) rows = rows.filter(r => String(r.date || '').slice(0,4) === String(yearFilter));
+        if (propFilter) rows = rows.filter(r => r.propertyId === propFilter);
 
         if (isWorker){
           const uid = CURRENT_UID;
@@ -816,7 +722,6 @@
           rows = rows.filter(r => userLabel(r.createdByEmail) === selectedUser);
         }
 
-        // sort
         const sortMode = sortSel.value || 'dateDesc';
         rows.sort((a,b)=>{
           const dA = String(a.date||'');
@@ -826,14 +731,8 @@
 
           if (sortMode === 'dateAsc') return dA.localeCompare(dB);
           if (sortMode === 'dateDesc') return dB.localeCompare(dA);
-          if (sortMode === 'userAsc'){
-            const c = uA.localeCompare(uB); if (c!==0) return c;
-            return dB.localeCompare(dA);
-          }
-          if (sortMode === 'userDesc'){
-            const c = uB.localeCompare(uA); if (c!==0) return c;
-            return dB.localeCompare(dA);
-          }
+          if (sortMode === 'userAsc'){ const c=uA.localeCompare(uB); return c!==0?c:dB.localeCompare(dA); }
+          if (sortMode === 'userDesc'){ const c=uB.localeCompare(uA); return c!==0?c:dB.localeCompare(dA); }
           return 0;
         });
 
@@ -852,7 +751,6 @@
           return uidMatch || emailMatch;
         };
 
-        // desktop table
         entriesBody.innerHTML = rows.map(r=>{
           const tot = Number(r.totalHours || 0);
           const pot = Number(r.potentialOtHours || 0);
@@ -871,7 +769,6 @@
           </tr>`;
         }).join('');
 
-        // mobile cards
         if (entriesCards){
           entriesCards.innerHTML = rows.map(r=>{
             const tot = Number(r.totalHours || 0).toFixed(2);
@@ -893,14 +790,11 @@
           }).join('');
         }
 
-        // delete wiring
-        const dels = document.querySelectorAll('button[data-del]');
-        dels.forEach(btn=>{
+        document.querySelectorAll('button[data-del]').forEach(btn=>{
           btn.onclick = async ()=>{
             const id = btn.dataset.del;
             if (!id) return;
-            const ok = confirm('Delete this hours entry?');
-            if (!ok) return;
+            if (!confirm('Delete this hours entry?')) return;
             try{
               await db.collection('hoursEntries').doc(id).delete();
               await refreshEntries();
@@ -926,11 +820,8 @@
       dateInp.value = todayISO();
       filterYear.value = now.getFullYear();
 
-      // default times
-      const hh = String(now.getHours()).padStart(2,'0');
-      const mm = String(now.getMinutes()).padStart(2,'0');
-      startInp.value = `${hh}:${mm}`;
-      endInp.value = `${hh}:${mm}`;
+      startInp.value = '';
+      endInp.value = '';
       breakInp.value = '';
 
       await loadUsers();
@@ -960,7 +851,6 @@
       setStatus('Ready');
     }
 
-    // Kick off
     window.addEventListener('load', ()=> setStatus('Ready'));
   </script>
 </body>
