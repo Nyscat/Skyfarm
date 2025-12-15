@@ -5,7 +5,7 @@
   <title>SkyFarm — Property Map</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- Shared header styles -->
+  <!-- Shared styles (ONCE) -->
   <link rel="stylesheet" href="skyfarm-shared.css">
 
   <!-- Leaflet -->
@@ -62,7 +62,6 @@
     .muted{color:var(--muted);font-size:.95rem;}
     .hidden{display:none;}
 
-    /* Map layout */
     .map-layout{
       display:grid;
       grid-template-columns:1fr 360px;
@@ -70,21 +69,18 @@
       align-items:start;
     }
 
-    /* Map element (important: iPhone-friendly) */
     #map{
       position:relative;
       width:100%;
-      height:560px;                /* fallback */
-      min-height:420px;            /* iPhone-friendly minimum */
-      height:calc(100dvh - 360px); /* modern iOS stable viewport */
+      height:560px;
+      min-height:420px;
+      height:calc(100dvh - 360px);
       background:#e5e7eb;
       border-radius:12px;
       overflow:hidden;
     }
-
     .map-panel{padding:0;}
 
-    /* Leaflet fixes for mobile / global img styles */
     .leaflet-container{background:#e5e7eb;}
     .leaflet-container img{
       max-width:none !important;
@@ -97,7 +93,6 @@
       height:256px !important;
     }
 
-    /* Auth overlay */
     #authOverlay{
       position:fixed;
       inset:0;
@@ -125,7 +120,6 @@
       margin:6px 0 10px;
     }
 
-    /* Mobile */
     @media (max-width:800px){
       .map-layout{display:flex;flex-direction:column;}
       #map{min-height:520px;}
@@ -134,12 +128,9 @@
 </head>
 
 <body>
-  <!-- Shared header mount point -->
+  <!-- Shared header mount point (ONCE) -->
   <div id="sf-header-root"></div>
 
-  <link rel="stylesheet" href="skyfarm-shared.css">
-<div id="sf-header-root"></div>
-  
   <div class="wrap">
     <div class="top-actions">
       <span id="authWho" class="muted">Checking sign-in…</span>
@@ -149,7 +140,6 @@
     <h1>Property Map</h1>
     <p id="status" class="muted">Loading paddock data…</p>
 
-    <!-- Controls row -->
     <div class="panel" style="margin-bottom:12px;">
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <div>
@@ -176,7 +166,6 @@
     </div>
   </div>
 
-  <!-- Auth overlay -->
   <div id="authOverlay">
     <div id="authCard">
       <h2>Sign in to SkyFarm</h2>
@@ -200,14 +189,11 @@
     </div>
   </div>
 
-  <!-- Shared header script -->
+  <!-- Header script (load ONCE) -->
   <script src="skyfarm-header.js"></script>
 
   <script>
   /* ---------- Firebase init ---------- */
-  // If you already use skyfarm-config.js elsewhere, you can swap to:
-  //   <script src="skyfarm-config.js"></script>
-  // and remove this config block.
   const firebaseConfig = {
     apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
     authDomain: "consentes-pastoral.firebaseapp.com",
@@ -218,14 +204,9 @@
   const db   = firebase.firestore();
   const auth = firebase.auth();
 
-  // Mount the shared header AFTER firebase exists (prevents "Checking sign-in..." sticking)
-  try{ window.SkyFarmHeader && SkyFarmHeader.mount(); }catch(e){ console.warn(e); }
-
-  <script src="skyfarm-header.js"></script>
-<script>
+  // Mount the shared header AFTER firebase init
   SkyFarmHeader.mount();
-</script>
-  
+
   /* ---------- Auth overlay ---------- */
   const authOverlay  = document.getElementById('authOverlay');
   const authWho      = document.getElementById('authWho');
@@ -266,7 +247,6 @@
   /* ---------- iPhone Leaflet sizing fix ---------- */
   const mapEl = document.getElementById('map');
   function setMapHeight(){
-    // ~60% of visible screen height with sensible bounds
     const h = Math.max(420, Math.min(760, Math.round(window.innerHeight * 0.60)));
     mapEl.style.height = h + 'px';
   }
@@ -322,7 +302,6 @@
   let allBounds      = null;
   let firestoreReady = false;
 
-  /* ---------- Firestore-backed indexes ---------- */
   async function loadProperties(){
     propertyMeta.clear();
     const snap = await db.collection('properties').get();
@@ -374,7 +353,6 @@
     });
   }
 
-  /* ---------- Diary helpers ---------- */
   async function getRecentDiary(propertyId, paddockName){
     const cacheKey = propertyId + '|' + paddockName;
     if (diaryCache.has(cacheKey)) return diaryCache.get(cacheKey);
@@ -395,18 +373,13 @@
       if ((d.paddock || '').trim() !== paddockName) return;
       const dateStr = d.date || '';
       if (dateStr && dateStr < fromISO) return;
-      out.push({
-        date: dateStr,
-        activity: d.activity || '',
-        notes: d.notes || ''
-      });
+      out.push({ date: dateStr, activity: d.activity || '', notes: d.notes || '' });
     });
 
     diaryCache.set(cacheKey, out);
     return out;
   }
 
-  /* ---------- Render paddock info ---------- */
   function renderPaddockInfo(propertyName, paddockName, stockRec, diaryList){
     let html = '';
     html += `<div><strong>Paddock:</strong> ${esc(paddockName)}</div>`;
@@ -442,7 +415,6 @@
     paddockInfoEl.innerHTML = html;
   }
 
-  /* ---------- Paddock click ---------- */
   async function handlePaddockClick(mapIndex, feature){
     const paddockName = (feature.properties && feature.properties.title)
       ? String(feature.properties.title).trim()
@@ -486,16 +458,11 @@
     paddockInfoEl.innerHTML = '<span class="muted">Loading diary entries…</span>';
 
     let diaryList = [];
-    try{
-      diaryList = await getRecentDiary(pid, paddockName);
-    }catch(e){
-      diaryList = [];
-    }
+    try{ diaryList = await getRecentDiary(pid, paddockName); }catch(e){ diaryList = []; }
 
     renderPaddockInfo(propertyName, paddockName, stockRec, diaryList);
   }
 
-  /* ---------- GeoJSON fetch with fallback ---------- */
   async function fetchWithFallback(primaryUrl, fallbackUrl){
     try{
       const r = await fetch(primaryUrl, {cache:'no-store'});
@@ -508,7 +475,6 @@
     }
   }
 
-  /* ---------- Property dropdown & zoom ---------- */
   function rebuildPropertyDropdown(){
     const entries = [];
     propertyMeta.forEach((meta,id)=>{
@@ -551,7 +517,6 @@
     }
   }
 
-  /* ---------- Map layers ---------- */
   function featureStyle(feature){
     const t = (feature && feature.geometry) ? feature.geometry.type : null;
     if (t === 'Polygon' || t === 'MultiPolygon'){
@@ -621,12 +586,10 @@
       map.fitBounds(allBounds, {padding:[20,20]});
     }
 
-    // iPhone: do this AFTER layers are added
     setTimeout(ensureMapSize, 150);
     setTimeout(ensureMapSize, 600);
   }
 
-  /* ---------- Auth + bootstrap ---------- */
   auth.onAuthStateChanged(async user=>{
     if (user){
       authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
