@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SkyFarm — Safety Induction</title>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6fbf8;
+      --card:#ffffff;
+      --line:#e2e8f0;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --accent:#047857;
+      --danger:#b91c1c;
+      --warn:#b45309;
+      --ok:#166534;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      -webkit-font-smoothing:antialiased;
+    }
+    a{color:#0f766e;text-decoration:none;}
+    a:hover{text-decoration:underline;}
+
+    /* Header */
+    #sf-header{
+      position:sticky; top:0; z-index:40;
+      background:rgba(255,255,255,.96);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid rgba(148,163,184,.4);
+    }
+    #sf-header .bar{
+      max-width:1200px; margin:0 auto; padding:8px 14px;
+      display:flex; align-items:center; gap:10px;
+      flex-wrap:wrap;
+    }
+    #sf-header .brand{
+      font-weight:600; font-size:1rem; padding:4px 10px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);
+      color:#ecfdf3;
+      box-shadow:0 10px 20px rgba(15,23,42,.25);
+      display:flex; align-items:center; gap:8px;
+    }
+    #sf-header nav a{
+      padding:4px 10px; border-radius:999px; font-size:.85rem;
+      color:#0f172a; text-decoration:none;
+    }
+    #sf-header nav a[aria-current="page"]{
+      background:#e0f2fe;
+      font-weight:500;
+    }
+    .nav-db{position:relative;}
+    .spacer{flex:1;}
+    .muted{color:var(--muted);}
+    .small{font-size:.85rem;}
+    .status-warn{color:var(--danger);}
+    .status-ok{color:var(--ok);}
+
+    .btn{
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      padding:6px 12px;
+      font-size:.82rem;
+      background:#fff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .btn.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#ecfdf3;
+    }
+    .btn.danger{
+      border-color:#ef4444;
+      color:#ef4444;
+      background:#fff;
+    }
+    .btn.small{ padding:4px 10px; font-size:.78rem; }
+    .btn[disabled]{opacity:.5;cursor:default;}
+
+    .db-menu{
+      position:absolute; top:100%; right:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      min-width:180px;
+      padding:4px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.12);
+      z-index:20;
+    }
+    .db-menu a{
+      display:block;
+      padding:6px 12px;
+      font-size:.9rem;
+      color:#0f172a;
+      text-decoration:none;
+    }
+    .db-menu a:hover{background:#f1f5f9;}
+    .hidden{display:none;}
+
+    .wrap{ max-width:1200px; margin:0 auto; padding:12px; }
+    h1{ margin:10px 0; font-size:1.5rem; }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      margin:10px 0;
+      box-shadow:0 10px 25px rgba(15,23,42,.04);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    @media (max-width:900px){
+      .grid{grid-template-columns:1fr;}
+    }
+
+    .side{
+      position:sticky;
+      top:70px;
+    }
+    @media (max-width:900px){
+      .side{position:static;}
+    }
+
+    .module-item{
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#f9fafb;
+      padding:10px;
+      margin-bottom:8px;
+      cursor:pointer;
+    }
+    .module-item.active{
+      border-color:#0f766e;
+      background:#ecfeff;
+    }
+    .module-title{font-weight:600;}
+    .module-meta{font-size:.8rem;color:var(--muted);margin-top:2px;}
+    .pill{
+      display:inline-block;
+      padding:2px 7px;
+      border-radius:999px;
+      font-size:.75rem;
+      background:#e5f3ff;
+      border:1px solid #bfdbfe;
+      margin-right:4px;
+      white-space:nowrap;
+    }
+    .pill.ok{background:#ecfdf5;border-color:#bbf7d0;color:#166534;}
+    .pill.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+    .pill.bad{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+
+    .row{
+      display:flex; flex-wrap:wrap; gap:10px;
+      align-items:center; margin:6px 0;
+    }
+
+    .content h2{margin:0 0 6px;}
+    .content p{margin:8px 0;color:#0f172a;}
+    .content ul{margin:8px 0 8px 18px;}
+    .content li{margin:6px 0;}
+
+    .q{
+      border-top:1px solid var(--line);
+      margin-top:12px;
+      padding-top:12px;
+    }
+    .q h3{margin:0 0 8px;font-size:1.05rem;}
+    .q .question{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background:#fff;
+      margin-bottom:10px;
+    }
+    .q .prompt{font-weight:600;margin-bottom:8px;}
+    .q label{
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      margin:6px 0;
+      font-size:.92rem;
+    }
+
+    .notice{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background:#f9fafb;
+    }
+
+    /* Auth overlay */
+    #authOverlay{
+      position:fixed; inset:0;
+      background:radial-gradient(circle at top,#020617 0,rgba(15,23,42,.94) 40%,rgba(15,23,42,.97) 100%);
+      display:none; align-items:center; justify-content:center;
+      z-index:50;
+    }
+    #authCard{
+      width:min(520px,92vw);
+      background:#fff;
+      border-radius:16px;
+      border:1px solid var(--line);
+      padding:20px;
+    }
+    #authCard h2{margin:0 0 8px;}
+
+    @media print{
+      #sf-header,.no-print{display:none!important;}
+      body{background:#fff;}
+      .wrap{padding:8px;}
+      .card{box-shadow:none;border:none;margin:6px 0;}
+      .side{display:none;}
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <div id="sf-header">
+    <div class="bar">
+      <a class="brand" href="skyfarm-diary.html">
+        <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
+             alt="SkyFarm logo"
+             style="height:28px;width:auto;border-radius:6px;">
+        <span>SkyFarm</span>
+      </a>
+      <nav>
+        <a href="skyfarm-diary.html">Diary</a>
+        <a href="skyfarm-map.html">Map</a>
+        <a href="skyfarm-rain.html">Rain</a>
+        <a href="skyfarm-hours.html">Hours</a>
+        <a href="skyfarm-induction.html" aria-current="page">Induction</a>
+      </nav>
+      <div class="nav-db">
+        <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
+        <div id="dbMenu" class="db-menu hidden">
+          <a href="skyfarm-livestock.html">Livestock</a>
+          <a href="skyfarm-chemical.html">Chemicals</a>
+          <a href="skyfarm-seeds.html">Seeds</a>
+          <a href="skyfarm-fodder.html">Fodder</a>
+          <a href="skyfarm-barcode.html">Barcode scanner</a>
+          <a href="skyfarm-users.html">Users &amp; roles</a>
+        </div>
+      </div>
+      <span class="spacer"></span>
+      <span id="authWho" class="muted small">Checking sign-in…</span>
+      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <h1>Safety Induction</h1>
+
+    <div class="card no-print">
+      <div class="row">
+        <div class="notice" style="flex:1;min-width:280px">
+          <div class="small muted">
+            Complete each module and pass the quiz to finish the induction.
+            Your progress is saved automatically. At the end you’ll get a completion record (printable).
+          </div>
+        </div>
+        <span class="spacer"></span>
+        <div id="status" class="muted small">Loading…</div>
+      </div>
+      <div class="row">
+        <span class="pill" id="pillProgress">Progress: 0/0</span>
+        <span class="pill warn" id="pillScore">Latest score: —</span>
+        <span class="pill" id="pillCompleted">Completed: No</span>
+        <span class="spacer"></span>
+        <button class="btn small" id="printBtn" type="button">Print certificate</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="side">
+        <div class="card">
+          <strong>Modules</strong>
+          <div class="small muted" style="margin-top:4px;">
+            Click a module, read it, then take the quiz.
+          </div>
+          <div id="moduleList" style="margin-top:10px;"></div>
+          <div class="row no-print" style="margin-top:10px;">
+            <button class="btn small" id="prevBtn" type="button">Back</button>
+            <button class="btn small" id="nextBtn" type="button">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="main">
+        <div class="card content" id="moduleContent">
+          <div class="muted small">Loading module…</div>
+        </div>
+
+        <div class="card q" id="quizCard">
+          <h3>Quiz</h3>
+          <div class="small muted" id="quizHint">Answer all questions, then submit.</div>
+          <div id="quizBody" style="margin-top:10px;"></div>
+          <div class="row no-print" style="margin-top:10px;">
+            <button class="btn primary" id="submitQuizBtn" type="button">Submit quiz</button>
+            <button class="btn" id="resetQuizBtn" type="button">Reset answers</button>
+            <span class="spacer"></span>
+            <span id="quizMsg" class="small muted"></span>
+          </div>
+        </div>
+
+        <div class="card" id="certificateCard" style="display:none;">
+          <h2 style="margin:0 0 6px;">Induction certificate</h2>
+          <div class="small muted">This is generated from what’s stored in Firestore.</div>
+          <div style="margin-top:10px;" id="certBody"></div>
+          <div class="row no-print" style="margin-top:10px;">
+            <button class="btn primary" id="printCertBtn" type="button">Print</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth overlay -->
+  <div id="authOverlay">
+    <div id="authCard">
+      <h2>Sign in to SkyFarm</h2>
+      <p class="small muted">Email &amp; password only.</p>
+      <div class="row">
+        <div style="flex:1;min-width:240px">
+          <label>Email</label>
+          <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label>Password</label>
+          <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
+        </div>
+      </div>
+      <div class="row">
+        <button id="signInBtn" class="btn primary" type="button">Sign in</button>
+        <span id="authMsg" class="muted small"></span>
+        <span class="spacer"></span>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Firebase init ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+      authDomain: "consentes-pastoral.firebaseapp.com",
+      projectId: "consentes-pastoral",
+      appId: "1:494858780013:web:d87497b370c82eeab06e64"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ---------- Helpers ----------
+    const $  = s => document.querySelector(s);
+    const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const todayISO = () => new Date().toISOString().slice(0,10);
+
+    function setStatus(msg, kind){
+      const el = $('#status');
+      el.textContent = msg || '';
+      el.classList.toggle('status-warn', kind === 'danger');
+      el.classList.toggle('status-ok', kind === 'ok');
+    }
+
+    // ---------- Induction content (EDIT THIS) ----------
+    // Keep it short and practical. You can add/remove modules/questions any time.
+    const PASS_PERCENT = 80; // per-module pass mark
+    const MODULES = [
+      {
+        id: 'site-basics',
+        title: 'Site basics and expectations',
+        minutes: 5,
+        content: `
+          <p><strong>Key points:</strong></p>
+          <ul>
+            <li>You must follow directions from the manager/supervisor.</li>
+            <li>If you are unsure, stop and ask. Don’t guess with machinery, chemicals, or livestock.</li>
+            <li>Report hazards, near misses, and incidents as soon as possible.</li>
+            <li>Wear suitable PPE for the task (boots, eye protection, hearing protection, gloves).</li>
+          </ul>
+          <p><strong>Minimum standard:</strong> If it feels unsafe, you stop work and escalate.</p>
+        `,
+        questions: [
+          { prompt: 'If you are unsure how to do a task safely, what should you do?', options: [
+            'Guess and keep going',
+            'Stop and ask for instruction',
+            'Wait until the end of the day'
+          ], answerIndex: 1 },
+          { prompt: 'Near misses should be reported:', options: [
+            'Only if someone is injured',
+            'As soon as possible',
+            'Only if equipment is damaged'
+          ], answerIndex: 1 }
+        ]
+      },
+      {
+        id: 'fatigue',
+        title: 'Fatigue, heat and hydration',
+        minutes: 6,
+        content: `
+          <ul>
+            <li>Fatigue increases risk. If you’re not fit to work safely, say so.</li>
+            <li>Heat stress: take shade breaks, drink water, and pace yourself.</li>
+            <li>Signs of heat stress: headache, nausea, cramps, confusion, dizziness.</li>
+            <li>Never push through severe symptoms. Get help immediately.</li>
+          </ul>
+        `,
+        questions: [
+          { prompt: 'Which is a sign of heat stress?', options: [
+            'Improved concentration',
+            'Dizziness or confusion',
+            'Feeling colder than usual'
+          ], answerIndex: 1 },
+          { prompt: 'If you are too fatigued to work safely you should:', options: [
+            'Keep going to finish faster',
+            'Tell the supervisor/manager and stop unsafe work',
+            'Have an energy drink and drive anyway'
+          ], answerIndex: 1 }
+        ]
+      },
+      {
+        id: 'vehicles',
+        title: 'Vehicles, quads and machinery',
+        minutes: 8,
+        content: `
+          <ul>
+            <li>Operate only what you are authorised and trained to use.</li>
+            <li>Seatbelts on. No passengers unless the vehicle is designed for it.</li>
+            <li>Speed to conditions. Most rollovers happen at “not that fast”.</li>
+            <li>Pre-start checks: tyres, fuel, brakes, lights (as applicable).</li>
+            <li>Phones away while driving. Stop first.</li>
+          </ul>
+        `,
+        questions: [
+          { prompt: 'Passengers are allowed:', options: [
+            'Whenever there is room',
+            'Only if the vehicle is designed and rated for passengers',
+            'Only on short trips'
+          ], answerIndex: 1 },
+          { prompt: 'Using a phone while driving is:', options: [
+            'OK if you are careful',
+            'OK if it’s hands-free only',
+            'Not allowed, stop first'
+          ], answerIndex: 2 }
+        ]
+      },
+      {
+        id: 'livestock',
+        title: 'Livestock safety',
+        minutes: 8,
+        content: `
+          <ul>
+            <li>Never put yourself between cattle and a solid object (fence, gate, rail).</li>
+            <li>Use calm, steady pressure. Avoid yelling and rapid movements.</li>
+            <li>Know escape routes in yards and races.</li>
+            <li>Be extra cautious with bulls, protective mothers, and stressed cattle.</li>
+          </ul>
+        `,
+        questions: [
+          { prompt: 'In yards, you should always know:', options: [
+            'Where your phone is',
+            'Where the nearest escape route is',
+            'Where the dog is'
+          ], answerIndex: 1 },
+          { prompt: 'You should avoid standing:', options: [
+            'Between cattle and a fence/gate',
+            'Near an open gate',
+            'In the shade'
+          ], answerIndex: 0 }
+        ]
+      },
+      {
+        id: 'chemicals',
+        title: 'Chemicals and PPE basics',
+        minutes: 8,
+        content: `
+          <ul>
+            <li>Only use chemicals you are authorised to use.</li>
+            <li>Read the label/SDS and follow mixing and PPE instructions.</li>
+            <li>Gloves and eye protection are common minimums.</li>
+            <li>Wash hands after handling and before eating/drinking.</li>
+            <li>Spills: stop, contain if safe, notify supervisor.</li>
+          </ul>
+        `,
+        questions: [
+          { prompt: 'Before mixing a chemical you should:', options: [
+            'Mix first then read the label',
+            'Read the label/SDS and follow PPE instructions',
+            'Ask someone else to do it'
+          ], answerIndex: 1 },
+          { prompt: 'After handling chemicals you should:', options: [
+            'Wash hands before eating/drinking',
+            'Wipe hands on pants',
+            'Only wash if you can smell it'
+          ], answerIndex: 0 }
+        ]
+      },
+      {
+        id: 'emergency',
+        title: 'Emergency response',
+        minutes: 6,
+        content: `
+          <ul>
+            <li>In an emergency: make the area safe (if possible), call for help, give location clearly.</li>
+            <li>Call emergency services when needed (000 in Australia).</li>
+            <li>Do not put yourself at risk to rescue someone.</li>
+            <li>Report all incidents to the supervisor/manager.</li>
+          </ul>
+          <p><strong>Note:</strong> You can add property-specific emergency contacts and coordinates later.</p>
+        `,
+        questions: [
+          { prompt: 'In an emergency your first priority is:', options: [
+            'Filming for evidence',
+            'Making the area safe and getting help',
+            'Finishing the job'
+          ], answerIndex: 1 },
+          { prompt: 'You should only attempt a rescue if:', options: [
+            'It is safe to do so',
+            'You are in a hurry',
+            'You don’t want to call for help'
+          ], answerIndex: 0 }
+        ]
+      }
+    ];
+
+    // ---------- State ----------
+    let CURRENT_UID = null;
+    let CURRENT_EMAIL = null;
+    let CURRENT_ROLE = 'worker';
+
+    let activeIndex = 0;
+    let progressDoc = null; // { activeIndex, passed: {moduleId: {passed, percent, at}} , completedAt }
+
+    // ---------- DOM ----------
+    const authOverlay = $('#authOverlay');
+    const authWho = $('#authWho');
+    const signOutBtn = $('#signOutBtn');
+
+    const dbMenuBtn = $('#dbMenuBtn');
+    const dbMenu = $('#dbMenu');
+
+    const moduleList = $('#moduleList');
+    const moduleContent = $('#moduleContent');
+    const quizBody = $('#quizBody');
+    const quizMsg = $('#quizMsg');
+
+    const prevBtn = $('#prevBtn');
+    const nextBtn = $('#nextBtn');
+    const submitQuizBtn = $('#submitQuizBtn');
+    const resetQuizBtn = $('#resetQuizBtn');
+
+    const pillProgress = $('#pillProgress');
+    const pillScore = $('#pillScore');
+    const pillCompleted = $('#pillCompleted');
+
+    const certificateCard = $('#certificateCard');
+    const certBody = $('#certBody');
+    const printBtn = $('#printBtn');
+    const printCertBtn = $('#printCertBtn');
+
+    // Header DB menu
+    if (dbMenuBtn && dbMenu){
+      dbMenuBtn.onclick = e => { e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
+      document.addEventListener('click', e=>{
+        if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
+      });
+    }
+
+    // Auth controls
+    const siEmail = $('#siEmail');
+    const siPass = $('#siPass');
+    const signInBtn = $('#signInBtn');
+    const authMsg = $('#authMsg');
+    const closeOverlayBtn = $('#closeOverlayBtn');
+
+    function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+
+    signInBtn.onclick = async ()=>{
+      const email = (siEmail.value || '').trim();
+      const pass  = siPass.value || '';
+      if (!email || !pass){
+        authMsg.textContent = 'Enter email and password.';
+        return;
+      }
+      authMsg.textContent = 'Signing in…';
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithEmailAndPassword(email, pass);
+        authMsg.textContent = 'Signed in.';
+        showOverlay(false);
+      }catch(e){
+        console.error(e);
+        authMsg.textContent = e.message || 'Sign-in failed.';
+      }
+    };
+    closeOverlayBtn.onclick = ()=> showOverlay(false);
+    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+    async function loadCurrentUserRole(user){
+      CURRENT_UID = user?.uid || null;
+      CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
+      CURRENT_ROLE = 'worker';
+
+      // Uses your existing users collection doc id convention: email sanitized
+      if (!CURRENT_EMAIL) return;
+      const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
+      try{
+        const snap = await db.collection('users').doc(docId).get();
+        if (snap.exists){
+          const data = snap.data() || {};
+          CURRENT_ROLE = data.role || 'worker';
+        }
+      }catch(e){
+        console.error('loadCurrentUserRole failed', e);
+      }
+    }
+
+    auth.onAuthStateChanged(async user=>{
+      if (user){
+        authWho.textContent = user.email || 'Signed in';
+        signOutBtn.classList.remove('hidden');
+        showOverlay(false);
+        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+        await loadCurrentUserRole(user);
+        await initAfterAuth();
+      }else{
+        authWho.textContent = 'Not signed in';
+        signOutBtn.classList.add('hidden');
+        showOverlay(true);
+      }
+    });
+
+    function getModule(id){
+      return MODULES.find(m => m.id === id) || null;
+    }
+
+    function isPassed(moduleId){
+      const p = (progressDoc && progressDoc.passed) ? progressDoc.passed[moduleId] : null;
+      return !!(p && p.passed);
+    }
+
+    function passedCount(){
+      let n = 0;
+      MODULES.forEach(m => { if (isPassed(m.id)) n++; });
+      return n;
+    }
+
+    function setActive(index){
+      activeIndex = Math.max(0, Math.min(MODULES.length - 1, index));
+      if (progressDoc) progressDoc.activeIndex = activeIndex;
+
+      renderSidebar();
+      renderModule();
+      renderQuiz();
+      saveProgressDebounced();
+    }
+
+    function renderSidebar(){
+      moduleList.innerHTML = MODULES.map((m, i)=>{
+        const passed = isPassed(m.id);
+        const meta = passed
+          ? `<span class="pill ok">Passed</span>`
+          : `<span class="pill warn">Not passed</span>`;
+        const extra = `<span class="pill">${m.minutes} min</span>`;
+        return `
+          <div class="module-item ${i===activeIndex?'active':''}" data-idx="${i}">
+            <div class="module-title">${escapeHtml(m.title)}</div>
+            <div class="module-meta">${extra} ${meta}</div>
+          </div>
+        `;
+      }).join('');
+
+      moduleList.querySelectorAll('.module-item').forEach(el=>{
+        el.onclick = ()=> setActive(Number(el.dataset.idx || 0));
+      });
+
+      prevBtn.disabled = (activeIndex === 0);
+      nextBtn.disabled = (activeIndex === MODULES.length - 1);
+    }
+
+    function renderModule(){
+      const m = MODULES[activeIndex];
+      moduleContent.innerHTML = `
+        <h2 style="margin:0 0 6px;">${escapeHtml(m.title)}</h2>
+        <div class="small muted">Module ${activeIndex+1} of ${MODULES.length} • Estimated ${m.minutes} minutes</div>
+        <div style="margin-top:10px;">${m.content}</div>
+      `;
+    }
+
+    function renderQuiz(){
+      quizMsg.textContent = '';
+      const m = MODULES[activeIndex];
+
+      const prior = progressDoc?.passed?.[m.id];
+      const priorMsg = prior
+        ? (prior.passed
+          ? `Previously passed (${prior.percent}% on ${new Date(prior.at).toLocaleString()}).`
+          : `Previously attempted (${prior.percent}% on ${new Date(prior.at).toLocaleString()}).`)
+        : '';
+
+      $('#quizHint').textContent = `Pass mark: ${PASS_PERCENT}%. ${priorMsg}`.trim();
+
+      quizBody.innerHTML = m.questions.map((q, qi)=>{
+        const name = `q_${m.id}_${qi}`;
+        return `
+          <div class="question">
+            <div class="prompt">${escapeHtml(q.prompt)}</div>
+            ${q.options.map((opt, oi)=>`
+              <label>
+                <input type="radio" name="${escapeHtml(name)}" value="${oi}">
+                <span>${escapeHtml(opt)}</span>
+              </label>
+            `).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getSelectedAnswers(){
+      const m = MODULES[activeIndex];
+      const answers = [];
+      for (let qi=0; qi<m.questions.length; qi++){
+        const name = `q_${m.id}_${qi}`;
+        const checked = document.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
+        answers.push(checked ? Number(checked.value) : null);
+      }
+      return answers;
+    }
+
+    function scoreQuiz(){
+      const m = MODULES[activeIndex];
+      const ans = getSelectedAnswers();
+      let correct = 0;
+      let total = m.questions.length;
+
+      for (let i=0; i<total; i++){
+        if (ans[i] === m.questions[i].answerIndex) correct++;
+      }
+      const percent = total ? Math.round((correct/total)*100) : 0;
+      const passed = percent >= PASS_PERCENT;
+      return { percent, passed, correct, total };
+    }
+
+    resetQuizBtn.onclick = ()=>{
+      quizBody.querySelectorAll('input[type="radio"]').forEach(r=> r.checked = false);
+      quizMsg.textContent = 'Answers cleared.';
+    };
+
+    submitQuizBtn.onclick = async ()=>{
+      const m = MODULES[activeIndex];
+      const ans = getSelectedAnswers();
+      if (ans.some(a => a === null)){
+        quizMsg.textContent = 'Answer all questions first.';
+        return;
+      }
+
+      const result = scoreQuiz();
+
+      // Update progressDoc
+      progressDoc = progressDoc || { activeIndex: activeIndex, passed: {}, completedAt: null };
+      progressDoc.passed = progressDoc.passed || {};
+      progressDoc.passed[m.id] = {
+        passed: result.passed,
+        percent: result.percent,
+        at: new Date().toISOString()
+      };
+
+      pillScore.textContent = `Latest score: ${result.percent}%`;
+      pillScore.className = 'pill ' + (result.passed ? 'ok' : 'bad');
+
+      quizMsg.textContent = result.passed
+        ? `Passed (${result.correct}/${result.total}).`
+        : `Not passed (${result.correct}/${result.total}). Review the module and try again.`;
+
+      await saveProgressNow();
+
+      renderSidebar();
+      refreshTopPills();
+
+      // If everything passed, mark completed
+      if (passedCount() === MODULES.length){
+        await markCompleted();
+      }
+    };
+
+    prevBtn.onclick = ()=> setActive(activeIndex - 1);
+    nextBtn.onclick = ()=> setActive(activeIndex + 1);
+
+    function refreshTopPills(){
+      pillProgress.textContent = `Progress: ${passedCount()}/${MODULES.length}`;
+      const completed = !!(progressDoc && progressDoc.completedAt);
+      pillCompleted.textContent = `Completed: ${completed ? 'Yes' : 'No'}`;
+      pillCompleted.className = 'pill ' + (completed ? 'ok' : 'warn');
+      if (!progressDoc) pillScore.textContent = 'Latest score: —';
+    }
+
+    async function loadProgress(){
+      if (!CURRENT_UID) return;
+      const ref = db.collection('inductionProgress').doc(CURRENT_UID);
+      const snap = await ref.get();
+      if (snap.exists){
+        progressDoc = snap.data() || null;
+      }else{
+        progressDoc = { activeIndex: 0, passed: {}, completedAt: null };
+      }
+      const idx = Number(progressDoc.activeIndex || 0) || 0;
+      activeIndex = Math.max(0, Math.min(MODULES.length - 1, idx));
+    }
+
+    let saveTimer = null;
+    function saveProgressDebounced(){
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveProgressNow, 600);
+    }
+
+    async function saveProgressNow(){
+      if (!CURRENT_UID) return;
+      try{
+        const ref = db.collection('inductionProgress').doc(CURRENT_UID);
+        const payload = {
+          uid: CURRENT_UID,
+          email: CURRENT_EMAIL || null,
+          role: CURRENT_ROLE || null,
+          activeIndex: activeIndex,
+          passed: (progressDoc && progressDoc.passed) ? progressDoc.passed : {},
+          completedAt: (progressDoc && progressDoc.completedAt) ? progressDoc.completedAt : null,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await ref.set(payload, {merge:true});
+      }catch(e){
+        console.error('saveProgressNow failed', e);
+      }
+    }
+
+    async function markCompleted(){
+      if (!CURRENT_UID) return;
+      try{
+        const nowIso = new Date().toISOString();
+        progressDoc.completedAt = nowIso;
+        await saveProgressNow();
+
+        const compRef = db.collection('inductionCompletions').doc(CURRENT_UID);
+        await compRef.set({
+          uid: CURRENT_UID,
+          email: CURRENT_EMAIL || null,
+          role: CURRENT_ROLE || null,
+          completedAt: nowIso,
+          version: 'v1',
+          modules: MODULES.map(m => ({
+            id: m.id,
+            title: m.title,
+            minutes: m.minutes,
+            result: (progressDoc.passed && progressDoc.passed[m.id]) ? progressDoc.passed[m.id] : null
+          })),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+
+        setStatus('Induction completed', 'ok');
+        refreshTopPills();
+        await renderCertificate();
+      }catch(e){
+        console.error('markCompleted failed', e);
+        setStatus('Could not save completion', 'danger');
+      }
+    }
+
+    async function renderCertificate(){
+      if (!CURRENT_UID) return;
+      try{
+        const snap = await db.collection('inductionCompletions').doc(CURRENT_UID).get();
+        if (!snap.exists){
+          certificateCard.style.display = 'none';
+          return;
+        }
+        const d = snap.data() || {};
+        const completedAt = d.completedAt ? new Date(d.completedAt).toLocaleString() : '—';
+
+        certBody.innerHTML = `
+          <div class="row">
+            <div style="min-width:260px;">
+              <div class="small muted">Name / Email</div>
+              <div><strong>${escapeHtml((CURRENT_EMAIL || '').toLowerCase())}</strong></div>
+            </div>
+            <div style="min-width:260px;">
+              <div class="small muted">Completed</div>
+              <div><strong>${escapeHtml(completedAt)}</strong></div>
+            </div>
+            <div style="min-width:260px;">
+              <div class="small muted">Induction version</div>
+              <div><strong>${escapeHtml(d.version || 'v1')}</strong></div>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <div class="small muted">Module results</div>
+            <ul>
+              ${(d.modules || []).map(m=>{
+                const res = m.result;
+                const pct = res && typeof res.percent === 'number' ? `${res.percent}%` : '—';
+                const pass = res && res.passed ? 'Passed' : 'Not passed';
+                return `<li><strong>${escapeHtml(m.title || m.id)}</strong> — ${escapeHtml(pass)} (${escapeHtml(pct)})</li>`;
+              }).join('')}
+            </ul>
+          </div>
+          <div class="notice" style="margin-top:10px;">
+            <div class="small muted">
+              This certificate confirms the user completed the induction modules and quizzes in SkyFarm.
+              It does not replace task-specific training or supervision.
+            </div>
+          </div>
+        `;
+
+        certificateCard.style.display = 'block';
+      }catch(e){
+        console.error('renderCertificate failed', e);
+        certificateCard.style.display = 'none';
+      }
+    }
+
+    printBtn.onclick = ()=> window.print();
+    printCertBtn.onclick = ()=> window.print();
+
+    async function initAfterAuth(){
+      setStatus('Loading…');
+
+      // Load progress
+      await loadProgress();
+
+      // Initial render
+      refreshTopPills();
+      setActive(activeIndex);
+
+      // If already completed, show certificate
+      if (progressDoc && progressDoc.completedAt){
+        setStatus('Induction completed', 'ok');
+        await renderCertificate();
+      }else{
+        setStatus('Ready');
+      }
+    }
+
+    // Kick off
+    window.addEventListener('load', ()=> setStatus('Ready'));
+  </script>
+</body>
+</html>
