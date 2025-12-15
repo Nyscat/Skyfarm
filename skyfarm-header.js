@@ -1,4 +1,4 @@
-// SkyFarm shared header — role-aware navigation
+// SkyFarm shared header — role-aware navigation (safe init)
 // Requires Firebase auth + Firestore on pages that use role gating
 
 (function(global){
@@ -31,11 +31,9 @@
   function currentFile(){
     return (location.pathname.split('/').pop() || '').toLowerCase();
   }
-
   function isActive(href){
     return currentFile() === href.toLowerCase();
   }
-
   function applyLegacyRedirect(){
     const f = currentFile();
     if (LEGACY_REDIRECTS[f]) location.replace(LEGACY_REDIRECTS[f]);
@@ -99,50 +97,96 @@
       e.stopPropagation();
       menu.classList.contains('open') ? close() : open();
     };
-
     document.addEventListener('click', e=>{
       if (!menu.contains(e.target)) close();
     });
   }
 
-  async function getUserRole(){
-    if (!global.firebase?.auth || !global.firebase?.firestore) return 'worker';
-
-    const user = firebase.auth().currentUser;
-    if (!user || !user.email) return 'worker';
-
-    const docId = user.email.toLowerCase().replace(/[^\w.-]/g,'_');
-
+  function firebaseReady(){
+    // SDK loaded + app initialised
     try{
+      if (!global.firebase) return false;
+      if (!global.firebase.apps) return false;
+      return global.firebase.apps.length > 0;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function setAuthLabel(text){
+    const el = document.getElementById('sf-auth');
+    if (el) el.textContent = text;
+  }
+
+  function attachAuthListenerOnce(){
+    // Call only when firebaseReady() is true
+    try{
+      firebase.auth().onAuthStateChanged(u=>{
+        if (u){
+          setAuthLabel(u.email || 'Signed in');
+        }else{
+          setAuthLabel('Not signed in');
+        }
+      });
+      return true;
+    }catch(e){
+      // If it still fails, keep trying
+      console.warn('Header auth attach failed (will retry)', e);
+      return false;
+    }
+  }
+
+  async function getUserRole(){
+    try{
+      if (!firebaseReady()) return 'worker';
+      if (!global.firebase?.firestore) return 'worker';
+
+      const user = firebase.auth().currentUser;
+      if (!user || !user.email) return 'worker';
+
+      const docId = user.email.toLowerCase().replace(/[^\w.-]/g,'_');
       const snap = await firebase.firestore().collection('users').doc(docId).get();
-      if (snap.exists){
-        return snap.data().role || 'worker';
-      }
+      if (snap.exists) return snap.data().role || 'worker';
+      return 'worker';
     }catch(e){
       console.warn('Header role lookup failed', e);
+      return 'worker';
     }
-    return 'worker';
   }
 
-  function updateAuthLabel(){
-    const el = document.getElementById('sf-auth');
-    if (!el) return;
+  async function maybeInjectAdminLinks(mountEl){
+    try{
+      if (!firebaseReady()) return;
+      const user = firebase.auth().currentUser;
+      if (!user) return;
 
-    if (!global.firebase?.auth){
-      el.textContent = 'Not connected';
-      return;
-    }
-
-    firebase.auth().onAuthStateChanged(u=>{
-      if (u){
-        el.textContent = u.email || 'Signed in';
-      }else{
-        el.textContent = 'Not signed in';
+      const role = await getUserRole();
+      if (role === 'admin' || role === 'manager'){
+        const adminLinks = ADMIN_ONLY_PAGES.map(p =>
+          `<a href="${p.href}" ${isActive(p.href)?'aria-current="page"':''}>${p.label}</a>`
+        ).join('');
+        mountEl.innerHTML = headerHtml(adminLinks);
+        wireMenu();
       }
-    });
+    }catch(e){
+      console.warn('Admin link inject failed', e);
+    }
   }
 
-  async function mount(rootId='sf-header-root'){
+  function waitForFirebaseThen(fn, maxMs=8000){
+    const start = Date.now();
+    const t = setInterval(()=>{
+      if (firebaseReady()){
+        clearInterval(t);
+        fn();
+      }else if (Date.now() - start > maxMs){
+        clearInterval(t);
+        setAuthLabel('Not connected');
+      }
+    }, 150);
+  }
+
+  function mount(rootId='sf-header-root'){
     applyLegacyRedirect();
 
     let mountEl = document.getElementById(rootId);
@@ -152,28 +196,16 @@
       document.body.insertBefore(mountEl, document.body.firstChild);
     }
 
-    // Default header (no admin links yet)
     mountEl.innerHTML = headerHtml('');
     wireMenu();
-    updateAuthLabel();
+    setAuthLabel('Checking sign-in…');
 
-    // If Firebase is present, decide whether to inject admin-only links
-    if (global.firebase?.auth){
-      firebase.auth().onAuthStateChanged(async user=>{
-        if (!user) return;
-
-        const role = await getUserRole();
-        if (role === 'admin' || role === 'manager'){
-          const adminLinks = ADMIN_ONLY_PAGES.map(p =>
-            `<a href="${p.href}" ${isActive(p.href)?'aria-current="page"':''}>${p.label}</a>`
-          ).join('');
-
-          mountEl.innerHTML = headerHtml(adminLinks);
-          wireMenu();
-          updateAuthLabel();
-        }
-      });
-    }
+    // Wait until firebase.initializeApp has happened, then wire auth + role
+    waitForFirebaseThen(async ()=>{
+      const ok = attachAuthListenerOnce();
+      if (!ok) return;
+      await maybeInjectAdminLinks(mountEl);
+    });
   }
 
   global.SkyFarmHeader = { mount };
