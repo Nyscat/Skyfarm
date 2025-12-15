@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SkyFarm — Safety Induction</title>
 
+  <!-- Optional: shared header styling (recommended) -->
+  <link rel="stylesheet" href="skyfarm-shared.css">
+
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -32,85 +35,6 @@
     }
     a{color:#0f766e;text-decoration:none;}
     a:hover{text-decoration:underline;}
-
-    /* Header */
-    #sf-header{
-      position:sticky; top:0; z-index:40;
-      background:rgba(255,255,255,.96);
-      backdrop-filter:blur(18px);
-      border-bottom:1px solid rgba(148,163,184,.4);
-    }
-    #sf-header .bar{
-      max-width:1200px; margin:0 auto; padding:8px 14px;
-      display:flex; align-items:center; gap:10px;
-      flex-wrap:wrap;
-    }
-    #sf-header .brand{
-      font-weight:600; font-size:1rem; padding:4px 10px;
-      border-radius:999px;
-      background:radial-gradient(circle at 30% 10%,#e0f2fe,#0f766e);
-      color:#ecfdf3;
-      box-shadow:0 10px 20px rgba(15,23,42,.25);
-      display:flex; align-items:center; gap:8px;
-    }
-    #sf-header nav a{
-      padding:4px 10px; border-radius:999px; font-size:.85rem;
-      color:#0f172a; text-decoration:none;
-    }
-    #sf-header nav a[aria-current="page"]{
-      background:#e0f2fe;
-      font-weight:500;
-    }
-    .nav-db{position:relative;}
-    .spacer{flex:1;}
-    .muted{color:var(--muted);}
-    .small{font-size:.85rem;}
-    .status-warn{color:var(--danger);}
-    .status-ok{color:var(--ok);}
-
-    .btn{
-      border-radius:999px;
-      border:1px solid #cbd5e1;
-      padding:6px 12px;
-      font-size:.82rem;
-      background:#fff;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-    }
-    .btn.primary{
-      background:var(--accent);
-      border-color:var(--accent);
-      color:#ecfdf3;
-    }
-    .btn.danger{
-      border-color:#ef4444;
-      color:#ef4444;
-      background:#fff;
-    }
-    .btn.small{ padding:4px 10px; font-size:.78rem; }
-    .btn[disabled]{opacity:.5;cursor:default;}
-
-    .db-menu{
-      position:absolute; top:100%; right:0;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:10px;
-      min-width:180px;
-      padding:4px 0;
-      box-shadow:0 10px 25px rgba(15,23,42,.12);
-      z-index:20;
-    }
-    .db-menu a{
-      display:block;
-      padding:6px 12px;
-      font-size:.9rem;
-      color:#0f172a;
-      text-decoration:none;
-    }
-    .db-menu a:hover{background:#f1f5f9;}
-    .hidden{display:none;}
 
     .wrap{ max-width:1200px; margin:0 auto; padding:12px; }
     h1{ margin:10px 0; font-size:1.5rem; }
@@ -156,6 +80,7 @@
     }
     .module-title{font-weight:600;}
     .module-meta{font-size:.8rem;color:var(--muted);margin-top:2px;}
+
     .pill{
       display:inline-block;
       padding:2px 7px;
@@ -166,7 +91,7 @@
       margin-right:4px;
       white-space:nowrap;
     }
-    .pill.ok{background:#ecfdf5;border-color:#bbf7d0;color:#166534;}
+    .pill.ok{background:#ecfdf5;border-color:#bbf7d0;color:var(--ok);}
     .pill.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
     .pill.bad{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
 
@@ -174,6 +99,29 @@
       display:flex; flex-wrap:wrap; gap:10px;
       align-items:center; margin:6px 0;
     }
+    .spacer{flex:1;}
+    .muted{color:var(--muted);}
+    .small{font-size:.85rem;}
+    .status-warn{color:var(--danger);}
+    .status-ok{color:var(--ok);}
+
+    .btn{
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      padding:6px 12px;
+      font-size:.82rem;
+      background:#fff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .btn.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#ecfdf3;
+    }
+    .btn[disabled]{opacity:.5;cursor:default;}
 
     .content h2{margin:0 0 6px;}
     .content p{margin:8px 0;color:#0f172a;}
@@ -214,7 +162,7 @@
       position:fixed; inset:0;
       background:radial-gradient(circle at top,#020617 0,rgba(15,23,42,.94) 40%,rgba(15,23,42,.97) 100%);
       display:none; align-items:center; justify-content:center;
-      z-index:50;
+      z-index:9999;
     }
     #authCard{
       width:min(520px,92vw);
@@ -224,9 +172,18 @@
       padding:20px;
     }
     #authCard h2{margin:0 0 8px;}
+    input{
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:6px 8px;
+      font-size:.9rem;
+      font-family:inherit;
+      background:#fff;
+      width:100%;
+    }
 
     @media print{
-      #sf-header,.no-print{display:none!important;}
+      #sf-header-root,.no-print{display:none!important;}
       body{background:#fff;}
       .wrap{padding:8px;}
       .card{box-shadow:none;border:none;margin:6px 0;}
@@ -236,38 +193,8 @@
 </head>
 
 <body>
-  <!-- Header -->
-  <div id="sf-header">
-    <div class="bar">
-      <a class="brand" href="skyfarm-diary.html">
-        <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-             alt="SkyFarm logo"
-             style="height:28px;width:auto;border-radius:6px;">
-        <span>SkyFarm</span>
-      </a>
-      <nav>
-        <a href="skyfarm-diary.html">Diary</a>
-        <a href="skyfarm-map.html">Map</a>
-        <a href="skyfarm-rain.html">Rain</a>
-        <a href="skyfarm-hours.html">Hours</a>
-        <a href="skyfarm-induction.html" aria-current="page">Induction</a>
-      </nav>
-      <div class="nav-db">
-        <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
-        <div id="dbMenu" class="db-menu hidden">
-          <a href="skyfarm-livestock.html">Livestock</a>
-          <a href="skyfarm-chemical.html">Chemicals</a>
-          <a href="skyfarm-seeds.html">Seeds</a>
-          <a href="skyfarm-fodder.html">Fodder</a>
-          <a href="skyfarm-barcode.html">Barcode scanner</a>
-          <a href="skyfarm-users.html">Users &amp; roles</a>
-        </div>
-      </div>
-      <span class="spacer"></span>
-      <span id="authWho" class="muted small">Checking sign-in…</span>
-      <button id="signOutBtn" class="btn small danger hidden">Sign out</button>
-    </div>
-  </div>
+  <!-- Shared header mount point -->
+  <div id="sf-header-root"></div>
 
   <div class="wrap">
     <h1>Safety Induction</h1>
@@ -276,13 +203,21 @@
       <div class="row">
         <div class="notice" style="flex:1;min-width:280px">
           <div class="small muted">
-            Complete each module and pass the quiz to finish the induction.
-            Your progress is saved automatically. At the end you’ll get a completion record (printable).
+            Complete each module and pass the quiz. Progress saves automatically.
+            At the end you’ll get a completion record you can print.
+          </div>
+          <div style="margin-top:8px;">
+            <span class="pill"><strong>Properties:</strong> Consentes • Gerawin • Mt Myrtle</span>
+            <span class="pill"><strong>UHF:</strong> Channel 18</span>
+          </div>
+          <div style="margin-top:8px;" class="small">
+            <strong>Non-negotiable:</strong> Everyone goes home safe. Safety is key.
           </div>
         </div>
         <span class="spacer"></span>
         <div id="status" class="muted small">Loading…</div>
       </div>
+
       <div class="row">
         <span class="pill" id="pillProgress">Progress: 0/0</span>
         <span class="pill warn" id="pillScore">Latest score: —</span>
@@ -303,6 +238,19 @@
           <div class="row no-print" style="margin-top:10px;">
             <button class="btn small" id="prevBtn" type="button">Back</button>
             <button class="btn small" id="nextBtn" type="button">Next</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <strong>Emergency contacts</strong>
+          <div class="small muted" style="margin-top:6px;">
+            Call help early. Give clear location and what happened.
+          </div>
+          <div style="margin-top:8px; font-size:.92rem;">
+            <div><strong>Paul Currin</strong> — <a href="tel:0428126499">0428 126 499</a></div>
+            <div style="margin-top:4px;"><strong>Nyssa Currin</strong> — <a href="tel:0427200783">0427 200 783</a></div>
+            <div class="small muted" style="margin-top:8px;">Emergency services: <strong>000</strong></div>
+            <div class="small muted">UHF: <strong>Channel 18</strong></div>
           </div>
         </div>
       </div>
@@ -326,7 +274,7 @@
 
         <div class="card" id="certificateCard" style="display:none;">
           <h2 style="margin:0 0 6px;">Induction certificate</h2>
-          <div class="small muted">This is generated from what’s stored in Firestore.</div>
+          <div class="small muted">Generated from what’s stored in Firestore.</div>
           <div style="margin-top:10px;" id="certBody"></div>
           <div class="row no-print" style="margin-top:10px;">
             <button class="btn primary" id="printCertBtn" type="button">Print</button>
@@ -343,11 +291,11 @@
       <p class="small muted">Email &amp; password only.</p>
       <div class="row">
         <div style="flex:1;min-width:240px">
-          <label>Email</label>
+          <label class="small muted">Email</label>
           <input id="siEmail" type="email" autocomplete="username" placeholder="you@example.com"/>
         </div>
         <div style="flex:1;min-width:200px">
-          <label>Password</label>
+          <label class="small muted">Password</label>
           <input id="siPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
         </div>
       </div>
@@ -368,54 +316,88 @@
       projectId: "consentes-pastoral",
       appId: "1:494858780013:web:d87497b370c82eeab06e64"
     };
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
 
+    // Mount shared header AFTER Firebase exists
+    // (important so it doesn't get stuck on "Checking sign-in…")
+  </script>
+
+  <!-- Shared header -->
+  <script src="skyfarm-header.js"></script>
+  <script>
+    if (window.SkyFarmHeader?.mount) SkyFarmHeader.mount();
+  </script>
+
+  <script>
     // ---------- Helpers ----------
     const $  = s => document.querySelector(s);
     const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const todayISO = () => new Date().toISOString().slice(0,10);
 
     function setStatus(msg, kind){
       const el = $('#status');
+      if (!el) return;
       el.textContent = msg || '';
       el.classList.toggle('status-warn', kind === 'danger');
       el.classList.toggle('status-ok', kind === 'ok');
     }
 
-    // NEW: your users doc ids are sanitised email addresses
-    function userDocIdFromEmail(email){
-      return String(email || '').toLowerCase().replace(/[^\w.-]/g,'_');
-    }
+    // ---------- Induction content ----------
+    const PASS_PERCENT = 80;
 
-    // ---------- Induction content (EDIT THIS) ----------
-    const PASS_PERCENT = 80; // per-module pass mark
     const MODULES = [
       {
-        id: 'site-basics',
-        title: 'Site basics and expectations',
-        minutes: 5,
+        id: 'safety-culture',
+        title: 'Safety culture (non-negotiables)',
+        minutes: 4,
         content: `
-          <p><strong>Key points:</strong></p>
+          <p><strong>Non-negotiable:</strong> Everyone goes home safe. Safety is key.</p>
           <ul>
-            <li>You must follow directions from the manager/supervisor.</li>
-            <li>If you are unsure, stop and ask. Don’t guess with machinery, chemicals, or livestock.</li>
+            <li>If it feels unsafe, you stop. No exceptions.</li>
+            <li>If you are unsure, you stop and ask. Don’t guess with livestock, machinery or chemicals.</li>
+            <li>Follow directions from the manager/supervisor.</li>
             <li>Report hazards, near misses, and incidents as soon as possible.</li>
-            <li>Wear suitable PPE for the task (boots, eye protection, hearing protection, gloves).</li>
           </ul>
-          <p><strong>Minimum standard:</strong> If it feels unsafe, you stop work and escalate.</p>
+          <p><strong>Minimum standard:</strong> If you cannot do it safely, you do not do it.</p>
         `,
         questions: [
-          { prompt: 'If you are unsure how to do a task safely, what should you do?', options: [
+          { prompt: 'If a task feels unsafe, you should:', options: [
+            'Push through to get it done',
+            'Stop work and escalate',
+            'Wait until the end of the day to mention it'
+          ], answerIndex: 1 },
+          { prompt: 'If you are unsure how to do something safely, you should:', options: [
             'Guess and keep going',
             'Stop and ask for instruction',
-            'Wait until the end of the day'
+            'Copy what someone else did once'
+          ], answerIndex: 1 }
+        ]
+      },
+      {
+        id: 'property-rules',
+        title: 'Property rules and communications',
+        minutes: 6,
+        content: `
+          <p>This induction applies to <strong>Consentes</strong>, <strong>Gerawin</strong> and <strong>Mt Myrtle</strong>.</p>
+          <ul>
+            <li><strong>UHF channel:</strong> Channel <strong>18</strong>.</li>
+            <li>If you need help, call early and be clear about location.</li>
+            <li><strong>Emergency contacts:</strong> Paul Currin (0428 126 499), Nyssa Currin (0427 200 783).</li>
+            <li>Emergency services: <strong>000</strong>.</li>
+          </ul>
+          <p><strong>Expectation:</strong> If something goes wrong, we want it reported, not hidden.</p>
+        `,
+        questions: [
+          { prompt: 'UHF channel for these properties is:', options: [
+            'Channel 8',
+            'Channel 18',
+            'Channel 28'
           ], answerIndex: 1 },
-          { prompt: 'Near misses should be reported:', options: [
-            'Only if someone is injured',
-            'As soon as possible',
-            'Only if equipment is damaged'
+          { prompt: 'If you need help or there is an incident, you should:', options: [
+            'Wait and see if it improves',
+            'Call for help early and give clear location',
+            'Only report it if someone asks'
           ], answerIndex: 1 }
         ]
       },
@@ -523,16 +505,17 @@
       },
       {
         id: 'emergency',
-        title: 'Emergency response',
+        title: 'Emergency response and reporting',
         minutes: 6,
         content: `
           <ul>
             <li>In an emergency: make the area safe (if possible), call for help, give location clearly.</li>
-            <li>Call emergency services when needed (000 in Australia).</li>
+            <li>Call emergency services when needed: <strong>000</strong>.</li>
             <li>Do not put yourself at risk to rescue someone.</li>
-            <li>Report all incidents to the supervisor/manager.</li>
+            <li>Report all incidents and near misses to the supervisor/manager.</li>
+            <li><strong>Contacts:</strong> Paul Currin (0428 126 499), Nyssa Currin (0427 200 783).</li>
+            <li><strong>UHF:</strong> Channel <strong>18</strong>.</li>
           </ul>
-          <p><strong>Note:</strong> You can add property-specific emergency contacts and coordinates later.</p>
         `,
         questions: [
           { prompt: 'In an emergency your first priority is:', options: [
@@ -559,12 +542,6 @@
 
     // ---------- DOM ----------
     const authOverlay = $('#authOverlay');
-    const authWho = $('#authWho');
-    const signOutBtn = $('#signOutBtn');
-
-    const dbMenuBtn = $('#dbMenuBtn');
-    const dbMenu = $('#dbMenu');
-
     const moduleList = $('#moduleList');
     const moduleContent = $('#moduleContent');
     const quizBody = $('#quizBody');
@@ -583,14 +560,6 @@
     const certBody = $('#certBody');
     const printBtn = $('#printBtn');
     const printCertBtn = $('#printCertBtn');
-
-    // Header DB menu
-    if (dbMenuBtn && dbMenu){
-      dbMenuBtn.onclick = e => { e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
-      document.addEventListener('click', e=>{
-        if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
-      });
-    }
 
     // Auth controls
     const siEmail = $('#siEmail');
@@ -620,7 +589,6 @@
       }
     };
     closeOverlayBtn.onclick = ()=> showOverlay(false);
-    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 
     async function loadCurrentUserRole(user){
       CURRENT_UID = user?.uid || null;
@@ -628,8 +596,7 @@
       CURRENT_ROLE = 'worker';
 
       if (!CURRENT_EMAIL) return;
-      const docId = userDocIdFromEmail(CURRENT_EMAIL);
-
+      const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
       try{
         const snap = await db.collection('users').doc(docId).get();
         if (snap.exists){
@@ -640,21 +607,6 @@
         console.error('loadCurrentUserRole failed', e);
       }
     }
-
-    auth.onAuthStateChanged(async user=>{
-      if (user){
-        authWho.textContent = user.email || 'Signed in';
-        signOutBtn.classList.remove('hidden');
-        showOverlay(false);
-        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
-        await loadCurrentUserRole(user);
-        await initAfterAuth();
-      }else{
-        authWho.textContent = 'Not signed in';
-        signOutBtn.classList.add('hidden');
-        showOverlay(true);
-      }
-    });
 
     function isPassed(moduleId){
       const p = (progressDoc && progressDoc.passed) ? progressDoc.passed[moduleId] : null;
@@ -778,7 +730,6 @@
 
       const result = scoreQuiz();
 
-      // Update progressDoc
       progressDoc = progressDoc || { activeIndex: activeIndex, passed: {}, completedAt: null };
       progressDoc.passed = progressDoc.passed || {};
       progressDoc.passed[m.id] = {
@@ -799,7 +750,6 @@
       renderSidebar();
       refreshTopPills();
 
-      // If everything passed, mark completed
       if (passedCount() === MODULES.length){
         await markCompleted();
       }
@@ -854,7 +804,6 @@
       }
     }
 
-    // IMPORTANT: this now ALSO writes users/{sanitised_email}.inductionComplete = true
     async function markCompleted(){
       if (!CURRENT_UID) return;
       try{
@@ -868,7 +817,14 @@
           email: CURRENT_EMAIL || null,
           role: CURRENT_ROLE || null,
           completedAt: nowIso,
-          version: 'v1',
+          version: 'v1-consentes-gerawin-mtmyrtle',
+          properties: ['Consentes','Gerawin','Mt Myrtle'],
+          uhfChannel: '18',
+          contacts: [
+            { name:'Paul Currin', phone:'0428 126 499' },
+            { name:'Nyssa Currin', phone:'0427 200 783' }
+          ],
+          statement: 'Everyone goes home safe. Safety is key.',
           modules: MODULES.map(m => ({
             id: m.id,
             title: m.title,
@@ -878,18 +834,6 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, {merge:true});
-
-        // NEW: set the induction flag on the user profile doc
-        if (CURRENT_EMAIL){
-          const uDocId = userDocIdFromEmail(CURRENT_EMAIL);
-          await db.collection('users').doc(uDocId).set({
-            email: CURRENT_EMAIL.toLowerCase(),
-            inductionComplete: true,
-            inductionCompletedAt: nowIso,
-            inductionVersion: 'v1',
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, {merge:true});
-        }
 
         setStatus('Induction completed', 'ok');
         refreshTopPills();
@@ -914,7 +858,7 @@
         certBody.innerHTML = `
           <div class="row">
             <div style="min-width:260px;">
-              <div class="small muted">Name / Email</div>
+              <div class="small muted">Email</div>
               <div><strong>${escapeHtml((CURRENT_EMAIL || '').toLowerCase())}</strong></div>
             </div>
             <div style="min-width:260px;">
@@ -922,10 +866,19 @@
               <div><strong>${escapeHtml(completedAt)}</strong></div>
             </div>
             <div style="min-width:260px;">
-              <div class="small muted">Induction version</div>
-              <div><strong>${escapeHtml(d.version || 'v1')}</strong></div>
+              <div class="small muted">UHF</div>
+              <div><strong>Channel ${escapeHtml(d.uhfChannel || '18')}</strong></div>
             </div>
           </div>
+
+          <div class="notice" style="margin-top:10px;">
+            <div><strong>Properties:</strong> ${(d.properties||[]).map(escapeHtml).join(', ') || '—'}</div>
+            <div style="margin-top:6px;"><strong>Non-negotiable:</strong> ${escapeHtml(d.statement || 'Everyone goes home safe. Safety is key.')}</div>
+            <div style="margin-top:6px;"><strong>Contacts:</strong>
+              ${(d.contacts||[]).map(c => `${escapeHtml(c.name)} (${escapeHtml(c.phone)})`).join(' • ') || '—'}
+            </div>
+          </div>
+
           <div style="margin-top:10px;">
             <div class="small muted">Module results</div>
             <ul>
@@ -937,9 +890,10 @@
               }).join('')}
             </ul>
           </div>
+
           <div class="notice" style="margin-top:10px;">
             <div class="small muted">
-              This certificate confirms the user completed the induction modules and quizzes in SkyFarm.
+              This confirms the user completed the SkyFarm induction modules and quizzes.
               It does not replace task-specific training or supervision.
             </div>
           </div>
@@ -957,9 +911,7 @@
 
     async function initAfterAuth(){
       setStatus('Loading…');
-
       await loadProgress();
-
       refreshTopPills();
       setActive(activeIndex);
 
@@ -971,7 +923,18 @@
       }
     }
 
-    // Kick off
+    auth.onAuthStateChanged(async user=>{
+      if (user){
+        showOverlay(false);
+        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+        await loadCurrentUserRole(user);
+        await initAfterAuth();
+      }else{
+        setStatus('Not signed in', 'danger');
+        showOverlay(true);
+      }
+    });
+
     window.addEventListener('load', ()=> setStatus('Ready'));
   </script>
 </body>
