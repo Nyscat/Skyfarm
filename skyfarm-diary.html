@@ -10,8 +10,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
-  <!-- Shared header CSS + JS -->
-  <link rel="stylesheet" href="skyfarm-shared.css">
+  <!-- Shared header styles -->
+  <link rel="stylesheet" href="skyfarm-shared.css"/>
 
   <style>
     :root{
@@ -33,6 +33,38 @@
     }
     a{color:#0f766e;text-decoration:none;}
     a:hover{text-decoration:underline;}
+
+    .spacer{flex:1;}
+    .muted{color:var(--muted);}
+    .small{font-size:.8rem;}
+    .status-warn{color:var(--danger);}
+
+    .btn{
+      border-radius:999px;
+      border:1px solid #cbd5e1;
+      padding:6px 12px;
+      font-size:.82rem;
+      background:#fff;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .btn.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#ecfdf3;
+    }
+    .btn.danger{
+      border-color:#ef4444;
+      color:#ef4444;
+      background:#fff;
+    }
+    .btn.small{
+      padding:4px 10px;
+      font-size:.78rem;
+    }
+    .btn[disabled]{opacity:.5;cursor:default;}
 
     .wrap{
       max-width:1200px;
@@ -90,37 +122,6 @@
       border:1px solid #bfdbfe;
       margin-right:4px;
     }
-
-    .muted{color:var(--muted);}
-    .small{font-size:.8rem;}
-    .status-warn{color:var(--danger);}
-
-    .btn{
-      border-radius:999px;
-      border:1px solid #cbd5e1;
-      padding:6px 12px;
-      font-size:.82rem;
-      background:#fff;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      gap:4px;
-    }
-    .btn.primary{
-      background:var(--accent);
-      border-color:var(--accent);
-      color:#ecfdf3;
-    }
-    .btn.danger{
-      border-color:#ef4444;
-      color:#ef4444;
-      background:#fff;
-    }
-    .btn.small{
-      padding:4px 10px;
-      font-size:.78rem;
-    }
-    .btn[disabled]{opacity:.5;cursor:default;}
 
     table{
       width:100%;
@@ -213,11 +214,8 @@
     }
     #authCard h2{margin:0 0 8px;}
 
-    /* Hide Time input wrapper */
-    .hidden{display:none;}
-
     @media print{
-      .no-print{display:none!important;}
+      .sf-header,.no-print{display:none!important;}
       body{background:#fff;}
       .wrap{padding:8px;}
       .card{box-shadow:none;border:none;margin:6px 0;}
@@ -226,14 +224,30 @@
     }
   </style>
 </head>
+
 <body>
-  <!-- Shared header mount point -->
+  <!-- IMPORTANT: Firebase must be initialised BEFORE the shared header mounts -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+      authDomain: "consentes-pastoral.firebaseapp.com",
+      projectId: "consentes-pastoral",
+      appId: "1:494858780013:web:d87497b370c82eeab06e64"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <!-- Shared header mount -->
   <div id="sf-header-root"></div>
-  <script src="skyfarm-header.js"></script>
+  <script src="skyfarm-header.js?v=20251215"></script>
   <script>SkyFarmHeader.mount();</script>
 
   <div class="wrap">
-    <h1>Diary</h1>
+    <div class="row no-print" style="margin-top:6px;">
+      <h1 style="margin:10px 0;">Diary</h1>
+      <span class="spacer"></span>
+      <button id="signOutBtn" class="btn small danger" type="button" style="display:none;">Sign out</button>
+    </div>
 
     <!-- Entry form -->
     <div class="card no-print">
@@ -246,13 +260,11 @@
           <label>Date</label>
           <input id="dateInp" type="date" class="w160"/>
         </div>
-
         <!-- hide time from the UI but keep the input for sorting/storage -->
-        <div id="timeWrap" class="hidden">
+        <div id="timeWrap" style="display:none;">
           <label>Time</label>
           <input id="timeInp" type="time" class="w120"/>
         </div>
-
         <div>
           <label>Activity</label>
           <select id="activitySel" class="w220">
@@ -271,11 +283,8 @@
             <option value="General">General</option>
           </select>
         </div>
-
-        <span class="spacer" style="flex:1;"></span>
-
+        <span class="spacer"></span>
         <div id="status" class="muted small">Ready</div>
-        <button id="pageSignOutBtn" class="btn small danger" type="button" style="display:none;">Sign out</button>
       </div>
 
       <div class="row">
@@ -287,14 +296,14 @@
           <div class="small muted">Yards appear at the top.</div>
         </div>
 
-        <div id="toPaddockWrap" class="hidden" style="min-width:240px">
+        <div id="toPaddockWrap" class="hidden" style="min-width:240px; display:none;">
           <label>To paddock</label>
           <select id="toPaddockSel" class="w220">
             <option value="">(choose)</option>
           </select>
         </div>
 
-        <div id="transferPropWrap" class="hidden" style="min-width:240px">
+        <div id="transferPropWrap" class="hidden" style="min-width:240px; display:none;">
           <label>To property</label>
           <select id="transferPropSel" class="w220">
             <option value="">(choose)</option>
@@ -302,11 +311,11 @@
         </div>
 
         <!-- rainfall fields only visible when activity = Rainfall -->
-        <div id="rainMmWrap" class="hidden">
+        <div id="rainMmWrap" style="display:none;">
           <label>Rainfall (mm to 9am)</label>
           <input id="rainMmInp" type="number" min="0" step="0.1" class="w120"/>
         </div>
-        <div id="gaugeWrap" class="hidden">
+        <div id="gaugeWrap" style="display:none;">
           <label>Gauge</label>
           <select id="gaugeSel" class="w220">
             <option value="">(none)</option>
@@ -326,7 +335,7 @@
       </div>
 
       <!-- Stock section (only for stock-related activities) -->
-      <div id="stockRow" class="row hidden">
+      <div id="stockRow" class="row" style="display:none;">
         <div>
           <label>Species</label>
           <select id="speciesSel" class="w160">
@@ -347,7 +356,7 @@
       </div>
 
       <!-- Chemical row -->
-      <div id="chemRow" class="row hidden">
+      <div id="chemRow" class="row" style="display:none;">
         <div>
           <label>Chemical</label>
           <select id="chemSel" class="w220">
@@ -365,7 +374,7 @@
       </div>
 
       <!-- Seed row -->
-      <div id="seedRow" class="row hidden">
+      <div id="seedRow" class="row" style="display:none;">
         <div>
           <label>Seed</label>
           <select id="seedSel" class="w220">
@@ -383,7 +392,7 @@
       </div>
 
       <!-- Fodder row -->
-      <div id="fodderRow" class="row hidden">
+      <div id="fodderRow" class="row" style="display:none;">
         <div>
           <label>Fodder</label>
           <select id="fodderSel" class="w220">
@@ -401,7 +410,7 @@
       </div>
 
       <!-- Purchase meta -->
-      <div id="purchaseRow" class="row hidden">
+      <div id="purchaseRow" class="row" style="display:none;">
         <div>
           <label>Purchase type</label>
           <select id="purchaseTypeSel" class="w160">
@@ -421,7 +430,7 @@
       </div>
 
       <!-- paddock livestock info, only when a stock activity is chosen -->
-      <div id="stockContext" class="row small hidden" style="color:#374151;"></div>
+      <div id="stockContext" class="row small" style="color:#374151; display:none;"></div>
 
       <div class="row">
         <button id="saveBtn" class="btn primary" type="button">Save entry</button>
@@ -459,7 +468,7 @@
           <label class="small">&nbsp;</label>
           <button id="refreshBtn" class="btn small" type="button">Refresh</button>
         </div>
-        <span class="spacer" style="flex:1;"></span>
+        <span class="spacer"></span>
         <button id="printBtn" class="btn small" type="button">Print / PDF</button>
       </div>
 
@@ -511,7 +520,7 @@
       <div class="row">
         <button id="signInBtn" class="btn primary" type="button">Sign in</button>
         <span id="authMsg" class="muted small"></span>
-        <span class="spacer" style="flex:1;"></span>
+        <span class="spacer"></span>
         <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
     </div>
@@ -541,23 +550,18 @@
   </div>
 
   <script>
-    // ---------- Firebase init ----------
-    const firebaseConfig = {
-      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-      authDomain: "consentes-pastoral.firebaseapp.com",
-      projectId: "consentes-pastoral",
-      appId: "1:494858780013:web:d87497b370c82eeab06e64"
-    };
-    firebase.initializeApp(firebaseConfig);
+    // Firebase handles (init already done above)
     const db = firebase.firestore();
     const auth = firebase.auth();
 
     // ---------- Helpers ----------
     const $  = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
     const todayISO = () => new Date().toISOString().slice(0,10);
     const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     }[c]));
+
     function setStatus(msg, warn){
       const el = $('#status');
       el.textContent = msg || '';
@@ -636,9 +640,8 @@
     const entriesBody = $('#entriesBody');
     const entriesCards = $('#entriesCards');
 
-    // Auth overlay
     const authOverlay = $('#authOverlay');
-    const pageSignOutBtn = $('#pageSignOutBtn');
+    const signOutBtn = $('#signOutBtn');
 
     // Auth
     const siEmail = $('#siEmail');
@@ -669,11 +672,8 @@
     };
     closeOverlayBtn.onclick = ()=> showOverlay(false);
 
-    pageSignOutBtn.onclick = async ()=>{
-      try{
-        await auth.signOut();
-        location.reload();
-      }catch(e){}
+    signOutBtn.onclick = async ()=>{
+      try{ await auth.signOut(); location.reload(); }catch(e){}
     };
 
     async function loadCurrentUserRole(user){
@@ -702,13 +702,13 @@
 
     auth.onAuthStateChanged(async user=>{
       if (user){
+        signOutBtn.style.display = '';
         showOverlay(false);
-        pageSignOutBtn.style.display = '';
         try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
         await loadCurrentUserRole(user);
         await initAfterAuth();
       }else{
-        pageSignOutBtn.style.display = 'none';
+        signOutBtn.style.display = 'none';
         showOverlay(true);
       }
     });
@@ -1050,9 +1050,9 @@
       const purchaseFodder = (act === 'Purchase inputs' && purchaseType === 'Fodder');
       const feedingFodder  = (act === 'Feeding (fodder)');
 
-      chemRow.classList.toggle('hidden', !(usesChemActivity || purchaseChem));
-      seedRow.classList.toggle('hidden', !(act === 'Planting' || purchaseSeed));
-      fodderRow.classList.toggle('hidden', !(feedingFodder || purchaseFodder));
+      chemRow.style.display = (usesChemActivity || purchaseChem) ? '' : 'none';
+      seedRow.style.display = (act === 'Planting' || purchaseSeed) ? '' : 'none';
+      fodderRow.style.display = (feedingFodder || purchaseFodder) ? '' : 'none';
     }
 
     function onActivityChange(){
@@ -1066,21 +1066,21 @@
         act === 'Chemical (stock)' ||
         act === 'Mustering'
       );
-      stockRow.classList.toggle('hidden', !needsStock);
-      stockContext.classList.toggle('hidden', !needsStock);
+      stockRow.style.display = needsStock ? '' : 'none';
+      stockContext.style.display = needsStock ? '' : 'none';
 
       const needsToPaddock = (act === 'Move stock');
-      toPaddockWrap.classList.toggle('hidden', !needsToPaddock);
+      toPaddockWrap.style.display = needsToPaddock ? '' : 'none';
 
       const needsTransferProp = (act === 'Transfer stock (Out)');
-      transferPropWrap.classList.toggle('hidden', !needsTransferProp);
+      transferPropWrap.style.display = needsTransferProp ? '' : 'none';
 
       const isPurchase = (act === 'Purchase inputs');
-      purchaseRow.classList.toggle('hidden', !isPurchase);
+      purchaseRow.style.display = isPurchase ? '' : 'none';
 
       const isRain = (act === 'Rainfall');
-      rainMmWrap.classList.toggle('hidden', !isRain);
-      gaugeWrap.classList.toggle('hidden', !isRain);
+      rainMmWrap.style.display = isRain ? '' : 'none';
+      gaugeWrap.style.display = isRain ? '' : 'none';
       if (!isRain){
         rainMmInp.value = '';
         gaugeSel.selectedIndex = 0;
@@ -1123,9 +1123,9 @@
 
       const weather = weatherInp.value || '';
 
-      const species = stockRow.classList.contains('hidden') ? null : (speciesSel.value || null);
-      const klass = stockRow.classList.contains('hidden') ? null : (classInp.value || null);
-      const headVal = stockRow.classList.contains('hidden') ? null : Number(headInp.value || 0);
+      const species = (stockRow.style.display === 'none') ? null : (speciesSel.value || null);
+      const klass = (stockRow.style.display === 'none') ? null : (classInp.value || null);
+      const headVal = (stockRow.style.display === 'none') ? null : Number(headInp.value || 0);
       const head = headVal && Number.isFinite(headVal) && headVal>0 ? headVal : null;
 
       const rainVal = Number(rainMmInp.value || 0);
@@ -1133,26 +1133,26 @@
       const gaugeId = gaugeSel.value || null;
       const gaugeName = gaugeSel.selectedOptions[0]?.textContent || null;
 
-      const chemId = chemRow.classList.contains('hidden') ? null : (chemSel.value || null);
-      const chemQtyVal = chemRow.classList.contains('hidden') ? null : Number(chemQty.value || 0);
+      const chemId = (chemRow.style.display === 'none') ? null : (chemSel.value || null);
+      const chemQtyVal = (chemRow.style.display === 'none') ? null : Number(chemQty.value || 0);
       const chemQtyNum = chemQtyVal && chemQtyVal>0 ? chemQtyVal : null;
-      const chemUnitVal = chemRow.classList.contains('hidden') ? null : (chemUnit.value || null);
+      const chemUnitVal = (chemRow.style.display === 'none') ? null : (chemUnit.value || null);
 
-      const seedId = seedRow.classList.contains('hidden') ? null : (seedSel.value || null);
-      const seedQtyVal = seedRow.classList.contains('hidden') ? null : Number(seedQty.value || 0);
+      const seedId = (seedRow.style.display === 'none') ? null : (seedSel.value || null);
+      const seedQtyVal = (seedRow.style.display === 'none') ? null : Number(seedQty.value || 0);
       const seedQtyNum = seedQtyVal && seedQtyVal>0 ? seedQtyVal : null;
-      const seedUnitVal = seedRow.classList.contains('hidden') ? null : (seedUnit.value || null);
+      const seedUnitVal = (seedRow.style.display === 'none') ? null : (seedUnit.value || null);
 
-      const fodderId = fodderRow.classList.contains('hidden') ? null : (fodderSel.value || null);
-      const fodderQtyVal = fodderRow.classList.contains('hidden') ? null : Number(fodderQty.value || 0);
+      const fodderId = (fodderRow.style.display === 'none') ? null : (fodderSel.value || null);
+      const fodderQtyVal = (fodderRow.style.display === 'none') ? null : Number(fodderQty.value || 0);
       const fodderQtyNum = fodderQtyVal && fodderQtyVal>0 ? fodderQtyVal : null;
-      const fodderUnitVal = fodderRow.classList.contains('hidden') ? null : (fodderUnit.value || null);
+      const fodderUnitVal = (fodderRow.style.display === 'none') ? null : (fodderUnit.value || null);
 
       const notes = notesInp.value || '';
 
-      const purchaseType = purchaseRow.classList.contains('hidden') ? null : (purchaseTypeSel.value || null);
-      const purchaseSupplierVal = purchaseRow.classList.contains('hidden') ? null : (purchaseSupplier.value || null);
-      const purchaseRefVal = purchaseRow.classList.contains('hidden') ? null : (purchaseRef.value || null);
+      const purchaseType = (purchaseRow.style.display === 'none') ? null : (purchaseTypeSel.value || null);
+      const purchaseSupplierVal = (purchaseRow.style.display === 'none') ? null : (purchaseSupplier.value || null);
+      const purchaseRefVal = (purchaseRow.style.display === 'none') ? null : (purchaseRef.value || null);
 
       const user = auth.currentUser || CURRENT_USER;
       const createdByUid   = user?.uid || CURRENT_UID || null;
@@ -1204,6 +1204,7 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
+
       return {
         payload,
         propertyId,
@@ -1231,6 +1232,7 @@
         alert('Choose a property.');
         return;
       }
+
       const {
         payload,
         propertyId,
@@ -1252,20 +1254,11 @@
       } = buildPayloadFromUI();
 
       if (activity === 'Move stock'){
-        if (!paddockName || !toPaddockName) {
-          alert('For Move cattle choose FROM and TO paddocks.');
-          return;
-        }
-        if (!klass || !head){
-          alert('For Move cattle set Class and Head.');
-          return;
-        }
+        if (!paddockName || !toPaddockName) { alert('For Move cattle choose FROM and TO paddocks.'); return; }
+        if (!klass || !head){ alert('For Move cattle set Class and Head.'); return; }
       }
       if (activity === 'Trucking (sale)' || activity === 'Cattle purchase'){
-        if (!paddockName || !klass || !head){
-          alert('For stock movements set paddock, class and head.');
-          return;
-        }
+        if (!paddockName || !klass || !head){ alert('For stock movements set paddock, class and head.'); return; }
       }
       if (activity === 'Transfer stock (Out)'){
         if (!paddockName || !transferPropertyId || !klass || !head){
@@ -1274,19 +1267,10 @@
         }
       }
       if (activity === 'Rainfall'){
-        if (!gaugeId || !rainfallMm){
-          alert('For Rainfall choose a gauge and enter mm.');
-          return;
-        }
+        if (!gaugeId || !rainfallMm){ alert('For Rainfall choose a gauge and enter mm.'); return; }
       }
-      if (activity === 'Planting' && (!seedId || !seedQty)){
-        alert('For Planting choose a seed and quantity.');
-        return;
-      }
-      if (activity === 'Feeding (fodder)' && (!fodderId || !fodderQty)){
-        alert('For Feeding choose a fodder and quantity.');
-        return;
-      }
+      if (activity === 'Planting' && (!seedId || !seedQty)){ alert('For Planting choose a seed and quantity.'); return; }
+      if (activity === 'Feeding (fodder)' && (!fodderId || !fodderQty)){ alert('For Feeding choose a fodder and quantity.'); return; }
       if (activity === 'Purchase inputs' && payload.purchaseType === 'Fodder' && (!fodderId || !fodderQty)){
         alert('For Fodder purchases choose a fodder item and quantity.');
         return;
@@ -1357,22 +1341,21 @@
     // Recent entries (table + cards)
     async function refreshEntries(){
       entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Loading…</td></tr>';
-      if (entriesCards){
-        entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
-      }
+      if (entriesCards) entriesCards.innerHTML = '<div class="muted small">Loading…</div>';
+
       try{
         const snap = await db.collection('diaryEntries')
           .orderBy('date','desc')
           .limit(200)
           .get();
+
         const rows = [];
-        snap.forEach(doc=>{
-          rows.push({id:doc.id, ...(doc.data()||{})});
-        });
+        snap.forEach(doc=> rows.push({id:doc.id, ...(doc.data()||{})}));
 
         // Build user filter options (use full name from users & roles)
         const existingSelection = filterUserSel.value || '';
         const userSet = new Set();
+
         rows.forEach(r=>{
           if (r.createdByEmail){
             const email = String(r.createdByEmail).toLowerCase();
@@ -1383,17 +1366,17 @@
             if (label) userSet.add(label);
           }
         });
-        const userList = Array.from(userSet).sort((a,b)=>a.localeCompare(b));
 
-        const isWorker = CURRENT_ROLE === 'worker';
+        const userList = Array.from(userSet).sort((a,b)=>a.localeCompare(b));
+        const isWorker = (CURRENT_ROLE === 'worker');
+
         if (isWorker){
           // worker can't filter by user; they only see themselves
           filterUserSel.parentElement.style.display = 'none';
         }else{
           filterUserSel.parentElement.style.display = '';
-          let optionsHtml = '<option value="">All users</option>';
-          optionsHtml += userList.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
-          filterUserSel.innerHTML = optionsHtml;
+          filterUserSel.innerHTML = '<option value="">All users</option>' +
+            userList.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
           if (existingSelection && userList.includes(existingSelection)){
             filterUserSel.value = existingSelection;
           }
@@ -1423,7 +1406,7 @@
           if (!isWorker && selectedUser){
             const email = (r.createdByEmail || '').toLowerCase();
             const u = USERS[email];
-            const label = u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
+            const label = (u && (u.fullName || u.firstName)) ? (u.fullName || u.firstName) : (email ? email.split('@')[0] : '');
             if (label !== selectedUser) return false;
           }
 
@@ -1441,7 +1424,7 @@
           const getUserName = (r)=>{
             const email = (r.createdByEmail || '').toLowerCase();
             const u = USERS[email];
-            return u && u.firstName ? u.firstName : (email ? email.split('@')[0] : '');
+            return (u && (u.fullName || u.firstName)) ? (u.fullName || u.firstName) : (email ? email.split('@')[0] : '');
           };
           const userA = getUserName(a);
           const userB = getUserName(b);
@@ -1471,9 +1454,7 @@
 
         if (!filtered.length){
           entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">No entries.</td></tr>';
-          if (entriesCards){
-            entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
-          }
+          if (entriesCards) entriesCards.innerHTML = '<div class="muted small">No entries.</div>';
           return;
         }
 
@@ -1489,14 +1470,12 @@
           if (!r.createdByEmail) return '';
           const email = String(r.createdByEmail).toLowerCase();
           const u = USERS[email];
-          if (u && (u.fullName || u.firstName)){
-            return u.fullName || u.firstName;
-          }
+          if (u && (u.fullName || u.firstName)) return (u.fullName || u.firstName);
           return email.split('@')[0];
         };
 
         // Build table rows (no time column)
-        const tableHtml = filtered.map(r=>{
+        entriesBody.innerHTML = filtered.map(r=>{
           const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
 
           let inputs = '';
@@ -1515,7 +1494,6 @@
 
           const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
           const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
-
           const userLabel = userLabelFor(r);
 
           const editHtml = canDeleteEntry(r)
@@ -1539,11 +1517,10 @@
             <td class="no-print">${editHtml} ${delHtml}</td>
           </tr>`;
         }).join('');
-        entriesBody.innerHTML = tableHtml;
 
-        // Build mobile cards (no time)
+        // Build mobile cards
         if (entriesCards){
-          const cardsHtml = filtered.map(r=>{
+          entriesCards.innerHTML = filtered.map(r=>{
             const stock = r.headCount ? `${r.headCount} ${r.species||''} ${r.livestockClass||''}`.trim() : '';
 
             let inputs = '';
@@ -1562,7 +1539,6 @@
 
             const rain = r.rainfallMm != null ? Number(r.rainfallMm).toFixed(1) : '';
             const notes = [r.notes||'', r.weather||''].filter(Boolean).join(' · ');
-
             const userLabel = userLabelFor(r);
 
             const editHtml = canDeleteEntry(r)
@@ -1587,23 +1563,18 @@
               ${inputs ? `<div class="ec-line"><span class="ec-label">Inputs</span>${escapeHtml(inputs)}</div>` : ''}
               ${rain ? `<div class="ec-line"><span class="ec-label">Rain</span>${escapeHtml(rain)} mm</div>` : ''}
               ${notes ? `<div class="ec-line ec-notes">${escapeHtml(notes)}</div>` : ''}
-              <div class="ec-actions no-print">
-                ${editHtml} ${delHtml}
-              </div>
+              <div class="ec-actions no-print">${editHtml} ${delHtml}</div>
             </div>`;
           }).join('');
-          entriesCards.innerHTML = cardsHtml;
         }
 
         // Wire EDIT buttons
-        const editBtns = document.querySelectorAll('#entriesBody button[data-edit], #entriesCards button[data-edit]');
-        editBtns.forEach(btn=>{
+        document.querySelectorAll('#entriesBody button[data-edit], #entriesCards button[data-edit]').forEach(btn=>{
           btn.onclick = ()=> openEditModal(btn.dataset.edit);
         });
 
         // Wire delete buttons
-        const delButtons = document.querySelectorAll('#entriesBody button[data-del], #entriesCards button[data-del]');
-        delButtons.forEach(btn=>{
+        document.querySelectorAll('#entriesBody button[data-del], #entriesCards button[data-del]').forEach(btn=>{
           btn.onclick = async ()=>{
             const id = btn.dataset.del;
             if (!id) return;
@@ -1618,12 +1589,11 @@
             }
           };
         });
+
       }catch(e){
         console.error(e);
         entriesBody.innerHTML = '<tr><td colspan="10" class="muted small">Error loading entries.</td></tr>';
-        if (entriesCards){
-          entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
-        }
+        if (entriesCards) entriesCards.innerHTML = '<div class="muted small">Error loading entries.</div>';
       }
     }
 
@@ -1639,12 +1609,7 @@
     const editCancel = document.getElementById('editCancel');
     const editSave = document.getElementById('editSave');
 
-    const SAFE_ACTIVITIES = [
-      'General',
-      'Ploughing',
-      'Planting',
-      'Spraying paddocks'
-    ];
+    const SAFE_ACTIVITIES = ['General','Ploughing','Planting','Spraying paddocks'];
 
     function openEditModal(id){
       CURRENT_EDIT_ID = id;
@@ -1652,8 +1617,7 @@
       db.collection('diaryEntries').doc(id).get().then(snap=>{
         if (!snap.exists) return;
 
-        const d = snap.data();
-
+        const d = snap.data() || {};
         editNotes.value = d.notes || '';
         editWeather.value = d.weather || '';
 
@@ -1713,10 +1677,8 @@
           const d = doc.data() || {};
           const email = String(d.email || '').toLowerCase();
           if (!email) return;
-
           const fullName = (d.name || '').trim();
           const firstName = fullName || email.split('@')[0];
-
           USERS[email] = { fullName, firstName };
         });
       }catch(e){
@@ -1725,6 +1687,7 @@
       }
 
       await loadProperties();
+
       if (propSel.options.length && propSel.value){
         await loadPaddocksForProperty(propSel.value);
         await loadGaugesForProperty(propSel.value);
@@ -1766,6 +1729,7 @@
         purchaseSupplier.value = '';
         purchaseRef.value = '';
       };
+
       $('#refreshBtn').onclick = refreshEntries;
       $('#printBtn').onclick = ()=>window.print();
       sortSel.onchange = refreshEntries;
@@ -1774,6 +1738,7 @@
       filterYear.onchange = refreshEntries;
 
       await refreshEntries();
+      setStatus('Ready');
     }
 
     window.addEventListener('load', ()=> setStatus('Ready'));
