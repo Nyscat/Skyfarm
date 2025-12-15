@@ -5,8 +5,8 @@
   <title>SkyFarm — Property Map</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- Shared header styling -->
-  <link rel="stylesheet" href="skyfarm-shared.css"/>
+  <!-- Shared header styles -->
+  <link rel="stylesheet" href="skyfarm-shared.css">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
@@ -25,6 +25,7 @@
       --muted:#64748b;
       --brand:#0B7A6E;
       --line:#e5e7eb;
+      --warn:#9a3412;
     }
     *{box-sizing:border-box;}
     body{
@@ -44,7 +45,6 @@
       background:#ecfeff;
       font-size:.8rem;
       margin-right:4px;
-      white-space:nowrap;
     }
 
     label{font-size:.85rem;color:#475569;display:block;margin-bottom:4px;}
@@ -59,9 +59,8 @@
     .btn{border-radius:10px;}
     .primary{background:var(--brand);color:#fff;border-color:var(--brand);}
     .danger{background:#ef4444;color:#fff;border-color:#ef4444;}
-    .muted{color:var(--muted);font-size:.9rem;}
+    .muted{color:var(--muted);font-size:.95rem;}
     .hidden{display:none;}
-    .spacer{flex:1;}
 
     /* Map layout */
     .map-layout{
@@ -71,23 +70,21 @@
       align-items:start;
     }
 
-    /* Map element */
+    /* Map element (important: iPhone-friendly) */
     #map{
       position:relative;
       width:100%;
-      height:560px;
-      min-height:360px;
+      height:560px;                /* fallback */
+      min-height:420px;            /* iPhone-friendly minimum */
+      height:calc(100dvh - 360px); /* modern iOS stable viewport */
       background:#e5e7eb;
       border-radius:12px;
       overflow:hidden;
-
-      /* iOS/WebKit paint stability */
-      transform: translateZ(0);
     }
 
     .map-panel{padding:0;}
 
-    /* Leaflet fixes (important if any global CSS touches img) */
+    /* Leaflet fixes for mobile / global img styles */
     .leaflet-container{background:#e5e7eb;}
     .leaflet-container img{
       max-width:none !important;
@@ -119,13 +116,19 @@
     }
     #authCard h2{margin:0 0 10px;}
 
+    .top-actions{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:10px;
+      justify-content:flex-end;
+      margin:6px 0 10px;
+    }
+
     /* Mobile */
     @media (max-width:800px){
       .map-layout{display:flex;flex-direction:column;}
-      #map{
-        height:65vh;
-        min-height:420px; /* iPhone friendly */
-      }
+      #map{min-height:520px;}
     }
   </style>
 </head>
@@ -135,8 +138,13 @@
   <div id="sf-header-root"></div>
 
   <div class="wrap">
+    <div class="top-actions">
+      <span id="authWho" class="muted">Checking sign-in…</span>
+      <button id="signOutBtn" class="danger hidden" type="button">Sign out</button>
+    </div>
+
     <h1>Property Map</h1>
-    <p id="status" class="muted">Loading…</p>
+    <p id="status" class="muted">Loading paddock data…</p>
 
     <!-- Controls row -->
     <div class="panel" style="margin-bottom:12px;">
@@ -148,9 +156,6 @@
           </select>
         </div>
         <span class="muted" id="propertyHint">Zooms map to the selected property’s paddocks.</span>
-        <span class="spacer"></span>
-        <span id="authWho" class="muted">Checking sign-in…</span>
-        <button id="signOutBtn" class="danger hidden">Sign out</button>
       </div>
     </div>
 
@@ -172,7 +177,7 @@
   <div id="authOverlay">
     <div id="authCard">
       <h2>Sign in to SkyFarm</h2>
-      <p class="muted" style="font-size:.85rem;">Email &amp; password only. Anonymous sign-in is disabled.</p>
+      <p class="muted" style="font-size:.85rem;">Email &amp; password only.</p>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
         <div style="flex:1;min-width:260px;">
           <label>Email</label>
@@ -184,32 +189,34 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <button id="signInBtn" class="primary btn">Sign in</button>
+        <button id="signInBtn" class="primary btn" type="button">Sign in</button>
         <span id="authMsg" class="muted" style="font-size:.85rem;"></span>
-        <span class="spacer"></span>
+        <span style="flex:1;"></span>
         <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Shared header JS -->
+  <!-- Shared header script -->
   <script src="skyfarm-header.js"></script>
-  <script>
-    SkyFarmHeader.mount();
-  </script>
 
   <script>
-  /* ---------- Firebase init (safe) ---------- */
+  /* ---------- Firebase init ---------- */
+  // If you already use skyfarm-config.js elsewhere, you can swap to:
+  //   <script src="skyfarm-config.js"></script>
+  // and remove this config block.
   const firebaseConfig = {
     apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
     authDomain: "consentes-pastoral.firebaseapp.com",
     projectId: "consentes-pastoral",
     appId: "1:494858780013:web:d87497b370c82eeab06e64"
   };
-  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-
+  firebase.initializeApp(firebaseConfig);
   const db   = firebase.firestore();
   const auth = firebase.auth();
+
+  // Mount the shared header AFTER firebase exists (prevents "Checking sign-in..." sticking)
+  try{ window.SkyFarmHeader && SkyFarmHeader.mount(); }catch(e){ console.warn(e); }
 
   /* ---------- Auth overlay ---------- */
   const authOverlay  = document.getElementById('authOverlay');
@@ -230,9 +237,8 @@
       await auth.signInWithEmailAndPassword(email, pass);
       msgEl.textContent = 'Signed in.';
       showOverlay(false);
-      setTimeout(ensureMapSize, 250);
     }catch(e){
-      msgEl.textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
+      msgEl.textContent = 'Sign-in failed: ' + (e && e.message ? e.message : 'Unknown error');
     }
   };
   closeOverlay.onclick = ()=> showOverlay(false);
@@ -242,37 +248,44 @@
   const statusEl      = document.getElementById('status');
   const paddockInfoEl = document.getElementById('paddockInfo');
   const propertySel   = document.getElementById('propertySel');
-  function setStatus(t){ if (statusEl) statusEl.textContent = t; }
 
+  function setStatus(t){ if (statusEl) statusEl.textContent = t; }
   function esc(s){
     if (s === null || s === undefined) s = '';
-    return String(s).replace(/[&<>"]/g, function(c){
-      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c];
-    });
+    return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
   }
+
+  /* ---------- iPhone Leaflet sizing fix ---------- */
+  const mapEl = document.getElementById('map');
+  function setMapHeight(){
+    // ~60% of visible screen height with sensible bounds
+    const h = Math.max(420, Math.min(760, Math.round(window.innerHeight * 0.60)));
+    mapEl.style.height = h + 'px';
+  }
+  setMapHeight();
 
   /* ---------- Map ---------- */
   const map = L.map('map', { zoomControl:true }).setView([-20.0, 142.5], 7);
 
-  const base = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-    // NOTE: removed crossOrigin:true (can trigger WebKit quirks)
-  }).addTo(map);
-
-  base.on('tileerror', function(e){
-    setStatus('Map tiles failed to load on this browser. If this is iPhone Firefox, it is usually a WebKit/tile issue.');
-    console.error('tileerror', e);
-  });
-
   function ensureMapSize(){
     try{ map.invalidateSize(true); }catch(e){}
   }
-  window.addEventListener('resize', ensureMapSize);
-  window.addEventListener('orientationchange', ()=> setTimeout(ensureMapSize, 250));
-  window.addEventListener('load', ()=> setTimeout(ensureMapSize, 350));
+
+  window.addEventListener('resize', ()=>{ setMapHeight(); setTimeout(ensureMapSize, 150); });
+  window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ setMapHeight(); ensureMapSize(); }, 250); });
+  window.addEventListener('load', ()=> setTimeout(()=>{ setMapHeight(); ensureMapSize(); }, 350));
   document.addEventListener('visibilitychange', ()=>{
-    if (!document.hidden) setTimeout(ensureMapSize, 250);
+    if (!document.hidden) setTimeout(()=>{ setMapHeight(); ensureMapSize(); }, 250);
+  });
+
+  const base = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors',
+    crossOrigin: true
+  }).addTo(map);
+
+  base.on('tileerror', function(){
+    setStatus('Map tiles failed to load on this browser (tileerror).');
   });
 
   /* ---------- Constants & sources ---------- */
@@ -281,6 +294,7 @@
     "Mt Myrtle": "TRuxtRBx2zJlwZnRGYKJ",
     "Gerawin":   "P0dQ0H2FWHeqqxejflZs"
   };
+
   const CLOUD_URLS = [
     "https://storage.googleapis.com/consentes-maps/consentes_station.json",
     "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
@@ -289,6 +303,7 @@
     "maps/consentes_station.json",
     "maps/mt_myrtle.json"
   ];
+
   const ACTIVE_PROPERTY_KEY = 'sf.map.activePropertyId';
 
   const propertyMeta   = new Map();
@@ -364,7 +379,7 @@
     const snap = await db.collection('diaryEntries')
       .where('propertyId', '==', propertyId)
       .orderBy('date', 'desc')
-      .limit(200)
+      .limit(100)
       .get();
 
     snap.forEach(doc=>{
@@ -372,7 +387,11 @@
       if ((d.paddock || '').trim() !== paddockName) return;
       const dateStr = d.date || '';
       if (dateStr && dateStr < fromISO) return;
-      out.push({ date: dateStr, activity: d.activity || '', notes: d.notes || '' });
+      out.push({
+        date: dateStr,
+        activity: d.activity || '',
+        notes: d.notes || ''
+      });
     });
 
     diaryCache.set(cacheKey, out);
@@ -459,7 +478,11 @@
     paddockInfoEl.innerHTML = '<span class="muted">Loading diary entries…</span>';
 
     let diaryList = [];
-    try{ diaryList = await getRecentDiary(pid, paddockName); }catch(e){ diaryList = []; }
+    try{
+      diaryList = await getRecentDiary(pid, paddockName);
+    }catch(e){
+      diaryList = [];
+    }
 
     renderPaddockInfo(propertyName, paddockName, stockRec, diaryList);
   }
@@ -589,7 +612,10 @@
     }else{
       map.fitBounds(allBounds, {padding:[20,20]});
     }
-    ensureMapSize();
+
+    // iPhone: do this AFTER layers are added
+    setTimeout(ensureMapSize, 150);
+    setTimeout(ensureMapSize, 600);
   }
 
   /* ---------- Auth + bootstrap ---------- */
@@ -610,15 +636,13 @@
         await loadLivestockIndex();
 
         firestoreReady = true;
-
         setStatus('Loading map…');
         await loadMapLayers();
 
         setStatus('Map ready. Click a paddock to see livestock and diary.');
-        setTimeout(ensureMapSize, 250);
       }catch(e){
         firestoreReady = false;
-        setStatus('Error loading data for map. Check console.');
+        setStatus('Error loading data for map.');
         console.error(e);
       }
     } else {
@@ -627,7 +651,6 @@
       firestoreReady = false;
       showOverlay(true);
       setStatus('Please sign in to see livestock & diary on paddocks.');
-      setTimeout(ensureMapSize, 250);
     }
   });
   </script>
