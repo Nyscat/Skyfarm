@@ -5,6 +5,9 @@
   <title>SkyFarm — Property Map</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
+  <!-- Shared header styling -->
+  <link rel="stylesheet" href="skyfarm-shared.css"/>
+
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
@@ -22,7 +25,6 @@
       --muted:#64748b;
       --brand:#0B7A6E;
       --line:#e5e7eb;
-      --warn:#9a3412;
     }
     *{box-sizing:border-box;}
     body{
@@ -31,59 +33,6 @@
       margin:0;
       color:var(--ink);
     }
-
-    /* Header */
-    #sf-header{position:sticky;top:0;z-index:10;}
-    #sf-header .bar{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      padding:10px 14px;
-      background:#fff;
-      border-bottom:1px solid var(--line);
-      flex-wrap:wrap;
-    }
-    #sf-header .brand{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color:var(--brand);
-      font-weight:700;
-      text-decoration:none;
-    }
-    #sf-header nav a{
-      color:var(--brand);
-      text-decoration:none;
-      font-weight:600;
-      margin-right:10px;
-    }
-    #sf-header nav a[aria-current="page"]{text-decoration:underline;}
-    .spacer{flex:1;}
-    .muted{color:var(--muted);font-size:.9rem;}
-    .hidden{display:none;}
-
-    .nav-db{position:relative;}
-    .nav-db button{font-size:.9rem;}
-    .db-menu{
-      position:absolute;
-      top:100%;
-      left:0;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:10px;
-      min-width:160px;
-      padding:4px 0;
-      box-shadow:0 10px 25px rgba(15,23,42,.12);
-      z-index:20;
-    }
-    .db-menu a{
-      display:block;
-      padding:6px 12px;
-      color:var(--ink);
-      text-decoration:none;
-      font-size:.9rem;
-    }
-    .db-menu a:hover{background:#f1f5f9;}
 
     .wrap{max-width:1200px;margin:0 auto;padding:16px;}
     h1{margin:12px 0;font-size:1.6rem;}
@@ -95,6 +44,7 @@
       background:#ecfeff;
       font-size:.8rem;
       margin-right:4px;
+      white-space:nowrap;
     }
 
     label{font-size:.85rem;color:#475569;display:block;margin-bottom:4px;}
@@ -109,6 +59,9 @@
     .btn{border-radius:10px;}
     .primary{background:var(--brand);color:#fff;border-color:var(--brand);}
     .danger{background:#ef4444;color:#fff;border-color:#ef4444;}
+    .muted{color:var(--muted);font-size:.9rem;}
+    .hidden{display:none;}
+    .spacer{flex:1;}
 
     /* Map layout */
     .map-layout{
@@ -123,29 +76,30 @@
       position:relative;
       width:100%;
       height:560px;
-      min-height:320px;
+      min-height:360px;
       background:#e5e7eb;
       border-radius:12px;
+      overflow:hidden;
+
+      /* iOS/WebKit paint stability */
+      transform: translateZ(0);
     }
 
-    .map-panel{
-      padding:0;
-    }
+    .map-panel{padding:0;}
 
-    /* Leaflet fixes for mobile / global img styles */
-    .leaflet-container{
-      background:#e5e7eb;
-    }
+    /* Leaflet fixes (important if any global CSS touches img) */
+    .leaflet-container{background:#e5e7eb;}
     .leaflet-container img{
       max-width:none !important;
       max-height:none !important;
     }
-.leaflet-container .leaflet-tile{
-  max-width:none !important;
-  max-height:none !important;
-  width:256px !important;
-  height:256px !important;
-}
+    .leaflet-container .leaflet-tile{
+      max-width:none !important;
+      max-height:none !important;
+      width:256px !important;
+      height:256px !important;
+    }
+
     /* Auth overlay */
     #authOverlay{
       position:fixed;
@@ -167,554 +121,515 @@
 
     /* Mobile */
     @media (max-width:800px){
-      .map-layout{
-        display:flex;
-        flex-direction:column;
-      }
+      .map-layout{display:flex;flex-direction:column;}
       #map{
         height:65vh;
-        min-height:350px;
+        min-height:420px; /* iPhone friendly */
       }
     }
   </style>
 </head>
+
 <body>
+  <!-- Shared header mount point -->
+  <div id="sf-header-root"></div>
 
-<!-- Header -->
-<div id="sf-header">
-  <div class="bar">
-    <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
-      <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-           alt="SkyFarm logo"
-           style="height:28px;width:auto;border-radius:6px;">
-      <span>SkyFarm</span>
-    </a>
-    <nav>
-      <a href="skyfarm-diary.html">Diary</a>
-      <a href="skyfarm-map.html" aria-current="page">Map</a>
-      <a href="skyfarm-rain.html">Rain</a>
-      <a href="skyfarm-hours.html">Hours</a>
-    </nav>
-    <div class="nav-db">
-      <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
-      <div id="dbMenu" class="db-menu hidden">
-        <a href="skyfarm-livestock.html">Livestock</a>
-        <a href="skyfarm-chemical.html">Chemicals</a>
-        <a href="skyfarm-seeds.html">Seeds</a>
-        <a href="skyfarm-fodder.html">Fodder</a>
-        <a href="skyfarm-barcode.html">Barcode scanner</a>
-        <a href="skyfarm-users.html">Users &amp; roles</a>
+  <div class="wrap">
+    <h1>Property Map</h1>
+    <p id="status" class="muted">Loading…</p>
+
+    <!-- Controls row -->
+    <div class="panel" style="margin-bottom:12px;">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+        <div>
+          <label>Property</label>
+          <select id="propertySel" style="min-width:200px;">
+            <option value="ALL">(All properties)</option>
+          </select>
+        </div>
+        <span class="muted" id="propertyHint">Zooms map to the selected property’s paddocks.</span>
+        <span class="spacer"></span>
+        <span id="authWho" class="muted">Checking sign-in…</span>
+        <button id="signOutBtn" class="danger hidden">Sign out</button>
       </div>
     </div>
-    <span class="spacer"></span>
-    <span id="authWho" class="muted">Connecting…</span>
-    <button id="signOutBtn" class="danger hidden">Sign out</button>
-  </div>
-</div>
 
-<div class="wrap">
-  <h1>Property Map</h1>
-  <p id="status" class="muted">Loading paddock data…</p>
-
-  <!-- Controls row -->
-  <div class="panel" style="margin-bottom:12px;">
-    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-      <div>
-        <label>Property</label>
-        <select id="propertySel" style="min-width:200px;">
-          <option value="ALL">(All properties)</option>
-        </select>
+    <div class="map-layout">
+      <div class="panel map-panel">
+        <div id="map"></div>
       </div>
-      <span class="muted" id="propertyHint">Zooms map to the selected property’s paddocks.</span>
+
+      <aside class="panel">
+        <h3 style="margin-top:0;">Paddock details</h3>
+        <div id="paddockInfo" class="muted">
+          Click a paddock to see livestock totals and recent diary entries (last 30 days).
+        </div>
+      </aside>
     </div>
   </div>
 
-  <div class="map-layout">
-    <div class="panel map-panel">
-      <div id="map"></div>
-    </div>
-
-    <aside class="panel">
-      <h3 style="margin-top:0;">Paddock details</h3>
-      <div id="paddockInfo" class="muted">
-        Click a paddock to see livestock totals and recent diary entries (last 30 days).
+  <!-- Auth overlay -->
+  <div id="authOverlay">
+    <div id="authCard">
+      <h2>Sign in to SkyFarm</h2>
+      <p class="muted" style="font-size:.85rem;">Email &amp; password only. Anonymous sign-in is disabled.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+        <div style="flex:1;min-width:260px;">
+          <label>Email</label>
+          <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username">
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <label>Password</label>
+          <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
       </div>
-    </aside>
-  </div>
-</div>
-
-<!-- Auth overlay -->
-<div id="authOverlay">
-  <div id="authCard">
-    <h2>Sign in to SkyFarm</h2>
-    <p class="muted" style="font-size:.85rem;">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
-      <div style="flex:1;min-width:260px;">
-        <label>Email</label>
-        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="signInBtn" class="primary btn">Sign in</button>
+        <span id="authMsg" class="muted" style="font-size:.85rem;"></span>
+        <span class="spacer"></span>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
-      <div style="flex:1;min-width:220px;">
-        <label>Password</label>
-        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password">
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <button id="signInBtn" class="primary btn">Sign in</button>
-      <span id="authMsg" class="muted" style="font-size:.85rem;"></span>
-      <span class="spacer"></span>
-      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
     </div>
   </div>
-</div>
 
-<script>
-/* ---------- Firebase init ---------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-  authDomain: "consentes-pastoral.firebaseapp.com",
-  projectId: "consentes-pastoral",
-  appId: "1:494858780013:web:d87497b370c82eeab06e64"
-};
-firebase.initializeApp(firebaseConfig);
-const db   = firebase.firestore();
-const auth = firebase.auth();
+  <!-- Shared header JS -->
+  <script src="skyfarm-header.js"></script>
+  <script>
+    SkyFarmHeader.mount();
+  </script>
 
-/* ---------- Header DB menu ---------- */
-const dbMenuBtn = document.getElementById('dbMenuBtn');
-const dbMenu    = document.getElementById('dbMenu');
-if (dbMenuBtn && dbMenu){
-  dbMenuBtn.onclick = (e)=>{ e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
-  document.addEventListener('click', e=>{
-    if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
-  });
-}
-
-/* ---------- Auth overlay ---------- */
-const authOverlay  = document.getElementById('authOverlay');
-const authWho      = document.getElementById('authWho');
-const signOutBtn   = document.getElementById('signOutBtn');
-const signInBtn    = document.getElementById('signInBtn');
-const closeOverlay = document.getElementById('closeOverlayBtn');
-
-function showOverlay(on){ authOverlay.style.display = on ? 'flex' : 'none'; }
-
-signInBtn.onclick = async ()=>{
-  const email = document.getElementById('siEmail').value.trim();
-  const pass  = document.getElementById('siPass').value;
-  const msgEl = document.getElementById('authMsg');
-  msgEl.textContent = 'Signing in…';
-  try{
-    await auth.signInWithEmailAndPassword(email, pass);
-    msgEl.textContent = 'Signed in.';
-    showOverlay(false);
-  }catch(e){
-    let msg = 'Unknown';
-    if (e && e.message) msg = e.message;
-    else if (e && e.code) msg = e.code;
-    msgEl.textContent = 'Sign-in failed: ' + msg;
-  }
-};
-closeOverlay.onclick = ()=> showOverlay(false);
-signOutBtn.onclick   = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
-
-/* ---------- UI helpers ---------- */
-const statusEl      = document.getElementById('status');
-const paddockInfoEl = document.getElementById('paddockInfo');
-const propertySel   = document.getElementById('propertySel');
-function setStatus(t){ if (statusEl) statusEl.textContent = t; }
-
-function esc(s){
-  if (s === null || s === undefined) s = '';
-  return String(s).replace(/[&<>"]/g, function(c){
-    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c];
-  });
-}
-
-/* ---------- Map ---------- */
-const map = L.map('map').setView([-20.0, 142.5], 7);
-const base = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors',
-  crossOrigin: true
-}).addTo(map);
-
-// Mobile debug: show tile errors in the status line
-base.on('tileerror', function(e){
-  setStatus('Map tiles blocked/failed to load on this browser (tileerror).');
-});
-base.on('load', function(){
-  // Only overwrite status if we’re not in the middle of other loading text
-  // Comment this out if you don’t want it.
-  // setStatus('Map tiles loaded.');
-});
-
-/* Force Leaflet to recalc size in a few situations */
-function ensureMapSize(){
-  try{ map.invalidateSize(); }catch(e){}
-}
-window.addEventListener('resize', ensureMapSize);
-window.addEventListener('orientationchange', ensureMapSize);
-window.addEventListener('load', ()=> setTimeout(ensureMapSize, 300));
-document.addEventListener('visibilitychange', ()=>{
-  if (!document.hidden) setTimeout(ensureMapSize, 300);
-});
-
-/* ---------- Constants & sources ---------- */
-const KNOWN_PROPERTIES = {
-  "Consentes": "s7PlDM9wrEpxuJ6DGIab",
-  "Mt Myrtle": "TRuxtRBx2zJlwZnRGYKJ",
-  "Gerawin":   "P0dQ0H2FWHeqqxejflZs"
-};
-const CLOUD_URLS = [
-  "https://storage.googleapis.com/consentes-maps/consentes_station.json",
-  "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
-];
-const LOCAL_FALLBACKS = [
-  "maps/consentes_station.json",
-  "maps/mt_myrtle.json"
-];
-const ACTIVE_PROPERTY_KEY = 'sf.map.activePropertyId';
-
-const propertyMeta   = new Map();
-const paddockIndex   = new Map();
-const livestockIndex = new Map();
-const diaryCache     = new Map();
-
-let allBounds      = null;
-let firestoreReady = false;
-
-/* ---------- Firestore-backed indexes ---------- */
-async function loadProperties(){
-  propertyMeta.clear();
-  const snap = await db.collection('properties').get();
-  snap.forEach(doc=>{
-    const d = doc.data() || {};
-    const name = d.name || '(Property)';
-    propertyMeta.set(doc.id, { name, bounds:null });
-  });
-  for (const [name,id] of Object.entries(KNOWN_PROPERTIES)){
-    if (!propertyMeta.has(id)) propertyMeta.set(id, { name, bounds:null });
-  }
-}
-
-async function loadPaddocksIndex(){
-  paddockIndex.clear();
-  const snap = await db.collection('paddocks').get();
-  snap.forEach(doc=>{
-    const d = doc.data() || {};
-    const name = (d.name || '').trim();
-    const pid  = d.propertyId || null;
-    if (!name || !pid) return;
-    const pm = propertyMeta.get(pid);
-    paddockIndex.set(name, {
-      propertyId: pid,
-      propertyName: pm ? pm.name : '(Property)'
-    });
-  });
-}
-
-async function loadLivestockIndex(){
-  livestockIndex.clear();
-  const snap = await db.collection('livestock').get();
-  snap.forEach(doc=>{
-    const d = doc.data() || {};
-    const propId  = d.propertyId;
-    const paddock = (d.location || '').trim();
-    const count   = Number(d.count || 0);
-    if (!propId || !paddock || !count) return;
-
-    const key = propId + '|' + paddock;
-    let rec = livestockIndex.get(key);
-    if (!rec){
-      rec = { total:0, byClass:{} };
-      livestockIndex.set(key, rec);
-    }
-    rec.total += count;
-    const cls = (d.class || d.species || 'Stock').trim() || 'Stock';
-    rec.byClass[cls] = (rec.byClass[cls] || 0) + count;
-  });
-}
-
-/* ---------- Diary helpers ---------- */
-async function getRecentDiary(propertyId, paddockName){
-  const cacheKey = propertyId + '|' + paddockName;
-  if (diaryCache.has(cacheKey)) return diaryCache.get(cacheKey);
-
-  const today = new Date();
-  const from  = new Date(today.getTime() - 30*24*60*60*1000);
-  const fromISO = from.toISOString().slice(0,10);
-
-  const out = [];
-  const snap = await db.collection('diaryEntries')
-    .where('propertyId', '==', propertyId)
-    .orderBy('date', 'desc')
-    .limit(100)
-    .get();
-
-  snap.forEach(doc=>{
-    const d = doc.data() || {};
-    if ((d.paddock || '').trim() !== paddockName) return;
-    const dateStr = d.date || '';
-    if (dateStr && dateStr < fromISO) return;
-    out.push({
-      date: dateStr,
-      activity: d.activity || '',
-      notes: d.notes || ''
-    });
-  });
-
-  diaryCache.set(cacheKey, out);
-  return out;
-}
-
-/* ---------- Render paddock info ---------- */
-function renderPaddockInfo(propertyName, paddockName, stockRec, diaryList){
-  let html = '';
-  html += `<div><strong>Paddock:</strong> ${esc(paddockName)}</div>`;
-  html += `<div><strong>Property:</strong> ${esc(propertyName)}</div>`;
-
-  if (stockRec){
-    html += `<div style="margin-top:6px;"><strong>Livestock in paddock:</strong> ${stockRec.total}</div>`;
-    const classes = Object.keys(stockRec.byClass);
-    if (classes.length){
-      html += '<div style="margin-top:4px;font-size:.9rem;">';
-      classes.sort().forEach(c=>{
-        html += `<span class="pill">${esc(c)}: ${stockRec.byClass[c]}</span>`;
-      });
-      html += '</div>';
-    }
-  } else {
-    html += `<div style="margin-top:6px;">No livestock records for this paddock.</div>`;
-  }
-
-  if (diaryList && diaryList.length){
-    html += `<div style="margin-top:10px;"><strong>Recent diary entries (last 30 days)</strong></div>`;
-    html += '<ul style="margin:4px 0 0 18px;padding:0;font-size:.9rem;">';
-    diaryList.forEach(e=>{
-      const label = [e.date, e.activity].filter(Boolean).join(' — ');
-      const notes = e.notes ? `: ${esc(e.notes)}` : '';
-      html += `<li>${esc(label)}${notes}</li>`;
-    });
-    html += '</ul>';
-  } else {
-    html += `<div style="margin-top:10px;">No diary entries for this paddock in the last 30 days.</div>`;
-  }
-
-  paddockInfoEl.innerHTML = html;
-}
-
-/* ---------- Paddock click ---------- */
-async function handlePaddockClick(mapIndex, feature){
-  const paddockName = (feature.properties && feature.properties.title)
-    ? String(feature.properties.title).trim()
-    : 'Paddock';
-
-  let pid = null;
-  let propertyName = '';
-
-  const idx = paddockIndex.get(paddockName);
-  if (idx){
-    pid = idx.propertyId;
-    propertyName = idx.propertyName;
-  }else{
-    if (mapIndex === 0){
-      pid = KNOWN_PROPERTIES["Consentes"];
-      propertyName = "Consentes / Gerawin";
-    }else if (mapIndex === 1){
-      pid = KNOWN_PROPERTIES["Mt Myrtle"];
-      propertyName = "Mt Myrtle";
-    }
-  }
-
-  if (!pid){
-    paddockInfoEl.innerHTML = `<span class="muted">No property match for paddock “${esc(paddockName)}”.</span>`;
-    return;
-  }
-
-  if (!propertyName){
-    const meta = propertyMeta.get(pid);
-    propertyName = meta ? meta.name : '(Property)';
-  }
-
-  if (!firestoreReady){
-    paddockInfoEl.innerHTML = '<span class="muted">Still connecting to Firebase… try again in a moment.</span>';
-    return;
-  }
-
-  const key      = pid + '|' + paddockName;
-  const stockRec = livestockIndex.get(key);
-
-  paddockInfoEl.innerHTML = '<span class="muted">Loading diary entries…</span>';
-
-  let diaryList = [];
-  try{
-    diaryList = await getRecentDiary(pid, paddockName);
-  }catch(e){
-    diaryList = [];
-  }
-
-  renderPaddockInfo(propertyName, paddockName, stockRec, diaryList);
-}
-
-/* ---------- GeoJSON fetch with fallback ---------- */
-async function fetchWithFallback(primaryUrl, fallbackUrl){
-  try{
-    const r = await fetch(primaryUrl, {cache:'no-store'});
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return await r.json();
-  }catch(e){
-    const r2 = await fetch(fallbackUrl, {cache:'no-store'});
-    if (!r2.ok) throw new Error('Fallback HTTP ' + r2.status);
-    return await r2.json();
-  }
-}
-
-/* ---------- Property dropdown & zoom ---------- */
-function rebuildPropertyDropdown(){
-  const entries = [];
-  propertyMeta.forEach((meta,id)=>{
-    if (meta.bounds) entries.push({id,name:meta.name});
-  });
-  entries.sort((a,b)=> a.name.localeCompare(b.name));
-
-  const saved = localStorage.getItem(ACTIVE_PROPERTY_KEY) || 'ALL';
-  propertySel.innerHTML = '<option value="ALL">(All properties)</option>';
-  entries.forEach(p=>{
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name;
-    propertySel.appendChild(opt);
-  });
-
-  if (saved !== 'ALL' && propertyMeta.has(saved) && propertyMeta.get(saved).bounds){
-    propertySel.value = saved;
-    zoomToProperty(saved);
-  }else{
-    propertySel.value = 'ALL';
-    if (allBounds) map.fitBounds(allBounds, {padding:[20,20]});
-  }
-
-  propertySel.onchange = ()=>{
-    const val = propertySel.value;
-    localStorage.setItem(ACTIVE_PROPERTY_KEY, val);
-    zoomToProperty(val);
+  <script>
+  /* ---------- Firebase init (safe) ---------- */
+  const firebaseConfig = {
+    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+    authDomain: "consentes-pastoral.firebaseapp.com",
+    projectId: "consentes-pastoral",
+    appId: "1:494858780013:web:d87497b370c82eeab06e64"
   };
-}
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
-function zoomToProperty(propertyId){
-  if (propertyId === 'ALL'){
-    if (allBounds) map.fitBounds(allBounds, {padding:[20,20]});
-    return;
-  }
-  const meta = propertyMeta.get(propertyId);
-  if (meta && meta.bounds){
-    map.fitBounds(meta.bounds, {padding:[20,20]});
-  }
-}
+  const db   = firebase.firestore();
+  const auth = firebase.auth();
 
-/* ---------- Auth + Firestore bootstrap ---------- */
-auth.onAuthStateChanged(async user=>{
-  if (user){
-    authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
-    signOutBtn.classList.remove('hidden');
-    showOverlay(false);
-    try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+  /* ---------- Auth overlay ---------- */
+  const authOverlay  = document.getElementById('authOverlay');
+  const authWho      = document.getElementById('authWho');
+  const signOutBtn   = document.getElementById('signOutBtn');
+  const signInBtn    = document.getElementById('signInBtn');
+  const closeOverlay = document.getElementById('closeOverlayBtn');
+
+  function showOverlay(on){ authOverlay.style.display = on ? 'flex' : 'none'; }
+
+  signInBtn.onclick = async ()=>{
+    const email = document.getElementById('siEmail').value.trim();
+    const pass  = document.getElementById('siPass').value;
+    const msgEl = document.getElementById('authMsg');
+    msgEl.textContent = 'Signing in…';
     try{
-      setStatus('Loading properties & paddocks…');
-      await loadProperties();
-      await loadPaddocksIndex();
-      setStatus('Loading livestock…');
-      await loadLivestockIndex();
-      firestoreReady = true;
-      setStatus('Loading map…');
-      await loadMapLayers();
-      setStatus('Map ready. Click a paddock to see livestock and diary.');
-      ensureMapSize();
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      await auth.signInWithEmailAndPassword(email, pass);
+      msgEl.textContent = 'Signed in.';
+      showOverlay(false);
+      setTimeout(ensureMapSize, 250);
     }catch(e){
-      firestoreReady = false;
-      setStatus('Error loading data for map.');
-      console.error(e);
+      msgEl.textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
     }
-  } else {
-    authWho.textContent = 'Not signed in';
-    signOutBtn.classList.add('hidden');
-    firestoreReady = false;
-    showOverlay(true);
-    setStatus('Please sign in to see livestock & diary on paddocks.');
+  };
+  closeOverlay.onclick = ()=> showOverlay(false);
+  signOutBtn.onclick   = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
+
+  /* ---------- UI helpers ---------- */
+  const statusEl      = document.getElementById('status');
+  const paddockInfoEl = document.getElementById('paddockInfo');
+  const propertySel   = document.getElementById('propertySel');
+  function setStatus(t){ if (statusEl) statusEl.textContent = t; }
+
+  function esc(s){
+    if (s === null || s === undefined) s = '';
+    return String(s).replace(/[&<>"]/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c];
+    });
   }
-});
 
-/* ---------- Map layers ---------- */
-function featureStyle(feature){
-  const t = (feature && feature.geometry) ? feature.geometry.type : null;
-  if (t === 'Polygon' || t === 'MultiPolygon'){
-    return { color:'#00897B', weight:2, fillOpacity:0.25 };
+  /* ---------- Map ---------- */
+  const map = L.map('map', { zoomControl:true }).setView([-20.0, 142.5], 7);
+
+  const base = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+    // NOTE: removed crossOrigin:true (can trigger WebKit quirks)
+  }).addTo(map);
+
+  base.on('tileerror', function(e){
+    setStatus('Map tiles failed to load on this browser. If this is iPhone Firefox, it is usually a WebKit/tile issue.');
+    console.error('tileerror', e);
+  });
+
+  function ensureMapSize(){
+    try{ map.invalidateSize(true); }catch(e){}
   }
-  return { color:'#64748b', weight:1, fillOpacity:0 };
-}
+  window.addEventListener('resize', ensureMapSize);
+  window.addEventListener('orientationchange', ()=> setTimeout(ensureMapSize, 250));
+  window.addEventListener('load', ()=> setTimeout(ensureMapSize, 350));
+  document.addEventListener('visibilitychange', ()=>{
+    if (!document.hidden) setTimeout(ensureMapSize, 250);
+  });
 
-async function loadMapLayers(){
-  allBounds = null;
+  /* ---------- Constants & sources ---------- */
+  const KNOWN_PROPERTIES = {
+    "Consentes": "s7PlDM9wrEpxuJ6DGIab",
+    "Mt Myrtle": "TRuxtRBx2zJlwZnRGYKJ",
+    "Gerawin":   "P0dQ0H2FWHeqqxejflZs"
+  };
+  const CLOUD_URLS = [
+    "https://storage.googleapis.com/consentes-maps/consentes_station.json",
+    "https://storage.googleapis.com/consentes-maps/mt_myrtle.json"
+  ];
+  const LOCAL_FALLBACKS = [
+    "maps/consentes_station.json",
+    "maps/mt_myrtle.json"
+  ];
+  const ACTIVE_PROPERTY_KEY = 'sf.map.activePropertyId';
 
-  for (let i=0;i<CLOUD_URLS.length;i++){
+  const propertyMeta   = new Map();
+  const paddockIndex   = new Map();
+  const livestockIndex = new Map();
+  const diaryCache     = new Map();
+
+  let allBounds      = null;
+  let firestoreReady = false;
+
+  /* ---------- Firestore-backed indexes ---------- */
+  async function loadProperties(){
+    propertyMeta.clear();
+    const snap = await db.collection('properties').get();
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      const name = d.name || '(Property)';
+      propertyMeta.set(doc.id, { name, bounds:null });
+    });
+    for (const [name,id] of Object.entries(KNOWN_PROPERTIES)){
+      if (!propertyMeta.has(id)) propertyMeta.set(id, { name, bounds:null });
+    }
+  }
+
+  async function loadPaddocksIndex(){
+    paddockIndex.clear();
+    const snap = await db.collection('paddocks').get();
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      const name = (d.name || '').trim();
+      const pid  = d.propertyId || null;
+      if (!name || !pid) return;
+      const pm = propertyMeta.get(pid);
+      paddockIndex.set(name, {
+        propertyId: pid,
+        propertyName: pm ? pm.name : '(Property)'
+      });
+    });
+  }
+
+  async function loadLivestockIndex(){
+    livestockIndex.clear();
+    const snap = await db.collection('livestock').get();
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      const propId  = d.propertyId;
+      const paddock = (d.location || '').trim();
+      const count   = Number(d.count || 0);
+      if (!propId || !paddock || !count) return;
+
+      const key = propId + '|' + paddock;
+      let rec = livestockIndex.get(key);
+      if (!rec){
+        rec = { total:0, byClass:{} };
+        livestockIndex.set(key, rec);
+      }
+      rec.total += count;
+      const cls = (d.class || d.species || 'Stock').trim() || 'Stock';
+      rec.byClass[cls] = (rec.byClass[cls] || 0) + count;
+    });
+  }
+
+  /* ---------- Diary helpers ---------- */
+  async function getRecentDiary(propertyId, paddockName){
+    const cacheKey = propertyId + '|' + paddockName;
+    if (diaryCache.has(cacheKey)) return diaryCache.get(cacheKey);
+
+    const today = new Date();
+    const from  = new Date(today.getTime() - 30*24*60*60*1000);
+    const fromISO = from.toISOString().slice(0,10);
+
+    const out = [];
+    const snap = await db.collection('diaryEntries')
+      .where('propertyId', '==', propertyId)
+      .orderBy('date', 'desc')
+      .limit(200)
+      .get();
+
+    snap.forEach(doc=>{
+      const d = doc.data() || {};
+      if ((d.paddock || '').trim() !== paddockName) return;
+      const dateStr = d.date || '';
+      if (dateStr && dateStr < fromISO) return;
+      out.push({ date: dateStr, activity: d.activity || '', notes: d.notes || '' });
+    });
+
+    diaryCache.set(cacheKey, out);
+    return out;
+  }
+
+  /* ---------- Render paddock info ---------- */
+  function renderPaddockInfo(propertyName, paddockName, stockRec, diaryList){
+    let html = '';
+    html += `<div><strong>Paddock:</strong> ${esc(paddockName)}</div>`;
+    html += `<div><strong>Property:</strong> ${esc(propertyName)}</div>`;
+
+    if (stockRec){
+      html += `<div style="margin-top:6px;"><strong>Livestock in paddock:</strong> ${stockRec.total}</div>`;
+      const classes = Object.keys(stockRec.byClass);
+      if (classes.length){
+        html += '<div style="margin-top:4px;font-size:.9rem;">';
+        classes.sort().forEach(c=>{
+          html += `<span class="pill">${esc(c)}: ${stockRec.byClass[c]}</span>`;
+        });
+        html += '</div>';
+      }
+    } else {
+      html += `<div style="margin-top:6px;">No livestock records for this paddock.</div>`;
+    }
+
+    if (diaryList && diaryList.length){
+      html += `<div style="margin-top:10px;"><strong>Recent diary entries (last 30 days)</strong></div>`;
+      html += '<ul style="margin:4px 0 0 18px;padding:0;font-size:.9rem;">';
+      diaryList.forEach(e=>{
+        const label = [e.date, e.activity].filter(Boolean).join(' — ');
+        const notes = e.notes ? `: ${esc(e.notes)}` : '';
+        html += `<li>${esc(label)}${notes}</li>`;
+      });
+      html += '</ul>';
+    } else {
+      html += `<div style="margin-top:10px;">No diary entries for this paddock in the last 30 days.</div>`;
+    }
+
+    paddockInfoEl.innerHTML = html;
+  }
+
+  /* ---------- Paddock click ---------- */
+  async function handlePaddockClick(mapIndex, feature){
+    const paddockName = (feature.properties && feature.properties.title)
+      ? String(feature.properties.title).trim()
+      : 'Paddock';
+
+    let pid = null;
+    let propertyName = '';
+
+    const idx = paddockIndex.get(paddockName);
+    if (idx){
+      pid = idx.propertyId;
+      propertyName = idx.propertyName;
+    }else{
+      if (mapIndex === 0){
+        pid = KNOWN_PROPERTIES["Consentes"];
+        propertyName = "Consentes / Gerawin";
+      }else if (mapIndex === 1){
+        pid = KNOWN_PROPERTIES["Mt Myrtle"];
+        propertyName = "Mt Myrtle";
+      }
+    }
+
+    if (!pid){
+      paddockInfoEl.innerHTML = `<span class="muted">No property match for paddock “${esc(paddockName)}”.</span>`;
+      return;
+    }
+
+    if (!propertyName){
+      const meta = propertyMeta.get(pid);
+      propertyName = meta ? meta.name : '(Property)';
+    }
+
+    if (!firestoreReady){
+      paddockInfoEl.innerHTML = '<span class="muted">Still connecting to Firebase… try again in a moment.</span>';
+      return;
+    }
+
+    const key      = pid + '|' + paddockName;
+    const stockRec = livestockIndex.get(key);
+
+    paddockInfoEl.innerHTML = '<span class="muted">Loading diary entries…</span>';
+
+    let diaryList = [];
+    try{ diaryList = await getRecentDiary(pid, paddockName); }catch(e){ diaryList = []; }
+
+    renderPaddockInfo(propertyName, paddockName, stockRec, diaryList);
+  }
+
+  /* ---------- GeoJSON fetch with fallback ---------- */
+  async function fetchWithFallback(primaryUrl, fallbackUrl){
     try{
-      const data = await fetchWithFallback(CLOUD_URLS[i], LOCAL_FALLBACKS[i]);
-      if (!data || !(data.type === 'FeatureCollection' || data.type === 'Feature')) continue;
+      const r = await fetch(primaryUrl, {cache:'no-store'});
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    }catch(e){
+      const r2 = await fetch(fallbackUrl, {cache:'no-store'});
+      if (!r2.ok) throw new Error('Fallback HTTP ' + r2.status);
+      return await r2.json();
+    }
+  }
 
-      const layer = L.geoJSON(data, {
-        style: featureStyle,
-        onEachFeature: function(feature, lyr){
-          const t = (feature && feature.geometry) ? feature.geometry.type : null;
-          const isPaddock = (t === 'Polygon' || t === 'MultiPolygon');
+  /* ---------- Property dropdown & zoom ---------- */
+  function rebuildPropertyDropdown(){
+    const entries = [];
+    propertyMeta.forEach((meta,id)=>{
+      if (meta.bounds) entries.push({id,name:meta.name});
+    });
+    entries.sort((a,b)=> a.name.localeCompare(b.name));
 
-          if (isPaddock){
-            const title = (feature.properties && feature.properties.title) ? String(feature.properties.title).trim() : '';
-            let pid = null;
+    const saved = localStorage.getItem(ACTIVE_PROPERTY_KEY) || 'ALL';
+    propertySel.innerHTML = '<option value="ALL">(All properties)</option>';
+    entries.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      propertySel.appendChild(opt);
+    });
 
-            const idx = paddockIndex.get(title);
-            if (idx){
-              pid = idx.propertyId;
-            }else{
-              if (i === 1){
-                pid = KNOWN_PROPERTIES["Mt Myrtle"];
+    if (saved !== 'ALL' && propertyMeta.has(saved) && propertyMeta.get(saved).bounds){
+      propertySel.value = saved;
+      zoomToProperty(saved);
+    }else{
+      propertySel.value = 'ALL';
+      if (allBounds) map.fitBounds(allBounds, {padding:[20,20]});
+    }
+
+    propertySel.onchange = ()=>{
+      const val = propertySel.value;
+      localStorage.setItem(ACTIVE_PROPERTY_KEY, val);
+      zoomToProperty(val);
+    };
+  }
+
+  function zoomToProperty(propertyId){
+    if (propertyId === 'ALL'){
+      if (allBounds) map.fitBounds(allBounds, {padding:[20,20]});
+      return;
+    }
+    const meta = propertyMeta.get(propertyId);
+    if (meta && meta.bounds){
+      map.fitBounds(meta.bounds, {padding:[20,20]});
+    }
+  }
+
+  /* ---------- Map layers ---------- */
+  function featureStyle(feature){
+    const t = (feature && feature.geometry) ? feature.geometry.type : null;
+    if (t === 'Polygon' || t === 'MultiPolygon'){
+      return { color:'#00897B', weight:2, fillOpacity:0.25 };
+    }
+    return { color:'#64748b', weight:1, fillOpacity:0 };
+  }
+
+  async function loadMapLayers(){
+    allBounds = null;
+
+    for (let i=0;i<CLOUD_URLS.length;i++){
+      try{
+        const data = await fetchWithFallback(CLOUD_URLS[i], LOCAL_FALLBACKS[i]);
+        if (!data || !(data.type === 'FeatureCollection' || data.type === 'Feature')) continue;
+
+        const layer = L.geoJSON(data, {
+          style: featureStyle,
+          onEachFeature: function(feature, lyr){
+            const t = (feature && feature.geometry) ? feature.geometry.type : null;
+            const isPaddock = (t === 'Polygon' || t === 'MultiPolygon');
+
+            if (isPaddock){
+              const title = (feature.properties && feature.properties.title) ? String(feature.properties.title).trim() : '';
+              let pid = null;
+
+              const idx = paddockIndex.get(title);
+              if (idx){
+                pid = idx.propertyId;
+              }else{
+                if (i === 1){
+                  pid = KNOWN_PROPERTIES["Mt Myrtle"];
+                }
               }
-            }
 
-            const b = (typeof lyr.getBounds === 'function') ? lyr.getBounds() : null;
-            if (b && b.isValid && b.isValid()){
-              if (!allBounds) allBounds = b; else allBounds.extend(b);
-              if (pid && propertyMeta.has(pid)){
-                const meta = propertyMeta.get(pid);
-                if (!meta.bounds) meta.bounds = b; else meta.bounds.extend(b);
+              const b = (typeof lyr.getBounds === 'function') ? lyr.getBounds() : null;
+              if (b && b.isValid && b.isValid()){
+                if (!allBounds) allBounds = b; else allBounds.extend(b);
+                if (pid && propertyMeta.has(pid)){
+                  const meta = propertyMeta.get(pid);
+                  if (!meta.bounds) meta.bounds = b; else meta.bounds.extend(b);
+                }
               }
-            }
 
-            lyr.on('click', ()=> handlePaddockClick(i, feature));
-          } else if (feature.properties && feature.properties.title){
-            lyr.bindTooltip(String(feature.properties.title), {direction:'top'});
+              lyr.on('click', ()=> handlePaddockClick(i, feature));
+            } else if (feature.properties && feature.properties.title){
+              lyr.bindTooltip(String(feature.properties.title), {direction:'top'});
+            }
           }
-        }
-      }).addTo(map);
+        }).addTo(map);
+
+        try{
+          const lb = layer.getBounds();
+          if (lb && lb.isValid && lb.isValid()){
+            if (!allBounds) allBounds = lb; else allBounds.extend(lb);
+          }
+        }catch(_){}
+      }catch(e){
+        console.error('Failed to load map source', i, e);
+      }
+    }
+
+    rebuildPropertyDropdown();
+    if (!allBounds){
+      setStatus('No features drawn');
+    }else{
+      map.fitBounds(allBounds, {padding:[20,20]});
+    }
+    ensureMapSize();
+  }
+
+  /* ---------- Auth + bootstrap ---------- */
+  auth.onAuthStateChanged(async user=>{
+    if (user){
+      authWho.textContent = user.email ? `Signed in as ${user.email}` : 'Signed in';
+      signOutBtn.classList.remove('hidden');
+      showOverlay(false);
+
+      try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
 
       try{
-        const lb = layer.getBounds();
-        if (lb && lb.isValid && lb.isValid()){
-          if (!allBounds) allBounds = lb; else allBounds.extend(lb);
-        }
-      }catch(_){}
-    }catch(e){
-      console.error('Failed to load map source', i, e);
-    }
-  }
+        setStatus('Loading properties & paddocks…');
+        await loadProperties();
+        await loadPaddocksIndex();
 
-  rebuildPropertyDropdown();
-  if (!allBounds){
-    setStatus('No features drawn');
-  }else{
-    map.fitBounds(allBounds, {padding:[20,20]});
-  }
-  ensureMapSize();
-}
-</script>
+        setStatus('Loading livestock…');
+        await loadLivestockIndex();
+
+        firestoreReady = true;
+
+        setStatus('Loading map…');
+        await loadMapLayers();
+
+        setStatus('Map ready. Click a paddock to see livestock and diary.');
+        setTimeout(ensureMapSize, 250);
+      }catch(e){
+        firestoreReady = false;
+        setStatus('Error loading data for map. Check console.');
+        console.error(e);
+      }
+    } else {
+      authWho.textContent = 'Not signed in';
+      signOutBtn.classList.add('hidden');
+      firestoreReady = false;
+      showOverlay(true);
+      setStatus('Please sign in to see livestock & diary on paddocks.');
+      setTimeout(ensureMapSize, 250);
+    }
+  });
+  </script>
 </body>
 </html>
