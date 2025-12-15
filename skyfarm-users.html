@@ -20,7 +20,7 @@
     color:#0f172a;
   }
   h1 { margin:0 0 12px; font-size:1.6rem; }
-  .wrap { max-width:1100px; margin:0 auto; }
+  .wrap { max-width:1200px; margin:0 auto; }
   .card {
     background:#fff;
     border:1px solid #e5e7eb;
@@ -86,8 +86,9 @@
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap:8px;
   }
+  .nowrap{ white-space:nowrap; }
 
-  @media (max-width: 700px){
+  @media (max-width: 900px){
     body { margin:8px; }
     .row { flex-direction:column; align-items:flex-start; }
   }
@@ -100,7 +101,8 @@
 <script src="skyfarm-header.js"></script>
 <script>SkyFarmHeader.mount();</script>
 
-<!-- Require a logged-in user (handled by shared script) -->
+<!-- Shared auth gate + login stamping -->
+<script src="skyfarm-auth.js"></script>
 <script>SkyFarmAuth.requireAuth();</script>
 
 <div class="wrap">
@@ -138,9 +140,7 @@
         </div>
         <div>
           <label>Allowed properties</label>
-          <div id="invProps" class="grid" style="grid-template-columns: repeat(1, minmax(200px,1fr));">
-            <!-- checkboxes inserted here -->
-          </div>
+          <div id="invProps" class="grid" style="grid-template-columns: repeat(1, minmax(200px,1fr));"></div>
         </div>
         <div>
           <label>Redirect after sign-in</label>
@@ -165,21 +165,25 @@
       <input id="search" placeholder="Search email / name" />
       <button id="refreshBtn">Refresh</button>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Name</th>
-          <th>Role</th>
-          <th>Properties</th>
-          <th>Last updated</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="usersTbody">
-        <tr><td colspan="6">Checking access…</td></tr>
-      </tbody>
-    </table>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Properties</th>
+            <th class="nowrap">Last login</th>
+            <th class="nowrap">Last seen</th>
+            <th class="nowrap">Last updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="usersTbody">
+          <tr><td colspan="8">Checking access…</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -201,9 +205,6 @@ const PROPERTY_IDS = {
   "Mt Myrtle":"TRuxtRBx2zJlwZnRGYKJ",
   "Gerawin":"P0dQ0H2FWHeqqxejflZs"
 };
-const PROPERTY_NAME_BY_ID = Object.fromEntries(
-  Object.entries(PROPERTY_IDS).map(([n,i])=>[i,n])
-);
 
 /*** DOM helpers ***/
 const $  = s=>document.querySelector(s);
@@ -216,6 +217,15 @@ const setMsg = (el,t,ms=4000)=>{
   el.textContent = t || '';
   if(t && ms){
     setTimeout(()=>{ if(el.textContent===t) el.textContent=''; }, ms);
+  }
+};
+const fmtTs = (ts)=>{
+  try{
+    if (!ts) return '';
+    const d = ts.toDate ? ts.toDate() : (ts instanceof Date ? ts : null);
+    return d ? d.toLocaleString() : '';
+  }catch(e){
+    return '';
   }
 };
 
@@ -233,7 +243,6 @@ const refreshBtn = $('#refreshBtn');
 const inviteBody = $('#inviteBody');
 
 let users = [];
-let CURRENT_USER = null;
 let CURRENT_ROLE = 'worker';
 
 /*** Role gate ***/
@@ -243,18 +252,16 @@ auth.onAuthStateChanged(async user=>{
     inviteBody.style.opacity = 0.4;
     inviteBtn.disabled = true;
     refreshBtn.disabled = true;
-    usersTbody.innerHTML = '<tr><td colspan="6">Sign in to use this page.</td></tr>';
+    usersTbody.innerHTML = '<tr><td colspan="8">Sign in to use this page.</td></tr>';
     return;
   }
 
-  CURRENT_USER = user;
   const email = (user.email || '').toLowerCase();
   if (!email){
     setStatus('Signed-in user has no email', false);
     return;
   }
 
-  // User doc id is normalised email (same as the invite code)
   const docId = email.replace(/[^\w.-]/g,'_');
   let role = 'worker';
   try{
@@ -275,12 +282,10 @@ auth.onAuthStateChanged(async user=>{
     refreshBtn.disabled = true;
     searchInp.disabled = true;
     usersTbody.innerHTML =
-      '<tr><td colspan="6">This page is only available to admin users. '+
-      'Managers and workers can use other SkyFarm pages but cannot manage users.</td></tr>';
+      '<tr><td colspan="8">This page is only available to admin users.</td></tr>';
     return;
   }
 
-  // Admin: enable UI and initialise it
   setStatus('Admin access', true);
   inviteBody.style.opacity = 1;
   inviteBtn.disabled = false;
@@ -291,13 +296,11 @@ auth.onAuthStateChanged(async user=>{
 
 /*** Admin initialisation ***/
 async function initAdminUI(){
-  // Build property checkboxes
   invPropsBox.innerHTML = Object.entries(PROPERTY_IDS).map(([name,id])=>`
     <label style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" value="${id}"> ${name}
     </label>`).join('');
 
-  // Default redirect: live diary
   const defaultRedirect = location.hostname.endsWith('consentes.com.au')
     ? `${location.origin}/skyfarm-diary.html`
     : 'https://www.consentes.com.au/skyfarm-diary.html';
@@ -352,7 +355,7 @@ async function sendInvite(){
 
 /*** Load users ***/
 async function loadUsers(){
-  usersTbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
+  usersTbody.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
   users = [];
   try{
     const snap = await db.collection('users').orderBy('updatedAt','desc').get();
@@ -361,12 +364,14 @@ async function loadUsers(){
       users.push({
         ...r,
         id: d.id,
-        updatedAt: r.updatedAt?.toDate?.()?.toLocaleString?.() || ''
+        lastLoginAtText: fmtTs(r.lastLoginAt),
+        lastSeenAtText:  fmtTs(r.lastSeenAt),
+        updatedAtText:   fmtTs(r.updatedAt)
       });
     });
   }catch(e){
     console.error(e);
-    usersTbody.innerHTML = '<tr><td colspan="6">Error loading users.</td></tr>';
+    usersTbody.innerHTML = '<tr><td colspan="8">Error loading users.</td></tr>';
     return;
   }
   renderUsers();
@@ -382,7 +387,7 @@ function renderUsers(){
 
   usersTbody.innerHTML = '';
   if (!list.length){
-    usersTbody.innerHTML = '<tr><td colspan="6">No users.</td></tr>';
+    usersTbody.innerHTML = '<tr><td colspan="8">No users.</td></tr>';
     return;
   }
 
@@ -401,8 +406,10 @@ function renderUsers(){
       <td>${Object.entries(PROPERTY_IDS).map(([n,id])=>
         `<label><input type="checkbox" value="${id}"${(u.allowedProperties || []).includes(id)?' checked':''}> ${n}</label>`
       ).join('<br>')}</td>
-      <td>${u.updatedAt || ''}</td>
-      <td>
+      <td class="nowrap">${u.lastLoginAtText || ''}</td>
+      <td class="nowrap">${u.lastSeenAtText || ''}</td>
+      <td class="nowrap">${u.updatedAtText || ''}</td>
+      <td class="nowrap">
         <button data-save class="primary">Save</button>
         <button data-del class="danger">Del</button>
       </td>`;
