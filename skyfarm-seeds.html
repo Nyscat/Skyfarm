@@ -10,6 +10,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
+<link rel="stylesheet" href="skyfarm-shared.css">
+
 <style>
   :root{
     --bg:#f8faf9; --card:#fff; --muted:#6b7280; --text:#111827;
@@ -19,38 +21,11 @@
     height:100%;margin:0;background:var(--bg);color:var(--text);
     font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial
   }
-  /* Top global header */
-  #sf-header{position:sticky;top:0;z-index:10;}
-  #sf-header .bar{
-    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
-    padding:10px 14px;border-bottom:1px solid var(--border);background:#fff;
-  }
-  #sf-header .brand{
-    display:flex;align-items:center;gap:8px;
-    color:var(--brand);font-weight:700;text-decoration:none;
-  }
-  #sf-header nav a{
-    color:var(--brand);text-decoration:none;font-weight:600;margin-right:10px;
-  }
-  #sf-header nav a[aria-current="page"]{text-decoration:underline;}
-  .spacer{flex:1;}
-  .muted{color:var(--muted);font-size:.9rem;}
-  .hidden{display:none;}
 
-  .nav-db{position:relative;}
-  .nav-db button{font-size:.9rem;}
-  .db-menu{
-    position:absolute;top:100%;left:0;background:#fff;
-    border:1px solid var(--border);border-radius:10px;min-width:160px;
-    padding:4px 0;box-shadow:0 10px 25px rgba(15,23,42,.12);z-index:20;
+  .topbar{
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    padding:10px 14px;border-bottom:1px solid var(--border);background:#fff
   }
-  .db-menu a{
-    display:block;padding:6px 12px;color:var(--text);
-    text-decoration:none;font-size:.9rem;
-  }
-  .db-menu a:hover{background:#f1f5f9;}
-
-  .topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--border);background:#fff}
   .topbar h1{font-size:1.1rem;margin:0 10px 0 0}
   .status{margin-left:auto;font-size:.9rem}
   .layout{display:grid;grid-template-columns: 1fr 1.2fr; gap:16px; padding:16px}
@@ -59,12 +34,14 @@
   .col{display:flex;flex-direction:column;gap:6px}
   label{font-size:.85rem;color:var(--muted)}
   input,select,button,textarea{
-    border:1px solid var(--border);border-radius:10px;background:#fff;padding:6px 10px;font:inherit;color:inherit
+    border:1px solid var(--border);border-radius:10px;background:#fff;
+    padding:6px 10px;font:inherit;color:inherit
   }
   textarea{min-height:72px}
   button{cursor:pointer}
   .primary{background:var(--brand);color:#fff;border-color:#0B7A6E}
   .danger{background:#b91c1c;color:#fff;border-color:#7f1d1d}
+  .muted{color:var(--muted);font-size:.9rem;}
   .mutedSmall{color:var(--muted);font-size:.85rem;}
   table{width:100%;border-collapse:collapse}
   th,td{border-bottom:1px solid var(--border);padding:8px 6px;font-size:.92rem;text-align:left}
@@ -73,260 +50,212 @@
   .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:.75rem}
   #log{white-space:pre-wrap;font:12px/1.45 ui-monospace,Consolas,Menlo,monospace}
 
-  /* Auth overlay */
-  #authOverlay{
-    position:fixed;inset:0;background:rgba(15,23,42,.06);
-    display:none;align-items:center;justify-content:center;z-index:50;
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr}
   }
-  #authCard{
-    width:min(520px,92vw);background:#fff;border:1px solid var(--border);
-    border-radius:16px;padding:20px;
-  }
-  #authCard h2{margin:0 0 10px;}
 </style>
 </head>
+
 <body>
+  <!-- Shared header -->
+  <div id="sf-header-root"></div>
+  <script src="skyfarm-header.js"></script>
+  <script>
+    // If your header supports an active page flag, keep it.
+    // If not, this won't hurt.
+    SkyFarmHeader.mount({ current: "seeds" });
+  </script>
 
-<!-- Global SkyFarm header -->
-<div id="sf-header">
-  <div class="bar">
-    <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
-  <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-       alt="SkyFarm logo"
-       style="height:28px;width:auto;border-radius:6px;">
-  <span>SkyFarm</span>
-</a>
-    <nav>
-  <a href="skyfarm-diary.html">Diary</a>
-  <a href="skyfarm-map.html">Map</a>
-  <a href="skyfarm-rain.html">Rain</a>
-  <a href="skyfarm-hours.html">Hours</a>
-</nav>
-    <div class="nav-db">
-  <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
-  <div id="dbMenu" class="db-menu hidden">
-    <a href="skyfarm-livestock.html">Livestock</a>
-    <a href="skyfarm-chemical.html">Chemicals</a>
-    <a href="skyfarm-seeds.html">Seeds</a>
-    <a href="skyfarm-fodder.html">Fodder</a>
-    <a href="skyfarm-barcode.html">Barcode scanner</a>
-    <a href="skyfarm-users.html">Users &amp; roles</a>
+  <!-- Require auth (shared pattern like barcode page) -->
+  <script>
+    // This should show the shared sign-in flow and block page until signed in.
+    // Matches your barcode page usage.
+    try { SkyFarmAuth.requireAuth(); } catch(e) {}
+  </script>
+
+  <div class="topbar">
+    <h1>SkyFarm — Seed Inventory</h1>
+    <div class="status">Firebase: <span id="fbStatus" class="muted">Connecting…</span></div>
   </div>
-</div>
-    <span class="spacer"></span>
-    <span id="authWho" class="muted">Connecting…</span>
-    <button id="signOutBtn" class="danger hidden">Sign out</button>
-  </div>
-</div>
 
-<div class="topbar">
-  <h1>SkyFarm — Seed Inventory</h1>
-  <div class="status">Firebase: <span id="fbStatus" class="muted">Connecting…</span></div>
-</div>
+  <div class="layout">
+    <!-- LEFT: Add/Edit form + Quick Use -->
+    <div class="card">
+      <h3 style="margin:0 0 8px 0;">Add / Edit Seed</h3>
 
-<div class="layout">
-  <!-- LEFT: Add/Edit form + Quick Use -->
-  <div class="card">
-    <h3 style="margin:0 0 8px 0;">Add / Edit Seed</h3>
+      <div class="row">
+        <div class="col">
+          <label>Crop</label>
+          <select id="cropSel" style="min-width:140px">
+            <option value="Oats">Oats</option>
+            <option value="Sorghum">Sorghum</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Variety</label>
+          <input id="varietyInp" placeholder="e.g. Leichhardt, MR-Buster" />
+        </div>
+        <div class="col">
+          <label>Season</label>
+          <select id="seasonSel">
+            <option value="Summer">Summer</option>
+            <option value="Winter" selected>Winter</option>
+            <option value="Dry">Dry</option>
+            <option value="Wet">Wet</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Year</label>
+          <input id="yearInp" type="number" min="2000" max="2100" style="width:110px" />
+        </div>
+      </div>
 
-    <div class="row">
-      <div class="col">
-        <label>Crop</label>
-        <select id="cropSel" style="min-width:140px">
-          <option value="Oats">Oats</option>
-          <option value="Sorghum">Sorghum</option>
-        </select>
+      <div class="row">
+        <div class="col">
+          <label>Unit</label>
+          <input id="unitInp" value="KG" disabled style="width:90px" />
+        </div>
+        <div class="col">
+          <label>Quantity (kg)</label>
+          <input id="qtyKgInp" type="number" min="0" step="0.01" style="width:140px" />
+        </div>
+        <div class="col">
+          <label>Bag size (kg)</label>
+          <input id="bagSizeInp" type="number" min="0" step="0.1" placeholder="optional" style="width:130px" />
+        </div>
+        <div class="col">
+          <label>Bags</label>
+          <input id="bagsInp" type="number" min="0" step="1" placeholder="optional" style="width:110px" />
+        </div>
       </div>
-      <div class="col">
-        <label>Variety</label>
-        <input id="varietyInp" placeholder="e.g. Leichhardt, MR-Buster" />
-      </div>
-      <div class="col">
-        <label>Season</label>
-        <select id="seasonSel">
-          <option value="Summer">Summer</option>
-          <option value="Winter" selected>Winter</option>
-          <option value="Dry">Dry</option>
-          <option value="Wet">Wet</option>
-        </select>
-      </div>
-      <div class="col">
-        <label>Year</label>
-        <input id="yearInp" type="number" min="2000" max="2100" style="width:110px" />
-      </div>
-    </div>
 
-    <div class="row">
-      <div class="col">
-        <label>Unit</label>
-        <input id="unitInp" value="KG" disabled style="width:90px" />
+      <div class="row">
+        <div class="col">
+          <label>Treatment</label>
+          <input id="treatInp" placeholder="e.g. Fungicide treated" />
+        </div>
+        <div class="col">
+          <label>Germination %</label>
+          <input id="germInp" type="number" min="0" max="100" step="1" placeholder="optional" style="width:130px" />
+        </div>
+        <div class="col">
+          <label>Storage location</label>
+          <input id="storeInp" placeholder="e.g. Silo 2, Machinery Shed" />
+        </div>
       </div>
-      <div class="col">
-        <label>Quantity (kg)</label>
-        <input id="qtyKgInp" type="number" min="0" step="0.01" style="width:140px" />
-      </div>
-      <div class="col">
-        <label>Bag size (kg)</label>
-        <input id="bagSizeInp" type="number" min="0" step="0.1" placeholder="optional" style="width:130px" />
-      </div>
-      <div class="col">
-        <label>Bags</label>
-        <input id="bagsInp" type="number" min="0" step="1" placeholder="optional" style="width:110px" />
-      </div>
-    </div>
 
-    <div class="row">
-      <div class="col">
-        <label>Treatment</label>
-        <input id="treatInp" placeholder="e.g. Fungicide treated" />
+      <div class="row">
+        <div class="col">
+          <label>Property</label>
+          <select id="propSel" style="min-width:180px"></select>
+        </div>
+        <div class="col" style="flex:1">
+          <label>SDS URL (optional)</label>
+          <input id="sdsInp" placeholder="https://… or gs://…" />
+        </div>
       </div>
-      <div class="col">
-        <label>Germination %</label>
-        <input id="germInp" type="number" min="0" max="100" step="1" placeholder="optional" style="width:130px" />
-      </div>
-      <div class="col">
-        <label>Storage location</label>
-        <input id="storeInp" placeholder="e.g. Silo 2, Machinery Shed" />
-      </div>
-    </div>
 
-    <div class="row">
-      <div class="col">
-        <label>Property</label>
-        <select id="propSel" style="min-width:180px"></select>
-      </div>
-      <div class="col" style="flex:1">
-        <label>SDS URL (optional)</label>
-        <input id="sdsInp" placeholder="https://… or gs://…" />
-      </div>
-    </div>
-
-    <div class="col" style="margin-top:8px">
-      <label>Notes</label>
-      <textarea id="notesInp" placeholder="Optional notes…"></textarea>
-    </div>
-
-    <div class="row" style="margin-top:10px">
-      <button id="saveBtn" class="primary">Save</button>
-      <button id="cancelBtn" class="hidden">Cancel edit</button>
-      <span id="formMsg" class="muted"></span>
-    </div>
-
-    <hr style="margin:16px 0;border:none;border-top:1px solid #eee" />
-
-    <h3 style="margin:0 0 8px 0;">Use Seed</h3>
-    <div class="mutedSmall" style="margin-bottom:8px">Pick a seed row on the right, then record usage here.</div>
-
-    <div class="row">
-      <div class="col">
-        <label>Date</label>
-        <input id="useDate" type="date" />
-      </div>
-      <div class="col">
-        <label>Use (kg) — direct</label>
-        <input id="useKg" type="number" min="0" step="0.01" placeholder="e.g. 1500" style="width:140px" />
-      </div>
-      <div class="col">
-        <label>OR Area (ha)</label>
-        <input id="useHa" type="number" min="0" step="0.01" placeholder="e.g. 120" style="width:120px" />
-      </div>
-      <div class="col">
-        <label>Rate (kg/ha)</label>
-        <input id="useRate" type="number" min="0" step="0.01" placeholder="e.g. 12" style="width:120px" />
-      </div>
-    </div>
-
-    <!-- Property + Paddock for usage -->
-    <div class="row" style="margin-top:8px">
-      <div class="col">
-        <label>Property (usage)</label>
-        <select id="usePropSel" style="min-width:180px"></select>
-      </div>
-      <div class="col">
-        <label>Paddock (usage)</label>
-        <select id="usePaddSel" style="min-width:220px">
-          <option value="">— select property first —</option>
-        </select>
-      </div>
-      <div class="col" style="flex:1">
+      <div class="col" style="margin-top:8px">
         <label>Notes</label>
-        <input id="useNotes" placeholder="Paddock/block, drill setting, operator…" />
+        <textarea id="notesInp" placeholder="Optional notes…"></textarea>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="saveBtn" class="primary">Save</button>
+        <button id="cancelBtn" class="hidden">Cancel edit</button>
+        <span id="formMsg" class="muted"></span>
+      </div>
+
+      <hr style="margin:16px 0;border:none;border-top:1px solid #eee" />
+
+      <h3 style="margin:0 0 8px 0;">Use Seed</h3>
+      <div class="mutedSmall" style="margin-bottom:8px">Pick a seed row on the right, then record usage here.</div>
+
+      <div class="row">
+        <div class="col">
+          <label>Date</label>
+          <input id="useDate" type="date" />
+        </div>
+        <div class="col">
+          <label>Use (kg) — direct</label>
+          <input id="useKg" type="number" min="0" step="0.01" placeholder="e.g. 1500" style="width:140px" />
+        </div>
+        <div class="col">
+          <label>OR Area (ha)</label>
+          <input id="useHa" type="number" min="0" step="0.01" placeholder="e.g. 120" style="width:120px" />
+        </div>
+        <div class="col">
+          <label>Rate (kg/ha)</label>
+          <input id="useRate" type="number" min="0" step="0.01" placeholder="e.g. 12" style="width:120px" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <div class="col">
+          <label>Property (usage)</label>
+          <select id="usePropSel" style="min-width:180px"></select>
+        </div>
+        <div class="col">
+          <label>Paddock (usage)</label>
+          <select id="usePaddSel" style="min-width:220px">
+            <option value="">— select property first —</option>
+          </select>
+        </div>
+        <div class="col" style="flex:1">
+          <label>Notes</label>
+          <input id="useNotes" placeholder="Paddock/block, drill setting, operator…" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <button id="useBtn" class="primary">Record Usage &amp; Deduct</button>
+        <span id="useMsg" class="muted"></span>
       </div>
     </div>
 
-    <div class="row" style="margin-top:8px">
-      <button id="useBtn" class="primary">Record Usage &amp; Deduct</button>
-      <span id="useMsg" class="muted"></span>
+    <!-- RIGHT: List & filters -->
+    <div class="card">
+      <div class="row" style="align-items:flex-end;margin-bottom:8px">
+        <div class="col">
+          <label>Filter: Property</label>
+          <select id="fltProp"><option value="">All</option></select>
+        </div>
+        <div class="col">
+          <label>Search</label>
+          <input id="fltText" placeholder="variety / storage / notes…" />
+        </div>
+        <button id="refreshBtn" style="height:36px">Refresh</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Crop</th>
+            <th>Variety</th>
+            <th>Season/Year</th>
+            <th>Qty (kg)</th>
+            <th>Bags</th>
+            <th>Property</th>
+            <th>Storage</th>
+            <th>Treatment</th>
+            <th>Germ%</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="seedBody">
+          <tr><td colspan="10" class="muted">No records.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- RIGHT: List & filters -->
-  <div class="card">
-    <div class="row" style="align-items:flex-end;margin-bottom:8px">
-      <div class="col">
-        <label>Filter: Property</label>
-        <select id="fltProp"><option value="">All</option></select>
-      </div>
-      <div class="col">
-        <label>Search</label>
-        <input id="fltText" placeholder="variety / storage / notes…" />
-      </div>
-      <button id="refreshBtn" style="height:36px">Refresh</button>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Crop</th>
-          <th>Variety</th>
-          <th>Season/Year</th>
-          <th>Qty (kg)</th>
-          <th>Bags</th>
-          <th>Property</th>
-          <th>Storage</th>
-          <th>Treatment</th>
-          <th>Germ%</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="seedBody">
-        <tr><td colspan="10" class="muted">No records.</td></tr>
-      </tbody>
-    </table>
+  <div class="card" style="margin:0 16px 16px 16px">
+    <strong>Log</strong>
+    <div id="log" class="muted"></div>
   </div>
-</div>
-
-<div class="card" style="margin:0 16px 16px 16px">
-  <strong>Log</strong>
-  <div id="log" class="muted"></div>
-</div>
-
-<!-- Auth overlay -->
-<div id="authOverlay">
-  <div id="authCard">
-    <h2>Sign in to SkyFarm</h2>
-    <p class="mutedSmall">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div class="row">
-      <div class="col" style="flex:1; min-width:260px">
-        <label>Email</label>
-        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username" />
-      </div>
-      <div class="col" style="flex:1; min-width:220px">
-        <label>Password</label>
-        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password" />
-      </div>
-    </div>
-    <div class="row" style="margin-top:8px">
-      <button id="signInBtn" class="primary">Sign in</button>
-      <span id="authMsg" class="muted"></span>
-      <span class="spacer"></span>
-      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
-    </div>
-  </div>
-</div>
 
 <script>
-/* ---------- Firebase init + auth ---------- */
+/* ---------- Firebase init ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
   authDomain: "consentes-pastoral.firebaseapp.com",
@@ -337,72 +266,34 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-/* Header DB menu */
-const dbMenuBtn = document.getElementById('dbMenuBtn');
-const dbMenu = document.getElementById('dbMenu');
-if (dbMenuBtn && dbMenu){
-  dbMenuBtn.onclick = (e)=>{ e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
-  document.addEventListener('click', (e)=>{
-    if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
-  });
-}
-
-/* Auth overlay helpers */
-const authOverlay = document.getElementById('authOverlay');
-const authWho = document.getElementById('authWho');
-const signOutBtn = document.getElementById('signOutBtn');
-const signInBtn = document.getElementById('signInBtn');
-const closeOverlayBtn = document.getElementById('closeOverlayBtn');
 const fbStatusEl = document.getElementById('fbStatus');
-
-function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
-
-/* Sign-in button */
-signInBtn.onclick = async ()=>{
-  const email = document.getElementById('siEmail').value.trim();
-  const pass  = document.getElementById('siPass').value;
-  document.getElementById('authMsg').textContent = 'Signing in…';
-  try{
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    await auth.signInWithEmailAndPassword(email, pass);
-    document.getElementById('authMsg').textContent = 'Signed in.';
-    showOverlay(false);
-  }catch(e){
-    document.getElementById('authMsg').textContent = 'Sign-in failed: ' + (e?.message || e?.code || 'Unknown');
-  }
-};
-closeOverlayBtn.onclick = ()=> showOverlay(false);
-signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 
 let bootstrapped = false;
 function startBootstrap(){
-  if (!bootstrapped){ bootstrapped = true; bootstrapSeeds(); }
+  if (!bootstrapped){
+    bootstrapped = true;
+    bootstrapSeeds();
+  }
 }
 
-/* Auth state */
+/* Wait for auth (shared header/overlay should handle login UI) */
 auth.onAuthStateChanged(async (u)=>{
   if (u){
-    authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
-    signOutBtn.classList.remove('hidden');
     fbStatusEl.textContent = 'Connected';
-    showOverlay(false);
     try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
     startBootstrap();
   } else {
-    authWho.textContent = 'Not signed in';
-    signOutBtn.classList.add('hidden');
     fbStatusEl.textContent = 'Not signed in';
-    showOverlay(true);
     const seedBody = document.getElementById('seedBody');
     if (seedBody) seedBody.innerHTML = '<tr><td colspan="10" class="muted">Sign in to see seeds.</td></tr>';
   }
 });
 
-/* ---------- Main seed logic (adapted from old file) ---------- */
+/* ---------- Main seed logic ---------- */
 function bootstrapSeeds(){
   (function(){
     const byId = id => document.getElementById(id);
-    const log = (m)=>{ const el=byId('log'); el.textContent += (m+'\\n'); el.scrollTop = el.scrollHeight; };
+    const log = (m)=>{ const el=byId('log'); el.textContent += (m+'\n'); el.scrollTop = el.scrollHeight; };
     const todayISO = ()=> new Date().toISOString().slice(0,10);
     const esc = s => String(s??'').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 
@@ -432,7 +323,6 @@ function bootstrapSeeds(){
     const useNotes = byId('useNotes');
     const useBtn = byId('useBtn');
     const useMsg = byId('useMsg');
-
     const usePropSel = byId('usePropSel');
     const usePaddSel = byId('usePaddSel');
 
@@ -463,6 +353,9 @@ function bootstrapSeeds(){
       usePropSel.addEventListener('change', async ()=>{
         await populateUsePaddocks(usePropSel.value);
       });
+
+      fltText.addEventListener('input', refreshList);
+      fltProp.addEventListener('change', refreshList);
     }
 
     async function loadProperties(){
@@ -689,10 +582,6 @@ function bootstrapSeeds(){
         useMsg.textContent = 'Error';
       }
     }
-
-    // hook filters
-    fltText.addEventListener('input', refreshList);
-    fltProp.addEventListener('change', refreshList);
 
     bootstrap().catch(e=>{ log('Bootstrap failed: '+e.message); });
   })();
