@@ -1,246 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SkyFarm — Livestock</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkyFarm — Livestock</title>
 
-<!-- Firebase compat SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 
-<style>
-  :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; --warn:#9a3412; }
-  * { box-sizing:border-box; }
-  body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:var(--ink); }
-  .wrap { max-width:1200px; margin:0 auto; padding:16px; }
-  h1 { margin:12px 0; font-size:1.6rem; }
+  <!-- Optional shared CSS (header styles etc). Safe if missing. -->
+  <link rel="stylesheet" href="skyfarm-shared.css">
 
-  /* Header */
-  #sf-header { position:sticky; top:0; z-index:10; }
-  #sf-header .bar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--line); }
-  #sf-header .brand { display:flex; align-items:center; gap:8px; color:var(--brand); font-weight:700; text-decoration:none; }
-  #sf-header nav a { color:var(--brand); text-decoration:none; font-weight:600; margin-right:10px; }
-  #sf-header nav a[aria-current="page"] { text-decoration:underline; }
-  .spacer { flex:1; }
-  .muted { color:var(--muted); font-size:.9rem; }
-  .hidden { display:none; }
+  <style>
+    :root { --brand:#0B7A6E; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --bg:#f6fbf8; --warn:#9a3412; }
+    * { box-sizing:border-box; }
+    body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); margin:0; color:var(--ink); }
+    .wrap { max-width:1200px; margin:0 auto; padding:16px; }
+    h1 { margin:12px 0; font-size:1.6rem; }
 
-  .nav-db { position:relative; }
-  .nav-db button { font-size:.9rem; }
-  .db-menu {
-    position:absolute;
-    top:100%;
-    left:0;
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:10px;
-    min-width:160px;
-    padding:4px 0;
-    box-shadow:0 10px 25px rgba(15,23,42,.12);
-    z-index:20;
-  }
-  .db-menu a {
-    display:block;
-    padding:6px 12px;
-    color:var(--ink);
-    text-decoration:none;
-    font-size:.9rem;
-  }
-  .db-menu a:hover { background:#f1f5f9; }
+    /* Cards etc */
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    label { font-size:.9rem; color:#475569; }
+    input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    input[disabled], select[disabled] { background:#f8fafc; color:#64748b; }
+    button { cursor:pointer; }
+    .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
+    .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+    .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
+    .pill { display:inline-block; padding:2px 10px; border-radius:999px; background:#eef2f7; font-size:.85rem; margin:4px 6px 0 0; border:1px solid #e5e7eb; }
+    .right { text-align:right; }
+    .small { font-size:.9rem; color:#475569; }
+    .w110 { width:110px; } .w140 { width:160px; } .w180 { width:180px; } .w220 { width:220px; }
+    .nowrap { white-space:nowrap; }
 
-  /* Cards etc */
-  .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
-  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  label { font-size:.9rem; color:#475569; }
-  input, select, button { padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
-  input[disabled], select[disabled] { background:#f8fafc; color:#64748b; }
-  button { cursor:pointer; }
-  .btn { border:1px solid #cbd5e1; border-radius:10px; background:#fff; }
-  .primary { background:var(--brand); color:#fff; border-color:var(--brand); }
-  .danger { background:#ef4444; color:#fff; border-color:#ef4444; }
-  .pill { display:inline-block; padding:2px 10px; border-radius:999px; background:#eef2f7; font-size:.85rem; margin:4px 6px 0 0; border:1px solid #e5e7eb; }
-  .right { text-align:right; }
-  .small { font-size:.9rem; color:#475569; }
-  .w110 { width:110px; } .w140 { width:160px; } .w180 { width:180px; } .w220 { width:220px; }
-  .nowrap { white-space:nowrap; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; }
+    th { background:#f1f5f9; }
 
-  table { width:100%; border-collapse:collapse; }
-  th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; }
-  th { background:#f1f5f9; }
+    .sum-head { font-weight:600; margin:8px 0 4px; }
+    .status-warn{ color:var(--warn); }
 
-  .sum-head { font-weight:600; margin:8px 0 4px; }
+    /* Auth overlay */
+    #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50;}
+    #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
+    #authCard h2{margin:0 0 10px}
 
-  .status-warn{ color:var(--warn); }
-
-  /* Auth overlay */
-  #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50;}
-  #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
-  #authCard h2{margin:0 0 10px}
-</style>
+    @media(max-width:800px){
+      .w220,.w180,.w140,.w110{ width:100%; }
+    }
+  </style>
 </head>
+
 <body>
+  <!-- Shared header mount point -->
+  <div id="sf-header-root"></div>
+  <script src="skyfarm-header.js"></script>
 
-<div id="sf-header">
-  <div class="bar">
-    <a class="brand" href="skyfarm-diary.html" style="display:flex;align-items:center;gap:8px;">
-  <img src="https://raw.githubusercontent.com/Nyscat/Skyfarm/main/FF9D2A05-6AC0-45E5-95EB-659A0A11E8D0_1_105_c.jpeg"
-       alt="SkyFarm logo"
-       style="height:28px;width:auto;border-radius:6px;">
-  <span>SkyFarm</span>
-</a>
-   <nav>
-  <a href="skyfarm-diary.html">Diary</a>
-  <a href="skyfarm-map.html">Map</a>
-  <a href="skyfarm-rain.html">Rain</a>
-  <a href="skyfarm-hours.html">Hours</a>
-</nav>
-    <div class="nav-db">
-  <button id="dbMenuBtn" class="btn small" type="button">Database ▾</button>
-  <div id="dbMenu" class="db-menu hidden">
-    <a href="skyfarm-livestock.html">Livestock</a>
-    <a href="skyfarm-chemical.html">Chemicals</a>
-    <a href="skyfarm-seeds.html">Seeds</a>
-    <a href="skyfarm-fodder.html">Fodder</a>
-    <a href="skyfarm-barcode.html">Barcode scanner</a>
-    <a href="skyfarm-users.html">Users &amp; roles</a>
-  </div>
-</div>
-    <span class="spacer"></span>
-    <span id="authWho" class="muted">Connecting…</span>
-    <button id="signOutBtn" class="danger hidden">Sign out</button>
-  </div>
-</div>
+  <div class="wrap">
+    <h1>Livestock</h1>
 
-<div class="wrap">
-  <h1>Livestock</h1>
+    <!-- ADD NEW -->
+    <div class="card" id="addCard">
+      <div class="row">
+        <div>
+          <label>Property</label><br/>
+          <select id="newPropSel" class="w180"></select>
+        </div>
 
-  <!-- ADD NEW -->
-  <div class="card" id="addCard">
-    <div class="row">
-      <div>
-        <label>Property</label><br/>
-        <select id="newPropSel" class="w180">
-          <option value="s7PlDM9wrEpxuJ6DGIab">Consentes</option>
-          <option value="TRuxtRBx2zJlwZnRGYKJ">Mt Myrtle</option>
-          <option value="P0dQ0H2FWHeqqxejflZs">Gerawin</option>
-        </select>
+        <div>
+          <label>Paddock</label><br/>
+          <input id="newLocation" class="w180" placeholder="e.g. Gravel Paddock" />
+        </div>
+
+        <div>
+          <label>Species</label><br/>
+          <select id="newSpecies" class="w140">
+            <option value="Cattle">Cattle</option>
+            <option value="Sheep">Sheep</option>
+            <option value="Goats">Goats</option>
+          </select>
+        </div>
+
+        <div style="min-width:320px;flex:1;">
+          <label>Class of stock</label>
+          <div id="classPills" style="display:flex;flex-wrap:wrap;margin-top:4px;"></div>
+          <input type="hidden" id="newClass" />
+        </div>
+
+        <div>
+          <label>Count</label><br/>
+          <input id="newCount" class="w110" type="number" min="0" />
+        </div>
+
+        <div style="align-self:flex-end;">
+          <button id="addRowBtn" class="btn primary">Add Livestock</button>
+        </div>
+        <span id="addMsg" class="muted"></span>
       </div>
-
-      <div>
-        <label>Paddock</label><br/>
-        <input id="newLocation" class="w180" placeholder="e.g. Gravel Paddock" />
-      </div>
-
-      <div>
-        <label>Species</label><br/>
-        <select id="newSpecies" class="w140">
-          <option value="Cattle">Cattle</option>
-          <option value="Sheep">Sheep</option>
-          <option value="Goats">Goats</option>
-        </select>
-      </div>
-
-      <div style="min-width:320px;flex:1;">
-        <label>Class of stock</label>
-        <div id="classPills" style="display:flex;flex-wrap:wrap;margin-top:4px;"></div>
-        <input type="hidden" id="newClass" />
-      </div>
-
-      <div>
-        <label>Count</label><br/>
-        <input id="newCount" class="w110" type="number" min="0" />
-      </div>
-
-      <div style="align-self:flex-end;">
-        <button id="addRowBtn" class="btn primary">Add Livestock</button>
-      </div>
-      <span id="addMsg" class="muted"></span>
     </div>
-  </div>
 
-  <!-- FILTERS -->
-  <div class="card">
-    <div class="row" style="gap:12px">
-      <div>
-        <label class="small">View</label><br/>
-        <select id="propSel" class="w220">
-          <option value="all">All Properties (Summary)</option>
-          <option value="s7PlDM9wrEpxuJ6DGIab">Consentes</option>
-          <option value="TRuxtRBx2zJlwZnRGYKJ">Mt Myrtle</option>
-          <option value="P0dQ0H2FWHeqqxejflZs">Gerawin</option>
-        </select>
+    <!-- FILTERS -->
+    <div class="card">
+      <div class="row" style="gap:12px">
+        <div>
+          <label class="small">View</label><br/>
+          <select id="propSel" class="w220"></select>
+        </div>
+        <div id="searchWrap">
+          <label class="small">Search</label><br/>
+          <input id="search" class="w220" placeholder="paddock / species / class" />
+        </div>
+        <button id="refreshBtn" class="btn">Refresh</button>
+        <button id="exportBtn" class="btn">Export CSV</button>
+        <span class="pill" id="countPill">0 rows</span>
+        <span class="pill" id="totalPill">Total: 0</span>
+        <span class="muted" id="status" style="margin-left:auto">Loading…</span>
       </div>
-      <div id="searchWrap">
-        <label class="small">Search</label><br/>
-        <input id="search" class="w220" placeholder="paddock / species / class" />
-      </div>
-      <button id="refreshBtn" class="btn">Refresh</button>
-      <button id="exportBtn" class="btn">Export CSV</button>
-      <span class="pill" id="countPill">0 rows</span>
-      <span class="pill" id="totalPill">Total: 0</span>
-      <span class="muted" id="status" style="margin-left:auto">Loading…</span>
     </div>
-  </div>
 
-  <!-- TABLE + SUMMARY -->
-  <div class="card" id="tableCard">
+    <!-- TABLE + SUMMARY -->
+    <div class="card" id="tableCard">
 
-    <!-- summary is used for ALL properties and single property -->
-    <div id="summaryWrap" style="margin-bottom:12px; display:none;">
-      <div class="sum-head" id="summaryHeading">Totals</div>
-      <table>
+      <div id="summaryWrap" style="margin-bottom:12px; display:none;">
+        <div class="sum-head" id="summaryHeading">Totals</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Species</th>
+              <th>Class</th>
+              <th class="right">Total head</th>
+            </tr>
+          </thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+
+      <table id="rowsTable">
         <thead>
           <tr>
+            <th>Paddock</th>
             <th>Species</th>
             <th>Class</th>
-            <th class="right">Total head</th>
+            <th class="right">Count</th>
+            <th>Updated</th>
+            <th class="nowrap">Actions</th>
           </tr>
         </thead>
-        <tbody id="summaryBody"></tbody>
+        <tbody id="rowsTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
       </table>
     </div>
-
-    <table id="rowsTable">
-      <thead>
-        <tr>
-          <th>Paddock</th>
-          <th>Species</th>
-          <th>Class</th>
-          <th class="right">Count</th>
-          <th>Updated</th>
-          <th class="nowrap">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="rowsTbody"><tr><td colspan="6">Loading…</td></tr></tbody>
-    </table>
   </div>
-</div>
 
-<!-- Auth overlay -->
-<div id="authOverlay">
-  <div id="authCard">
-    <h2>Sign in to SkyFarm</h2>
-    <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
-    <div class="row">
-      <div style="flex:1; min-width:260px">
-        <label>Email</label>
-        <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
+  <!-- Auth overlay -->
+  <div id="authOverlay">
+    <div id="authCard">
+      <h2>Sign in to SkyFarm</h2>
+      <p class="small muted">Email &amp; password only. Anonymous sign-in is disabled.</p>
+      <div class="row">
+        <div style="flex:1; min-width:260px">
+          <label>Email</label>
+          <input id="siEmail" type="email" placeholder="you@example.com" autocomplete="username"/>
+        </div>
+        <div style="flex:1; min-width:220px">
+          <label>Password</label>
+          <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+        </div>
       </div>
-      <div style="flex:1; min-width:220px">
-        <label>Password</label>
-        <input id="siPass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      <div class="row">
+        <button id="signInBtn" class="primary">Sign in</button>
+        <span id="authMsg" class="muted"></span>
+        <span style="flex:1"></span>
+        <button id="closeOverlayBtn" class="btn" type="button">Close</button>
       </div>
     </div>
-    <div class="row">
-      <button id="signInBtn" class="primary">Sign in</button>
-      <span id="authMsg" class="muted"></span>
-      <span class="spacer"></span>
-      <button id="closeOverlayBtn" class="btn" type="button">Close</button>
-    </div>
   </div>
-</div>
 
 <script>
 /*** Firebase ***/
@@ -254,6 +190,9 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
+/*** Mount shared header (role aware) ***/
+try{ window.SkyFarmHeader?.mount?.(); }catch(e){}
+
 /*** Helpers ***/
 const $ = s => document.querySelector(s);
 const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
@@ -261,13 +200,73 @@ const statusEl=$('#status'), countPill=$('#countPill'), totalPill=$('#totalPill'
 const setStatus = (t, warn=false)=>{ statusEl.textContent=t; statusEl.classList.toggle('status-warn', !!warn); };
 function showOverlay(show){ $('#authOverlay').style.display = show ? 'flex' : 'none'; }
 
-/*** Header DB menu ***/
-const dbMenuBtn = $('#dbMenuBtn'), dbMenu = $('#dbMenu');
-if (dbMenuBtn && dbMenu) {
-  dbMenuBtn.onclick = (e)=>{ e.stopPropagation(); dbMenu.classList.toggle('hidden'); };
-  document.addEventListener('click', (e)=>{
-    if (!dbMenu.contains(e.target) && e.target !== dbMenuBtn) dbMenu.classList.add('hidden');
+/*** Role + allowed properties ***/
+let CURRENT_EMAIL = null;
+let CURRENT_ROLE = 'worker';
+let ALLOWED_PROPERTY_IDS = null; // Set or null (null means unrestricted)
+let ALL_PROPERTIES = [];         // [{id,name}]
+let propNameById = new Map();    // id -> name
+
+async function loadCurrentUserRole(user){
+  CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
+  CURRENT_ROLE = 'worker';
+  ALLOWED_PROPERTY_IDS = null;
+
+  if (!CURRENT_EMAIL) return;
+
+  const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
+  try{
+    const snap = await db.collection('users').doc(docId).get();
+    if (snap.exists){
+      const d = snap.data() || {};
+      CURRENT_ROLE = d.role || 'worker';
+      const allowed = d.allowedProperties || [];
+      if (Array.isArray(allowed) && allowed.length){
+        ALLOWED_PROPERTY_IDS = new Set(allowed);
+      }
+    }
+  }catch(e){
+    console.warn('loadCurrentUserRole failed', e);
+  }
+}
+
+async function loadProperties(){
+  const snap = await db.collection('properties').get();
+  let props = [];
+  propNameById.clear();
+
+  snap.forEach(doc=>{
+    const d = doc.data() || {};
+    props.push({ id: doc.id, name: d.name || '(Property)' });
+    propNameById.set(doc.id, d.name || '(Property)');
   });
+
+  props.sort((a,b)=>a.name.localeCompare(b.name));
+
+  // Restrict properties for non-admin/manager if allowedProperties is set
+  if ((CURRENT_ROLE !== 'admin' && CURRENT_ROLE !== 'manager') && (ALLOWED_PROPERTY_IDS instanceof Set)){
+    props = props.filter(p => ALLOWED_PROPERTY_IDS.has(p.id));
+  } else if (ALLOWED_PROPERTY_IDS instanceof Set && CURRENT_ROLE !== 'admin'){
+    // managers can also be restricted if you want (keeps it consistent)
+    props = props.filter(p => ALLOWED_PROPERTY_IDS.has(p.id));
+  }
+
+  ALL_PROPERTIES = props;
+
+  // Fill selects
+  const newPropSel = $('#newPropSel');
+  const propSel = $('#propSel');
+
+  newPropSel.innerHTML = props.length
+    ? props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')
+    : `<option value="">(no properties available)</option>`;
+
+  propSel.innerHTML =
+    `<option value="all">All Properties (Summary)</option>` +
+    (props.length ? props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('') : '');
+
+  // Default selection
+  if (props.length && !newPropSel.value) newPropSel.value = props[0].id;
 }
 
 /*** Class sets & order ***/
@@ -303,7 +302,7 @@ const rowsTable=$('#rowsTable');
 const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'),
       newClassHidden=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg'), classPillsWrap=$('#classPills');
 
-const authWho = $('#authWho'), signOutBtn = $('#signOutBtn');
+const signOutBtn = $('#signOutBtn');
 const signInBtn = $('#signInBtn'), closeOverlayBtn = $('#closeOverlayBtn');
 
 let allRows=[];
@@ -360,16 +359,26 @@ addRowBtn.onclick = addLivestock;
 setStatus('Connecting…');
 auth.onAuthStateChanged(async (u)=>{
   if (u) {
-    authWho.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
-    signOutBtn.classList.remove('hidden');
     showOverlay(false);
     setStatus('Loading…');
     try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+
+    await loadCurrentUserRole(u);
+    await loadProperties();
+
+    // If no properties available, stop.
+    if (!ALL_PROPERTIES.length){
+      $('#addCard').style.display = 'none';
+      rowsTable.style.display = 'none';
+      summaryWrap.style.display = 'none';
+      rowsTbody.innerHTML = '<tr><td colspan="6">No properties available for this user.</td></tr>';
+      setStatus('No properties', true);
+      return;
+    }
+
     await loadRows();
     setStatus('Loaded');
   } else {
-    authWho.textContent = 'Not signed in';
-    signOutBtn.classList.add('hidden');
     showOverlay(true);
     setStatus('Please sign in', true);
     rowsTbody.innerHTML = '<tr><td colspan="6">Sign in to see livestock.</td></tr>';
@@ -378,69 +387,95 @@ auth.onAuthStateChanged(async (u)=>{
 
 /*** Add livestock ***/
 async function addLivestock(){
-  const pid=newPropSel.value, location=newLocation.value.trim(), species=newSpecies.value,
-        klass=newClassHidden.value.trim(), count=Number(newCount.value||0);
+  const pid=newPropSel.value;
+  const location=newLocation.value.trim();
+  const species=newSpecies.value;
+  const klass=newClassHidden.value.trim();
+  const count=Number(newCount.value||0);
+
+  if(!pid) return alert('Choose a property.');
   if(!location) return alert('Please enter paddock.');
   if(CLASSES_BY_SPECIES[species] && !klass) return alert('Please choose a class.');
   if(count<0||!Number.isFinite(count)) return alert('Enter a valid count.');
-  addRowBtn.disabled=true; addMsg.textContent='Saving…';
+
+  addRowBtn.disabled=true;
+  addMsg.textContent='Saving…';
   try{
     await db.collection('livestock').add({
-      propertyId:pid, location, species, class:klass || '(Unspecified)', count,
+      propertyId:pid,
+      location,
+      species,
+      class:klass || '(Unspecified)',
+      count,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-    addMsg.textContent='Added!'; newLocation.value=''; newCount.value='';
+    addMsg.textContent='Added!';
+    newLocation.value='';
+    newCount.value='';
     await loadRows();
-  }catch(e){ console.error(e); addMsg.textContent='Failed to add'; }
-  finally{ addRowBtn.disabled=false; setTimeout(()=>addMsg.textContent='',2500); }
+  }catch(e){
+    console.error(e);
+    addMsg.textContent='Failed to add';
+  }finally{
+    addRowBtn.disabled=false;
+    setTimeout(()=>addMsg.textContent='',2500);
+  }
 }
 
 /*** Load rows or summary ***/
 async function loadRows(){
   if (!auth.currentUser) return;
+
   setStatus('Loading…');
   rowsTbody.innerHTML='<tr><td colspan="6">Loading…</td></tr>';
   summaryBody.innerHTML='';
   allRows=[];
+
   const mode = propSel.value;
   const summaryMode = (mode === 'all');
 
   document.getElementById('addCard').style.display = summaryMode ? 'none' : '';
   rowsTable.style.display = summaryMode ? 'none' : '';
-  summaryWrap.style.display = '';                      // always show some totals when we have data
+  summaryWrap.style.display = '';
   searchWrap.style.display = summaryMode ? 'none' : '';
 
   try{
-    let snap;
-    if (summaryMode) {
-      snap = await db.collection('livestock').get();
-      summaryHeading.textContent = 'Totals across all properties';
-    } else {
-      snap = await db.collection('livestock').where('propertyId','==',mode).get();
-      const name = propSel.selectedOptions[0]?.textContent || 'Property';
-      summaryHeading.textContent = `Totals for ${name}`;
-    }
+    // Fetch livestock. If restricted properties, filter client-side.
+    const snap = await db.collection('livestock').get();
+    const allowedSet = (ALLOWED_PROPERTY_IDS instanceof Set) ? ALLOWED_PROPERTY_IDS : null;
+
     snap.forEach(d=>{
-      const r=d.data();
+      const r=d.data()||{};
+      const pid = r.propertyId || '';
+      if (allowedSet && !allowedSet.has(pid) && (CURRENT_ROLE !== 'admin')) return;
       allRows.push({id:d.id,...r,updatedAt:r.updatedAt?.toDate?.()});
     });
 
-    renderSummary(allRows);
-
-    if (!summaryMode) {
+    if (summaryMode) {
+      summaryHeading.textContent = 'Totals across all properties';
+      renderSummary(allRows);
+      rowsTbody.innerHTML = '<tr><td colspan="6">Select a specific property for paddock detail.</td></tr>';
+    } else {
+      const list = allRows.filter(r => r.propertyId === mode);
+      const name = propSel.selectedOptions[0]?.textContent || 'Property';
+      summaryHeading.textContent = `Totals for ${name}`;
+      renderSummary(list);
+      allRows = list;
       allRows.sort(compareByClass);
       renderTable();
-    } else {
-      rowsTbody.innerHTML = '<tr><td colspan="6">Select a specific property for paddock detail.</td></tr>';
     }
 
     setStatus('Loaded');
-  }catch(e){ console.error(e); setStatus('Error loading', true); }
+  }catch(e){
+    console.error(e);
+    setStatus('Error loading', true);
+  }
 }
 
 /*** SUMMARY RENDERER ***/
 function renderSummary(rows){
   if (!rows.length) {
+    summaryWrap.style.display = '';
     summaryBody.innerHTML = '<tr><td colspan="3">No data.</td></tr>';
     countPill.textContent = '0 rows';
     totalPill.textContent = 'Total: 0';
@@ -553,31 +588,55 @@ function renderTable(){
     };
     buildClassEditor(r.species, r.class, true);
 
-    const locEl=tr.querySelector('.loc'), specEl=tr.querySelector('.spec'), clsEl=()=>tr.querySelector('.cls'), cntEl=tr.querySelector('.cnt');
-    const btnEdit=tr.querySelector('[data-edit]'), btnSave=tr.querySelector('[data-save]'), btnCancel=tr.querySelector('[data-cancel]'), btnDel=tr.querySelector('[data-del]');
+    const locEl=tr.querySelector('.loc'),
+          specEl=tr.querySelector('.spec'),
+          clsEl=()=>tr.querySelector('.cls'),
+          cntEl=tr.querySelector('.cnt');
+
+    const btnEdit=tr.querySelector('[data-edit]'),
+          btnSave=tr.querySelector('[data-save]'),
+          btnCancel=tr.querySelector('[data-cancel]'),
+          btnDel=tr.querySelector('[data-del]');
 
     function setEditable(on){
-      locEl.disabled = !on; specEl.disabled = !on; cntEl.disabled = !on;
+      locEl.disabled = !on;
+      specEl.disabled = !on;
+      cntEl.disabled = !on;
       buildClassEditor(specEl.value, clsEl().value, !on);
+
       btnEdit.style.display = on ? 'none' : '';
       btnSave.style.display = on ? '' : 'none';
       btnCancel.style.display = on ? '' : 'none';
     }
-    specEl.addEventListener('change', ()=> { if (!specEl.disabled) buildClassEditor(specEl.value, clsEl().value, specEl.disabled); });
+
+    specEl.addEventListener('change', ()=> {
+      if (!specEl.disabled) buildClassEditor(specEl.value, clsEl().value, specEl.disabled);
+    });
 
     btnEdit.onclick = ()=> setEditable(true);
     btnCancel.onclick = ()=> loadRows();
     btnSave.onclick = async ()=>{
       const spec=specEl.value;
-      const cls = (clsEl().tagName==='SELECT') ? clsEl().value : clsEl().value.trim();
+      const clsNode = clsEl();
+      const cls = (clsNode.tagName==='SELECT') ? clsNode.value : clsNode.value.trim();
       const cnt=Number(cntEl.value||0);
+
       await db.collection('livestock').doc(r.id).set({
-        location:locEl.value.trim(), species:spec, class:cls, count:cnt,
+        location:locEl.value.trim(),
+        species:spec,
+        class:cls,
+        count:cnt,
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
       },{merge:true});
+
       await loadRows();
     };
-    btnDel.onclick = async()=>{ if(confirm('Delete this row?')){ await db.collection('livestock').doc(r.id).delete(); await loadRows(); } };
+    btnDel.onclick = async()=>{
+      if(confirm('Delete this row?')){
+        await db.collection('livestock').doc(r.id).delete();
+        await loadRows();
+      }
+    };
 
     rowsTbody.appendChild(tr);
   }
@@ -595,7 +654,10 @@ function exportCsv(){
   const head='Property,Paddock,Species,Class,Count,DocID';
   const lines=rows.map(r=>[propName,r.location,r.species,r.class,r.count,r.id].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
   const blob=new Blob([head+'\n'+lines.join('\n')],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`livestock_${propName}.csv`;a.click();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`livestock_${propName}.csv`;
+  a.click();
 }
 </script>
 </body>
