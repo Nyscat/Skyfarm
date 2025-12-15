@@ -5,9 +5,10 @@
   <title>SkyFarm — Property Map</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
+  <!-- Shared styles (header + basics) -->
   <link rel="stylesheet" href="skyfarm-shared.css">
 
-  <!-- Leaflet (must load) -->
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
 
@@ -21,71 +22,90 @@
       --bg:#f6fbf8; --card:#fff; --ink:#0f172a; --muted:#64748b; --brand:#0B7A6E; --line:#e5e7eb;
     }
     *{box-sizing:border-box;}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);margin:0;color:var(--ink);}
+    body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
     .wrap{max-width:1200px;margin:0 auto;padding:16px;}
     h1{margin:12px 0;font-size:1.6rem;}
     .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;}
-    .map-panel{padding:0;}
     .muted{color:var(--muted);font-size:.95rem;}
-    .hidden{display:none;}
     .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#ecfeff;font-size:.8rem;margin-right:4px;}
 
-    /* Map element */
-    #map{
+    /* Layout */
+    .map-layout{
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap:16px;
+      align-items:start;
       width:100%;
+    }
+
+    /* Map panel */
+    .map-panel{padding:0;}
+
+    /* IMPORTANT FIX:
+       On iPhone, we force a real width that can't collapse to 0 */
+    #map{
+      display:block;
+      width:100%;
+      max-width:100%;
       height:560px;
-      min-height:520px; /* iPhone safety */
+      min-height:520px;
       background:#e5e7eb;
       border-radius:12px;
       overflow:hidden;
     }
 
-    /* Leaflet + iOS global image CSS protection */
+    /* Leaflet iOS image scaling protection */
     .leaflet-container img{max-width:none !important; max-height:none !important;}
     .leaflet-container .leaflet-tile{max-width:none !important; max-height:none !important;}
 
-    .map-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;}
-    @media (max-width:800px){ .map-layout{display:flex;flex-direction:column;} }
-
-    /* Debug line */
-    #debugLine{
-      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size:12px;
-      padding:8px 10px;
-      border:1px dashed #cbd5e1;
-      border-radius:10px;
-      background:#fff;
-      margin:10px 0;
-      color:#334155;
-      white-space:pre-wrap;
-      word-break:break-word;
+    /* Mobile */
+    @media (max-width:800px){
+      .map-layout{display:block;}
+      #map{
+        /* Force full usable width on mobile */
+        width:calc(100vw - 32px);
+        max-width:calc(100vw - 32px);
+        height:62vh;
+        min-height:520px;
+      }
     }
 
     /* Auth overlay */
-    #authOverlay{position:fixed;inset:0;background:rgba(15,23,42,.06);display:none;align-items:center;justify-content:center;z-index:50;}
-    #authCard{width:min(520px,92vw);background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;}
-    .top-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:flex-end;margin:6px 0 10px;}
+    #authOverlay{
+      position:fixed; inset:0;
+      background:rgba(15,23,42,.06);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:2000;
+    }
+    #authCard{
+      width:min(520px,92vw);
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:20px;
+    }
+    #authCard h2{margin:0 0 10px;}
     button{padding:6px 10px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;}
-    .danger{background:#ef4444;color:#fff;border-color:#ef4444;}
     .primary{background:var(--brand);color:#fff;border-color:var(--brand);}
+    .danger{background:#ef4444;color:#fff;border-color:#ef4444;}
     select,input{padding:6px 10px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;}
     label{font-size:.85rem;color:#475569;display:block;margin-bottom:4px;}
   </style>
 </head>
 
 <body>
+  <!-- Shared header mount point -->
   <div id="sf-header-root"></div>
 
   <div class="wrap">
-    <div class="top-actions">
-      <span id="authWho" class="muted">Checking sign-in…</span>
-      <button id="signOutBtn" class="danger hidden" type="button">Sign out</button>
+    <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;margin:6px 0 10px;">
+      <button id="signOutBtn" class="danger" type="button" style="display:none;">Sign out</button>
     </div>
 
     <h1>Property Map</h1>
     <p id="status" class="muted">Loading…</p>
-
-    <div id="debugLine">Debug: (starting…)</div>
 
     <div class="panel" style="margin-bottom:12px;">
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
@@ -104,7 +124,7 @@
         <div id="map"></div>
       </div>
 
-      <aside class="panel">
+      <aside class="panel" style="margin-top:16px;">
         <h3 style="margin-top:0;">Paddock details</h3>
         <div id="paddockInfo" class="muted">
           Click a paddock to see livestock totals and recent diary entries (last 30 days).
@@ -113,6 +133,7 @@
     </div>
   </div>
 
+  <!-- Auth overlay -->
   <div id="authOverlay">
     <div id="authCard">
       <h2>Sign in to SkyFarm</h2>
@@ -136,155 +157,112 @@
     </div>
   </div>
 
+  <!-- Shared header script -->
   <script src="skyfarm-header.js"></script>
 
   <script>
-  const statusEl = document.getElementById('status');
-  const debugEl  = document.getElementById('debugLine');
-  const mapEl    = document.getElementById('map');
-  const paddockInfoEl = document.getElementById('paddockInfo');
-  const propertySel   = document.getElementById('propertySel');
+    // Firebase init
+    const firebaseConfig = {
+      apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
+      authDomain: "consentes-pastoral.firebaseapp.com",
+      projectId: "consentes-pastoral",
+      appId: "1:494858780013:web:d87497b370c82eeab06e64"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db   = firebase.firestore();
+    const auth = firebase.auth();
 
-  function setStatus(t){ statusEl.textContent = t; }
-  function dbg(t){ debugEl.textContent = t; }
+    // Mount shared header AFTER firebase exists
+    SkyFarmHeader.mount();
 
-  // Basic on-page debug (so you don’t need iPhone console)
-  function writeEnv(){
-    const r = mapEl.getBoundingClientRect();
-    dbg(
-      "Leaflet L present: " + (!!window.L) + "\n" +
-      "UA: " + navigator.userAgent + "\n" +
-      "#map size: " + Math.round(r.width) + "x" + Math.round(r.height)
-    );
-  }
-  writeEnv();
-  window.addEventListener('resize', writeEnv);
+    // UI refs
+    const statusEl = document.getElementById('status');
+    const mapEl = document.getElementById('map');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const authOverlay  = document.getElementById('authOverlay');
+    const signInBtn    = document.getElementById('signInBtn');
+    const closeOverlay = document.getElementById('closeOverlayBtn');
+    const authMsg      = document.getElementById('authMsg');
 
-  // Firebase init
-  const firebaseConfig = {
-    apiKey: "AIzaSyBO9_0v1HdvVDuK3EFvaBGvQJIGvBwmW70",
-    authDomain: "consentes-pastoral.firebaseapp.com",
-    projectId: "consentes-pastoral",
-    appId: "1:494858780013:web:d87497b370c82eeab06e64"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db   = firebase.firestore();
-  const auth = firebase.auth();
+    function setStatus(t){ statusEl.textContent = t; }
+    function showOverlay(on){ authOverlay.style.display = on ? 'flex' : 'none'; }
 
-  // Shared header mount (after firebase exists)
-  SkyFarmHeader.mount();
+    // Sign-in handlers
+    signInBtn.onclick = async ()=>{
+      const email = document.getElementById('siEmail').value.trim();
+      const pass  = document.getElementById('siPass').value;
+      authMsg.textContent = 'Signing in…';
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInWithEmailAndPassword(email, pass);
+        authMsg.textContent = 'Signed in.';
+        showOverlay(false);
+      }catch(e){
+        authMsg.textContent = 'Sign-in failed: ' + (e && e.message ? e.message : 'Unknown error');
+      }
+    };
+    closeOverlay.onclick = ()=> showOverlay(false);
+    signOutBtn.onclick = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
 
-  // Auth overlay handlers
-  const authOverlay  = document.getElementById('authOverlay');
-  const authWho      = document.getElementById('authWho');
-  const signOutBtn   = document.getElementById('signOutBtn');
-  const signInBtn    = document.getElementById('signInBtn');
-  const closeOverlay = document.getElementById('closeOverlayBtn');
-
-  function showOverlay(on){ authOverlay.style.display = on ? 'flex' : 'none'; }
-
-  signInBtn.onclick = async ()=>{
-    const email = document.getElementById('siEmail').value.trim();
-    const pass  = document.getElementById('siPass').value;
-    const msgEl = document.getElementById('authMsg');
-    msgEl.textContent = 'Signing in…';
-    try{
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      await auth.signInWithEmailAndPassword(email, pass);
-      msgEl.textContent = 'Signed in.';
-      showOverlay(false);
-    }catch(e){
-      msgEl.textContent = 'Sign-in failed: ' + (e && e.message ? e.message : 'Unknown error');
-    }
-  };
-  closeOverlay.onclick = ()=> showOverlay(false);
-  signOutBtn.onclick   = async ()=>{ try{ await auth.signOut(); location.reload(); }catch(e){} };
-
-  // Leaflet init (with iOS-friendly options)
-  let map;
-  try{
-    map = L.map('map', {
+    // Leaflet init
+    const map = L.map('map', {
       zoomControl: true,
-      tap: false,              // iOS Safari/Firefox friendliness
-      preferCanvas: false
+      tap: false
     }).setView([-20.0, 142.5], 7);
-  }catch(e){
-    setStatus("Leaflet failed to init: " + (e && e.message ? e.message : e));
-    dbg(debugEl.textContent + "\n\nLeaflet init error: " + e);
-    throw e;
-  }
 
-  // If you can see this circle, Leaflet is rendering even if tiles fail.
-  L.circle([-20.0, 142.5], { radius: 25000 }).addTo(map).bindTooltip("Leaflet OK (test)");
-
-  function ensureMapSize(){
-    try{ map.invalidateSize(true); }catch(e){}
-  }
-  setTimeout(ensureMapSize, 150);
-  setTimeout(ensureMapSize, 600);
-  window.addEventListener('orientationchange', ()=> setTimeout(ensureMapSize, 250));
-  document.addEventListener('visibilitychange', ()=> { if(!document.hidden) setTimeout(ensureMapSize, 250); });
-
-  // Tile layers with fallback
-  const tileProviders = [
-    {
-      name: "OSM",
-      layer: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        subdomains: "abc",
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors"
-      })
-    },
-    {
-      name: "CARTO",
-      layer: L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        subdomains: "abcd",
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap &copy; CARTO"
-      })
-    },
-    {
-      name: "ESRI",
-      layer: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
-        maxZoom: 19,
-        attribution: "Tiles &copy; Esri"
-      })
+    function ensureMapSize(){
+      try{ map.invalidateSize(true); }catch(e){}
     }
-  ];
 
-  let providerIndex = 0;
-  let tileErrorCount = 0;
-  let activeTiles = null;
+    // IMPORTANT: if iPhone reports width=0 initially, this forces it to recalc
+    function fixZeroWidth(){
+      const r = mapEl.getBoundingClientRect();
+      if (r.width === 0){
+        // force a width temporarily
+        mapEl.style.width = 'calc(100vw - 32px)';
+      }
+      setTimeout(ensureMapSize, 50);
+      setTimeout(ensureMapSize, 250);
+    }
+    window.addEventListener('load', ()=>{ fixZeroWidth(); });
+    window.addEventListener('resize', ()=>{ fixZeroWidth(); });
+    window.addEventListener('orientationchange', ()=> setTimeout(fixZeroWidth, 250));
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(fixZeroWidth, 250); });
 
-  function mountTiles(i){
-    if (activeTiles) map.removeLayer(activeTiles);
-    providerIndex = i;
-    tileErrorCount = 0;
-    activeTiles = tileProviders[i].layer;
+    // Tiles
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc',
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    activeTiles.on("tileerror", ()=>{
-      tileErrorCount++;
-      setStatus("Map tiles failing (" + tileProviders[providerIndex].name + ")… errors=" + tileErrorCount);
-      // If lots of failures, swap provider
-      if (tileErrorCount >= 6 && providerIndex < tileProviders.length - 1){
-        setStatus("Switching tiles to " + tileProviders[providerIndex + 1].name + "…");
-        mountTiles(providerIndex + 1);
+    tiles.on('load', ()=> setStatus('Map tiles loaded.'));
+    tiles.on('tileerror', ()=> setStatus('Map tiles failed to load (tileerror).'));
+
+    // Test marker (if you see this, Leaflet is drawing)
+    L.circle([-20.0, 142.5], { radius: 25000 }).addTo(map).bindTooltip('Leaflet OK');
+
+    // Auth state
+    auth.onAuthStateChanged(async user=>{
+      if (user){
+        signOutBtn.style.display = '';
+        showOverlay(false);
+        setStatus('Signed in. Loading map data…');
+
+        try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+
+        // ---- PUT YOUR EXISTING FIRESTORE + GEOJSON LOGIC HERE ----
+        // loadProperties(), loadPaddocksIndex(), loadLivestockIndex(), loadMapLayers(), etc.
+        // ---------------------------------------------------------
+
+        setStatus('Map ready.');
+        fixZeroWidth();
+      }else{
+        signOutBtn.style.display = 'none';
+        showOverlay(true);
+        setStatus('Please sign in.');
       }
     });
-
-    activeTiles.on("load", ()=>{
-      setStatus("Map tiles loaded (" + tileProviders[providerIndex].name + ").");
-    });
-
-    activeTiles.addTo(map);
-    setStatus("Loading tiles (" + tileProviders[providerIndex].name + ")…");
-  }
-
-  mountTiles(0);
-
-  // ---- Your existing Firestore + GeoJSON code can stay below this line ----
-  // Keep your auth.onAuthStateChanged + loadProperties/loadMapLayers etc.
-  // (I’m not pasting it again here because it’s long and unrelated to the tile blank issue.)
   </script>
 </body>
 </html>
