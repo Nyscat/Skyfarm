@@ -10,7 +10,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 
-  <!-- Optional shared CSS (header styles etc). Safe if missing. -->
   <link rel="stylesheet" href="skyfarm-shared.css">
 
   <style>
@@ -20,7 +19,6 @@
     .wrap { max-width:1200px; margin:0 auto; padding:16px; }
     h1 { margin:12px 0; font-size:1.6rem; }
 
-    /* Cards etc */
     .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
     .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
     label { font-size:.9rem; color:#475569; }
@@ -35,6 +33,8 @@
     .small { font-size:.9rem; color:#475569; }
     .w110 { width:110px; } .w140 { width:160px; } .w180 { width:180px; } .w220 { width:220px; }
     .nowrap { white-space:nowrap; }
+    .muted { color:var(--muted); }
+    .hidden { display:none; }
 
     table { width:100%; border-collapse:collapse; }
     th, td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; }
@@ -43,21 +43,26 @@
     .sum-head { font-weight:600; margin:8px 0 4px; }
     .status-warn{ color:var(--warn); }
 
+    /* Species total row */
+    .sum-total-row td{
+      background:#f8fafc;
+      font-weight:700;
+    }
+
     /* Auth overlay */
     #authOverlay{position:fixed; inset:0; background:rgba(15,23,42,.06); display:none; align-items:center; justify-content:center; z-index:50;}
     #authCard{width:min(520px,92vw); background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px}
     #authCard h2{margin:0 0 10px}
-
-    @media(max-width:800px){
-      .w220,.w180,.w140,.w110{ width:100%; }
-    }
   </style>
 </head>
-
 <body>
-  <!-- Shared header mount point -->
+
+  <!-- Shared header -->
   <div id="sf-header-root"></div>
   <script src="skyfarm-header.js"></script>
+  <script>
+    try { window.SkyFarmHeader?.mount?.('sf-header-root'); } catch(e) {}
+  </script>
 
   <div class="wrap">
     <h1>Livestock</h1>
@@ -67,7 +72,11 @@
       <div class="row">
         <div>
           <label>Property</label><br/>
-          <select id="newPropSel" class="w180"></select>
+          <select id="newPropSel" class="w180">
+            <option value="s7PlDM9wrEpxuJ6DGIab">Consentes</option>
+            <option value="TRuxtRBx2zJlwZnRGYKJ">Mt Myrtle</option>
+            <option value="P0dQ0H2FWHeqqxejflZs">Gerawin</option>
+          </select>
         </div>
 
         <div>
@@ -107,23 +116,34 @@
       <div class="row" style="gap:12px">
         <div>
           <label class="small">View</label><br/>
-          <select id="propSel" class="w220"></select>
+          <select id="propSel" class="w220">
+            <option value="all">All Properties (Summary)</option>
+            <option value="s7PlDM9wrEpxuJ6DGIab">Consentes</option>
+            <option value="TRuxtRBx2zJlwZnRGYKJ">Mt Myrtle</option>
+            <option value="P0dQ0H2FWHeqqxejflZs">Gerawin</option>
+          </select>
         </div>
         <div id="searchWrap">
           <label class="small">Search</label><br/>
           <input id="search" class="w220" placeholder="paddock / species / class" />
         </div>
+
         <button id="refreshBtn" class="btn">Refresh</button>
         <button id="exportBtn" class="btn">Export CSV</button>
+
         <span class="pill" id="countPill">0 rows</span>
         <span class="pill" id="totalPill">Total: 0</span>
+
         <span class="muted" id="status" style="margin-left:auto">Loading…</span>
+
+        <!-- Inline auth controls -->
+        <span id="authWhoInline" class="muted">Checking sign-in…</span>
+        <button id="signOutBtn" class="btn danger hidden" type="button">Sign out</button>
       </div>
     </div>
 
     <!-- TABLE + SUMMARY -->
     <div class="card" id="tableCard">
-
       <div id="summaryWrap" style="margin-bottom:12px; display:none;">
         <div class="sum-head" id="summaryHeading">Totals</div>
         <table>
@@ -170,7 +190,7 @@
         </div>
       </div>
       <div class="row">
-        <button id="signInBtn" class="primary">Sign in</button>
+        <button id="signInBtn" class="primary" type="button">Sign in</button>
         <span id="authMsg" class="muted"></span>
         <span style="flex:1"></span>
         <button id="closeOverlayBtn" class="btn" type="button">Close</button>
@@ -190,84 +210,12 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-/*** Mount shared header (role aware) ***/
-try{ window.SkyFarmHeader?.mount?.(); }catch(e){}
-
 /*** Helpers ***/
 const $ = s => document.querySelector(s);
 const escapeHtml = s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const statusEl=$('#status'), countPill=$('#countPill'), totalPill=$('#totalPill');
 const setStatus = (t, warn=false)=>{ statusEl.textContent=t; statusEl.classList.toggle('status-warn', !!warn); };
 function showOverlay(show){ $('#authOverlay').style.display = show ? 'flex' : 'none'; }
-
-/*** Role + allowed properties ***/
-let CURRENT_EMAIL = null;
-let CURRENT_ROLE = 'worker';
-let ALLOWED_PROPERTY_IDS = null; // Set or null (null means unrestricted)
-let ALL_PROPERTIES = [];         // [{id,name}]
-let propNameById = new Map();    // id -> name
-
-async function loadCurrentUserRole(user){
-  CURRENT_EMAIL = (user?.email || '').toLowerCase() || null;
-  CURRENT_ROLE = 'worker';
-  ALLOWED_PROPERTY_IDS = null;
-
-  if (!CURRENT_EMAIL) return;
-
-  const docId = CURRENT_EMAIL.replace(/[^\w.-]/g,'_');
-  try{
-    const snap = await db.collection('users').doc(docId).get();
-    if (snap.exists){
-      const d = snap.data() || {};
-      CURRENT_ROLE = d.role || 'worker';
-      const allowed = d.allowedProperties || [];
-      if (Array.isArray(allowed) && allowed.length){
-        ALLOWED_PROPERTY_IDS = new Set(allowed);
-      }
-    }
-  }catch(e){
-    console.warn('loadCurrentUserRole failed', e);
-  }
-}
-
-async function loadProperties(){
-  const snap = await db.collection('properties').get();
-  let props = [];
-  propNameById.clear();
-
-  snap.forEach(doc=>{
-    const d = doc.data() || {};
-    props.push({ id: doc.id, name: d.name || '(Property)' });
-    propNameById.set(doc.id, d.name || '(Property)');
-  });
-
-  props.sort((a,b)=>a.name.localeCompare(b.name));
-
-  // Restrict properties for non-admin/manager if allowedProperties is set
-  if ((CURRENT_ROLE !== 'admin' && CURRENT_ROLE !== 'manager') && (ALLOWED_PROPERTY_IDS instanceof Set)){
-    props = props.filter(p => ALLOWED_PROPERTY_IDS.has(p.id));
-  } else if (ALLOWED_PROPERTY_IDS instanceof Set && CURRENT_ROLE !== 'admin'){
-    // managers can also be restricted if you want (keeps it consistent)
-    props = props.filter(p => ALLOWED_PROPERTY_IDS.has(p.id));
-  }
-
-  ALL_PROPERTIES = props;
-
-  // Fill selects
-  const newPropSel = $('#newPropSel');
-  const propSel = $('#propSel');
-
-  newPropSel.innerHTML = props.length
-    ? props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')
-    : `<option value="">(no properties available)</option>`;
-
-  propSel.innerHTML =
-    `<option value="all">All Properties (Summary)</option>` +
-    (props.length ? props.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('') : '');
-
-  // Default selection
-  if (props.length && !newPropSel.value) newPropSel.value = props[0].id;
-}
 
 /*** Class sets & order ***/
 const CLASSES_BY_SPECIES = {
@@ -302,8 +250,10 @@ const rowsTable=$('#rowsTable');
 const newPropSel=$('#newPropSel'), newLocation=$('#newLocation'), newSpecies=$('#newSpecies'),
       newClassHidden=$('#newClass'), newCount=$('#newCount'), addRowBtn=$('#addRowBtn'), addMsg=$('#addMsg'), classPillsWrap=$('#classPills');
 
+const authWhoInline = $('#authWhoInline');
 const signOutBtn = $('#signOutBtn');
-const signInBtn = $('#signInBtn'), closeOverlayBtn = $('#closeOverlayBtn');
+const signInBtn = $('#signInBtn');
+const closeOverlayBtn = $('#closeOverlayBtn');
 
 let allRows=[];
 
@@ -321,7 +271,9 @@ function renderClassPills(species){
     b.type='button'; b.className='btn pill'; b.textContent=cls;
     b.onclick=()=>{
       newClassHidden.value=cls;
-      classPillsWrap.querySelectorAll('.pill').forEach(x=>{x.style.background='';x.style.color='';x.style.borderColor='#e5e7eb';});
+      classPillsWrap.querySelectorAll('.pill').forEach(x=>{
+        x.style.background='';x.style.color='';x.style.borderColor='#e5e7eb';
+      });
       b.style.background='#0B7A6E'; b.style.color='#fff'; b.style.borderColor='#0B7A6E';
     };
     classPillsWrap.appendChild(b);
@@ -359,26 +311,16 @@ addRowBtn.onclick = addLivestock;
 setStatus('Connecting…');
 auth.onAuthStateChanged(async (u)=>{
   if (u) {
+    authWhoInline.textContent = u.email ? `Signed in as ${u.email}` : 'Signed in';
+    signOutBtn.classList.remove('hidden');
     showOverlay(false);
     setStatus('Loading…');
     try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
-
-    await loadCurrentUserRole(u);
-    await loadProperties();
-
-    // If no properties available, stop.
-    if (!ALL_PROPERTIES.length){
-      $('#addCard').style.display = 'none';
-      rowsTable.style.display = 'none';
-      summaryWrap.style.display = 'none';
-      rowsTbody.innerHTML = '<tr><td colspan="6">No properties available for this user.</td></tr>';
-      setStatus('No properties', true);
-      return;
-    }
-
     await loadRows();
     setStatus('Loaded');
   } else {
+    authWhoInline.textContent = 'Not signed in';
+    signOutBtn.classList.add('hidden');
     showOverlay(true);
     setStatus('Please sign in', true);
     rowsTbody.innerHTML = '<tr><td colspan="6">Sign in to see livestock.</td></tr>';
@@ -387,95 +329,72 @@ auth.onAuthStateChanged(async (u)=>{
 
 /*** Add livestock ***/
 async function addLivestock(){
-  const pid=newPropSel.value;
-  const location=newLocation.value.trim();
-  const species=newSpecies.value;
-  const klass=newClassHidden.value.trim();
-  const count=Number(newCount.value||0);
-
-  if(!pid) return alert('Choose a property.');
+  const pid=newPropSel.value, location=newLocation.value.trim(), species=newSpecies.value,
+        klass=newClassHidden.value.trim(), count=Number(newCount.value||0);
   if(!location) return alert('Please enter paddock.');
   if(CLASSES_BY_SPECIES[species] && !klass) return alert('Please choose a class.');
   if(count<0||!Number.isFinite(count)) return alert('Enter a valid count.');
-
-  addRowBtn.disabled=true;
-  addMsg.textContent='Saving…';
+  addRowBtn.disabled=true; addMsg.textContent='Saving…';
   try{
     await db.collection('livestock').add({
-      propertyId:pid,
-      location,
-      species,
-      class:klass || '(Unspecified)',
-      count,
+      propertyId:pid, location, species, class:klass || '(Unspecified)', count,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-    addMsg.textContent='Added!';
-    newLocation.value='';
-    newCount.value='';
+    addMsg.textContent='Added!'; newLocation.value=''; newCount.value='';
     await loadRows();
-  }catch(e){
-    console.error(e);
-    addMsg.textContent='Failed to add';
-  }finally{
-    addRowBtn.disabled=false;
-    setTimeout(()=>addMsg.textContent='',2500);
-  }
+  }catch(e){ console.error(e); addMsg.textContent='Failed to add'; }
+  finally{ addRowBtn.disabled=false; setTimeout(()=>addMsg.textContent='',2500); }
 }
 
 /*** Load rows or summary ***/
 async function loadRows(){
   if (!auth.currentUser) return;
-
   setStatus('Loading…');
   rowsTbody.innerHTML='<tr><td colspan="6">Loading…</td></tr>';
   summaryBody.innerHTML='';
   allRows=[];
-
   const mode = propSel.value;
   const summaryMode = (mode === 'all');
 
   document.getElementById('addCard').style.display = summaryMode ? 'none' : '';
   rowsTable.style.display = summaryMode ? 'none' : '';
-  summaryWrap.style.display = '';
+  summaryWrap.style.display = '';     // show totals when data exists
   searchWrap.style.display = summaryMode ? 'none' : '';
 
   try{
-    // Fetch livestock. If restricted properties, filter client-side.
-    const snap = await db.collection('livestock').get();
-    const allowedSet = (ALLOWED_PROPERTY_IDS instanceof Set) ? ALLOWED_PROPERTY_IDS : null;
+    let snap;
+    if (summaryMode) {
+      snap = await db.collection('livestock').get();
+      summaryHeading.textContent = 'Totals across all properties';
+    } else {
+      snap = await db.collection('livestock').where('propertyId','==',mode).get();
+      const name = propSel.selectedOptions[0]?.textContent || 'Property';
+      summaryHeading.textContent = `Totals for ${name}`;
+    }
 
     snap.forEach(d=>{
-      const r=d.data()||{};
-      const pid = r.propertyId || '';
-      if (allowedSet && !allowedSet.has(pid) && (CURRENT_ROLE !== 'admin')) return;
+      const r=d.data();
       allRows.push({id:d.id,...r,updatedAt:r.updatedAt?.toDate?.()});
     });
 
-    if (summaryMode) {
-      summaryHeading.textContent = 'Totals across all properties';
-      renderSummary(allRows);
-      rowsTbody.innerHTML = '<tr><td colspan="6">Select a specific property for paddock detail.</td></tr>';
-    } else {
-      const list = allRows.filter(r => r.propertyId === mode);
-      const name = propSel.selectedOptions[0]?.textContent || 'Property';
-      summaryHeading.textContent = `Totals for ${name}`;
-      renderSummary(list);
-      allRows = list;
+    // Always render summary when possible
+    summaryWrap.style.display = '';
+    renderSummary(allRows);
+
+    if (!summaryMode) {
       allRows.sort(compareByClass);
       renderTable();
+    } else {
+      rowsTbody.innerHTML = '<tr><td colspan="6">Select a specific property for paddock detail.</td></tr>';
     }
 
     setStatus('Loaded');
-  }catch(e){
-    console.error(e);
-    setStatus('Error loading', true);
-  }
+  }catch(e){ console.error(e); setStatus('Error loading', true); }
 }
 
-/*** SUMMARY RENDERER ***/
+/*** SUMMARY RENDERER (with species totals) ***/
 function renderSummary(rows){
   if (!rows.length) {
-    summaryWrap.style.display = '';
     summaryBody.innerHTML = '<tr><td colspan="3">No data.</td></tr>';
     countPill.textContent = '0 rows';
     totalPill.textContent = 'Total: 0';
@@ -495,11 +414,17 @@ function renderSummary(rows){
   let grand = 0;
 
   for (const sp of speciesList) {
+    let speciesTotal = 0;
+
     const order = CLASSES_BY_SPECIES[sp] || Object.keys(totals[sp]).sort();
+
+    // Ordered classes first
     for (const cls of order) {
       if (!(cls in totals[sp])) continue;
       const sum = totals[sp][cls];
+      speciesTotal += sum;
       grand += sum;
+
       const tr=document.createElement('tr');
       tr.innerHTML = `
         <td>${escapeHtml(sp)}</td>
@@ -507,10 +432,14 @@ function renderSummary(rows){
         <td class="right">${sum}</td>`;
       summaryBody.appendChild(tr);
     }
+
+    // Any remaining classes not in the ordered set (custom)
     for (const cls of Object.keys(totals[sp])) {
       if ((CLASSES_BY_SPECIES[sp]||[]).includes(cls)) continue;
       const sum = totals[sp][cls];
+      speciesTotal += sum;
       grand += sum;
+
       const tr=document.createElement('tr');
       tr.innerHTML = `
         <td>${escapeHtml(sp)}</td>
@@ -518,10 +447,20 @@ function renderSummary(rows){
         <td class="right">${sum}</td>`;
       summaryBody.appendChild(tr);
     }
+
+    // Species subtotal row
+    const trTot = document.createElement('tr');
+    trTot.className = 'sum-total-row';
+    trTot.innerHTML = `
+      <td>${escapeHtml(sp)}</td>
+      <td>Total ${escapeHtml(sp)}</td>
+      <td class="right">${speciesTotal}</td>`;
+    summaryBody.appendChild(trTot);
   }
 
   countPill.textContent = `${rows.length} lines`;
   totalPill.textContent = `Total head: ${grand}`;
+  summaryWrap.style.display = '';
 }
 
 /*** TABLE (per property) ***/
@@ -555,10 +494,10 @@ function renderTable(){
       <td class="right"><input type="number" class="cnt w110" value="${Number(r.count||0)}" disabled /></td>
       <td class="small">${updatedStr}</td>
       <td>
-        <button class="btn" data-edit>Edit</button>
-        <button class="btn primary" data-save style="display:none">Save</button>
-        <button class="btn" data-cancel style="display:none">Cancel</button>
-        <button class="btn danger" data-del>Delete</button>
+        <button class="btn" data-edit type="button">Edit</button>
+        <button class="btn primary" data-save type="button" style="display:none">Save</button>
+        <button class="btn" data-cancel type="button" style="display:none">Cancel</button>
+        <button class="btn danger" data-del type="button">Delete</button>
       </td>`;
 
     const clsCell = tr.querySelector('.clsCell');
@@ -592,7 +531,6 @@ function renderTable(){
           specEl=tr.querySelector('.spec'),
           clsEl=()=>tr.querySelector('.cls'),
           cntEl=tr.querySelector('.cnt');
-
     const btnEdit=tr.querySelector('[data-edit]'),
           btnSave=tr.querySelector('[data-save]'),
           btnCancel=tr.querySelector('[data-cancel]'),
@@ -603,7 +541,6 @@ function renderTable(){
       specEl.disabled = !on;
       cntEl.disabled = !on;
       buildClassEditor(specEl.value, clsEl().value, !on);
-
       btnEdit.style.display = on ? 'none' : '';
       btnSave.style.display = on ? '' : 'none';
       btnCancel.style.display = on ? '' : 'none';
@@ -617,10 +554,8 @@ function renderTable(){
     btnCancel.onclick = ()=> loadRows();
     btnSave.onclick = async ()=>{
       const spec=specEl.value;
-      const clsNode = clsEl();
-      const cls = (clsNode.tagName==='SELECT') ? clsNode.value : clsNode.value.trim();
+      const cls = (clsEl().tagName==='SELECT') ? clsEl().value : clsEl().value.trim();
       const cnt=Number(cntEl.value||0);
-
       await db.collection('livestock').doc(r.id).set({
         location:locEl.value.trim(),
         species:spec,
@@ -628,7 +563,6 @@ function renderTable(){
         count:cnt,
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
       },{merge:true});
-
       await loadRows();
     };
     btnDel.onclick = async()=>{
@@ -652,7 +586,8 @@ function exportCsv(){
   const rows = filtered();
   const propName=propSel.selectedOptions[0]?.textContent||'';
   const head='Property,Paddock,Species,Class,Count,DocID';
-  const lines=rows.map(r=>[propName,r.location,r.species,r.class,r.count,r.id].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
+  const lines=rows.map(r=>[propName,r.location,r.species,r.class,r.count,r.id]
+    .map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
   const blob=new Blob([head+'\n'+lines.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
