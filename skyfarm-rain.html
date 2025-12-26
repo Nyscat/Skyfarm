@@ -872,50 +872,138 @@
       }catch(e){}
     }
 
-    // History: treat entire missing years as UNKNOWN so they do not create fake mega droughts.
     async function computeAndCacheHistoryStats(gaugeId){
-      setStatus('Computing history stats…');
-      insightsContent.innerHTML = `<div class="summary-item">Computing history stats (paged)…</div>`;
+  setStatus('Computing history stats…');
+  insightsContent.innerHTML = `<div class="summary-item">Computing history stats (paged)…</div>`;
 
-      const col = db.collection('gauges').doc(gaugeId).collection('daily');
-      const idField = firebase.firestore.FieldPath.documentId();
+  const col = db.collection('gauges').doc(gaugeId).collection('daily');
+  const idField = firebase.firestore.FieldPath.documentId();
 
-      const mmByISO = new Map();
-      const yearsPresent = new Set();
+  // Collect rain-day docs (IDs only), and which years exist at all
+  const rainDays = []; // sorted later
+  const yearsPresent = new Set();
 
-      let firstISO = null;
-      let lastISO = null;
+  let lastDoc = null;
+  let pages = 0;
 
-      let lastDoc = null;
-      let pages = 0;
+  while (true){
+    let q = col.orderBy(idField, 'asc').limit(500);
+    if (lastDoc) q = q.startAfter(lastDoc);
 
-      while (true){
-        let q = col.orderBy(idField, 'asc').limit(500);
-        if (lastDoc) q = q.startAfter(lastDoc);
+    const snap = await q.get();
+    pages++;
+    if (snap.empty) break;
 
-        const snap = await q.get();
-        pages++;
-        if (snap.empty) break;
+    snap.forEach(doc=>{
+      const id = doc.id;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
+      rainDays.push(id);
+      yearsPresent.add(id.slice(0,4));
+    });
 
-        snap.forEach(doc=>{
-          const id = doc.id;
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
-          const mm = extractMm(doc.data() || {});
-          mmByISO.set(id, mm);
-          yearsPresent.add(id.slice(0,4));
-          if (!firstISO) firstISO = id;
-          lastISO = id;
-        });
+    lastDoc = snap.docs[snap.docs.length - 1];
+    if (pages > 5000) throw new Error('Paging safety stop hit');
+  }
 
-        lastDoc = snap.docs[snap.docs.length - 1];
-        if (pages > 5000) throw new Error('Paging safety stop hit');
+  if (rainDays.length === 0){
+    setCachedHistoryStats(gaugeId, null);
+    setStatus('No history found', true);
+    return null;
+  }
+
+  // Already ordered by doc id asc, but keep safe:
+  rainDays.sort();
+
+  const firstISO = rainDays[0];
+  const lastISO  = rainDays[rainDays.length - 1];
+
+  // Wettest day on record (only among rain days, which is fine)
+  let wettestDayISO = null;
+  let wettestDayMm = -1;
+
+  // We only need mm for wettest day; page again but keep it simple:
+  // (If you want, we can compute wettest during the first paging loop instead.)
+  lastDoc = null;
+  pages = 0;
+  while (true){
+    let q = col.orderBy(idField, 'asc').limit(500);
+    if (lastDoc) q = q.startAfter(lastDoc);
+    const snap = await q.get();
+    pages++;
+    if (snap.empty) break;
+
+    snap.forEach(doc=>{
+      const id = doc.id;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
+      const mm = extractMm(doc.data() || {});
+      if (mm > wettestDayMm){
+        wettestDayMm = mm;
+        wettestDayISO = id;
       }
+    });
 
-      if (!firstISO || !lastISO){
-        setCachedHistoryStats(gaugeId, null);
-        setStatus('No history found', true);
-        return null;
-      }
+    lastDoc = snap.docs[snap.docs.length - 1];
+    if (pages > 5000) throw new Error('Paging safety stop hit');
+  }
+
+  // Build set of missing years within the covered range
+  const minYear = parseInt(firstISO.slice(0,4),10);
+  const maxYear = parseInt(lastISO.slice(0,4),10);
+  const missingYears = new Set();
+  for (let y=minYear; y<=maxYear; y++){
+    const ys = String(y);
+    if (!yearsPresent.has(ys)) missingYears.add(y);
+  }
+
+  function gapCrossesMissingYear(startISO, endISO){
+    const y1 = parseInt(startISO.slice(0,4),10);
+    const y2 = parseInt(endISO.slice(0,4),10);
+    if (!Number.isFinite(y1) || !Number.isFinite(y2)) return false;
+    const a = Math.min(y1,y2), b = Math.max(y1,y2);
+    for (let y=a; y<=b; y++){
+      if (missingYears.has(y)) return true;
+    }
+    return false;
+  }
+
+  // Longest dry streak = biggest gap between consecutive rain days (minus the rain days themselves)
+  let longestDryDays = 0;
+  let longestDryStart = null;
+  let longestDryEnd = null;
+
+  for (let i=0; i<rainDays.length-1; i++){
+    const a = rainDays[i];
+    const b = rainDays[i+1];
+
+    // If this span includes a missing year (1989, 2001), ignore it completely (break streak)
+    if (gapCrossesMissingYear(a, b)) continue;
+
+    const diff = daysBetweenISO(a, b);
+    if (diff == null) continue;
+
+    const dryDays = Math.max(0, diff - 1);
+    if (dryDays > longestDryDays){
+      longestDryDays = dryDays;
+      longestDryStart = addDaysISO(a, 1);
+      longestDryEnd   = addDaysISO(b, -1);
+    }
+  }
+
+  const out = {
+    firstISO, lastISO,
+    wettestDayISO,
+    wettestDayMm: wettestDayMm >= 0 ? wettestDayMm : null,
+    longestDryDays,
+    longestDryStart,
+    longestDryEnd,
+    missingYears: [...missingYears].sort((x,y)=>x-y),
+    cachedAt: new Date().toISOString()
+  };
+
+  setCachedHistoryStats(gaugeId, out);
+  setStatus('History stats updated');
+  return out;
+}
 
       // Wettest day: only compare days that exist in data.
       let wettestDayISO = null;
