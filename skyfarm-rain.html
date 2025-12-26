@@ -87,14 +87,14 @@
     }
     .summary-grid{
       margin-top:8px;display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
       gap:8px;
     }
     .summary-item{
       border-radius:10px;background:#fff;border:1px solid #e5e7eb;
       padding:7px 9px;font-size:.78rem;
     }
-    /* green/red month comparison */
+    /* green/orange month comparison */
     .summary-good{border-color:#16a34a;background:#f0fdf4;}
     .summary-bad{border-color:#f97316;background:#fff7ed;}
 
@@ -214,6 +214,7 @@
     firebase.initializeApp(firebaseConfig);
     const db   = firebase.firestore();
     const auth = firebase.auth();
+
     try { window.SkyFarmHeader && SkyFarmHeader.mount(); } catch(e){ console.warn(e); }
 
     const $ = s => document.querySelector(s);
@@ -273,9 +274,7 @@
       const get = t => parts.find(p=>p.type===t)?.value;
       return {
         y: get('year'), m: get('month'), d: get('day'),
-        hh: parseInt(get('hour')||'0',10),
-        mm: parseInt(get('minute')||'0',10),
-        ss: parseInt(get('second')||'0',10),
+        hh: parseInt(get('hour')||'0',10)
       };
     }
 
@@ -345,7 +344,7 @@
 
     // ---------- Init ----------
     async function initPage(){
-      setStatus('Loading gauges…');
+      setStatus('Loading…');
       try{
         await loadProperties();
         await loadGauges();
@@ -421,7 +420,7 @@
       // Must exist at same folder level as this HTML on your site
       try{
         const resp = await fetch('consentes-house-rain.json', {cache:'no-store'});
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        if (!resp.ok) throw new Error(`Fetch consentes-house-rain.json failed: HTTP ${resp.status}`);
         climatology = await resp.json();
       }catch(e){
         console.warn('No climatology file:', e);
@@ -507,8 +506,7 @@
       let bounds = null;
       try{ bounds = await getGaugeYearBounds(currentGauge.id); }catch(e){ console.error(e); }
 
-      const now = new Date();
-      const thisYear = now.getFullYear();
+      const thisYear = new Date().getFullYear();
 
       if (bounds){
         buildYears(bounds.minYear, bounds.maxYear);
@@ -582,12 +580,7 @@
         const startId = `${year}-01-01`;
         const endId   = `${year}-12-31`;
 
-        const snap = await col
-          .orderBy(idField)
-          .startAt(startId)
-          .endAt(endId)
-          .get();
-
+        const snap = await col.orderBy(idField).startAt(startId).endAt(endId).get();
         const grid = makeEmptyYear();
 
         snap.forEach(doc=>{
@@ -600,7 +593,6 @@
           const dIdx = day - 1;
           const mIdx = month - 1;
           if (dIdx<0||dIdx>=31||mIdx<0||mIdx>=12) return;
-          // docs are rain-days-only, so we just place the mm on that calendar day
           grid[dIdx][mIdx] = (grid[dIdx][mIdx] || 0) + mm;
         });
 
@@ -731,77 +723,85 @@
       }
 
       const lt = climatology.longTerm || {};
+      const ann = lt.annual || {};
+      const mon = lt.monthly || {};
 
-      // Supports BOTH shapes:
-      // 1) OLD:
-      //    lt.annual (number), lt.monthly (array), lt.monthlyRainDays (array), lt.years (array)
-      // 2) NEW (your current file):
-      //    lt.annual.meanMm, lt.annual.meanRainDays, lt.monthly.meanMm, lt.monthly.meanRainDays
-      const annualMeanMm =
-        (typeof lt?.annual?.meanMm === 'number') ? lt.annual.meanMm :
-        (typeof lt?.annual === 'number') ? lt.annual :
-        null;
+      // Mean = “yearsUsed” mean (your filtered set)
+      const annualMeanMm = (typeof ann.meanMm === 'number') ? ann.meanMm : null;
+      const annualMeanRainDays = (typeof ann.meanRainDays === 'number') ? ann.meanRainDays : null;
+      const monthlyMeanMm = Array.isArray(mon.meanMm) ? mon.meanMm : [];
+      const monthlyMeanRainDays = Array.isArray(mon.meanRainDays) ? mon.meanRainDays : [];
 
-      const annualMeanRainDays =
-        (typeof lt?.annual?.meanRainDays === 'number') ? lt.annual.meanRainDays :
-        (typeof lt?.annualRainDays === 'number') ? lt.annualRainDays :
-        null;
+      // All-years average/median/trimmed (your “use all years with any docs” set)
+      const annualAllAvgMm = (typeof ann.allYearsAvgMm === 'number') ? ann.allYearsAvgMm : null;
+      const annualAllAvgRainDays = (typeof ann.allYearsAvgRainDays === 'number') ? ann.allYearsAvgRainDays : null;
+      const annualAllMedianMm = (typeof ann.allYearsMedianMm === 'number') ? ann.allYearsMedianMm : null;
+      const annualAllMedianRainDays = (typeof ann.allYearsMedianRainDays === 'number') ? ann.allYearsMedianRainDays : null;
+      const annualAllTrimMm = (typeof ann.allYearsTrimmedMeanMm === 'number') ? ann.allYearsTrimmedMeanMm : null;
+      const annualAllTrimRainDays = (typeof ann.allYearsTrimmedMeanRainDays === 'number') ? ann.allYearsTrimmedMeanRainDays : null;
 
-      const monthlyMeanMm =
-        Array.isArray(lt?.monthly?.meanMm) ? lt.monthly.meanMm :
-        Array.isArray(lt?.monthly) ? lt.monthly :
-        [];
+      const monthlyAllAvgMm = Array.isArray(mon.allYearsAvgMm) ? mon.allYearsAvgMm : [];
+      const monthlyAllAvgRainDays = Array.isArray(mon.allYearsAvgRainDays) ? mon.allYearsAvgRainDays : [];
 
-      const monthlyMeanRainDays =
-        Array.isArray(lt?.monthly?.meanRainDays) ? lt.monthly.meanRainDays :
-        Array.isArray(lt?.monthlyRainDays) ? lt.monthlyRainDays :
-        [];
+      // Colour rule stays based on MEAN (yearsUsed mean), like you had before
+      const yearPctVsMean = (annualMeanMm && annualMeanMm > 0) ? (thisYearTotal / annualMeanMm * 100) : null;
 
-      const yearPct = (annualMeanMm && annualMeanMm > 0) ? (thisYearTotal / annualMeanMm * 100) : null;
+      const baseFrom = lt?.basePeriod?.from ?? null;
+      const baseTo   = lt?.basePeriod?.to   ?? null;
 
-      const baseFrom = lt?.basePeriod?.from ?? (Array.isArray(lt?.years) && lt.years.length ? lt.years[0] : null);
-      const baseTo   = lt?.basePeriod?.to   ?? (Array.isArray(lt?.years) && lt.years.length ? lt.years[lt.years.length-1] : null);
-
-      const yearsAvailCount = lt?.yearsAvailableCount ?? (Array.isArray(lt?.yearsAvailable) ? lt.yearsAvailable.length : null);
-      const yearsUsedCount  = lt?.yearsUsedCount ?? (Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : (Array.isArray(lt?.years) ? lt.years.length : null));
-      const minDays = lt?.minDaysRecordedPerYear;
+      const used = lt?.yearsUsedCount ?? (Array.isArray(lt.yearsUsed) ? lt.yearsUsed.length : null);
+      const avail = lt?.yearsAvailableCount ?? (Array.isArray(lt.yearsAvailable) ? lt.yearsAvailable.length : null);
+      const calCount = lt?.calendarYearCount ?? null;
+      const minDays = lt?.minDaysRecordedPerYear ?? null;
+      const trimFrac = lt?.trimFraction ?? null;
 
       let html = '';
 
       html += `<div class="summary-item">
         <strong>${year} total</strong>
         <div>This year: ${fmt1(thisYearTotal)} mm</div>
-        <div>Long-term (mean): ${fmt1(annualMeanMm)} mm</div>
-        <div>Year vs mean: ${fmtPct(yearPct)}</div>
-        <div>This year rain days: ${fmt0(thisYearRainDays)}</div>
+        <div>Mean (filtered years): ${fmt1(annualMeanMm)} mm</div>
+        <div>All-years average: ${fmt1(annualAllAvgMm)} mm</div>
+        <div>All-years median: ${fmt1(annualAllMedianMm)} mm</div>
+        <div>All-years trimmed mean${(trimFrac!=null)?` (${Math.round(trimFrac*100)}% each side)`:''}: ${fmt1(annualAllTrimMm)} mm</div>
+        <div>Year vs mean: ${fmtPct(yearPctVsMean)}</div>
+        <div style="margin-top:6px;">This year rain days: ${fmt0(thisYearRainDays)}</div>
         <div>Mean rain days/year: ${fmt1(annualMeanRainDays)}</div>
-        ${(baseFrom && baseTo) ? `<div class="muted small">Base period: ${baseFrom}–${baseTo}</div>` : ''}
-        ${(yearsAvailCount!=null || yearsUsedCount!=null) ? `<div class="muted small">Years: ${yearsUsedCount ?? '—'} used / ${yearsAvailCount ?? '—'} available${(minDays!=null)?` (min days/year: ${minDays})`:''}</div>` : ''}
+        <div>All-years avg rain days/year: ${fmt1(annualAllAvgRainDays)}</div>
+        <div>All-years median rain days/year: ${fmt0(annualAllMedianRainDays)}</div>
+        <div>All-years trimmed mean rain days/year: ${fmt1(annualAllTrimRainDays)}</div>
+        ${(baseFrom && baseTo) ? `<div class="muted small" style="margin-top:6px;">Base period: ${baseFrom}–${baseTo}${(calCount!=null)?` (${calCount} calendar yrs)`:''}</div>` : ''}
+        ${(used!=null || avail!=null) ? `<div class="muted small">Years: ${used ?? '—'} used / ${avail ?? '—'} available${(minDays!=null)?` (min days/year: ${minDays})`:''}</div>` : ''}
         ${knownNoRecordYears.has(year) ? `<div class="muted small">Marked: no record</div>` : ''}
       </div>`;
 
       for (let m=0; m<12; m++){
         const thisM = monthTotalsThisYear[m] || 0;
-        const avgM  = (typeof monthlyMeanMm[m] === 'number') ? monthlyMeanMm[m] : null;
-        const pct   = (avgM && avgM>0) ? (thisM / avgM * 100) : null;
+
+        const meanM  = (typeof monthlyMeanMm[m] === 'number') ? monthlyMeanMm[m] : null;
+        const avgM   = (typeof monthlyAllAvgMm[m] === 'number') ? monthlyAllAvgMm[m] : null;
+
+        const pctMean = (meanM && meanM>0) ? (thisM / meanM * 100) : null;
 
         const thisRD = rainDaysThisYear[m] || 0;
-        const avgRD  = (typeof monthlyMeanRainDays[m] === 'number') ? monthlyMeanRainDays[m] : null;
+        const meanRD = (typeof monthlyMeanRainDays[m] === 'number') ? monthlyMeanRainDays[m] : null;
+        const avgRD  = (typeof monthlyAllAvgRainDays[m] === 'number') ? monthlyAllAvgRainDays[m] : null;
 
-        // restore the green/red monthly comparison
         let cls = '';
-        if (pct != null){
-          if (pct < 60) cls = 'summary-bad';
-          else if (pct > 140) cls = 'summary-good';
+        if (pctMean != null){
+          if (pctMean < 60) cls = 'summary-bad';
+          else if (pctMean > 140) cls = 'summary-good';
         }
 
         html += `<div class="summary-item ${cls}">
           <strong>${months[m]}</strong>
           <div>This year: ${fmt1(thisM)} mm</div>
-          <div>Mean: ${fmt1(avgM)} mm</div>
-          <div>Pct of mean: ${fmtPct(pct)}</div>
-          <div>Rain days: ${fmt0(thisRD)}</div>
-          <div>Mean rain days: ${fmt1(avgRD)}</div>
+          <div>Mean (filtered): ${fmt1(meanM)} mm</div>
+          <div>All-years avg: ${fmt1(avgM)} mm</div>
+          <div>Pct of mean: ${fmtPct(pctMean)}</div>
+          <div style="margin-top:6px;">Rain days: ${fmt0(thisRD)}</div>
+          <div>Mean rain days: ${fmt1(meanRD)}</div>
+          <div>All-years avg rain days: ${fmt1(avgRD)}</div>
         </div>`;
       }
 
@@ -841,8 +841,8 @@
       return { year, total, rainDays, wettestDayISO: best.iso, wettestDayMm: best.mm >= 0 ? best.mm : null };
     }
 
-    // Recent: missing doc => 0mm (normal for your storage model: only rain-day docs exist)
-    // IMPORTANT: "today" here is the effective rainfall day (to 9am counts previous day)
+    // Recent: missing doc => 0mm (because you store rain-days-only)
+    // IMPORTANT: use effective rainfall day (to 9am counts previous day)
     async function computeRecentInsights(gaugeId){
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
@@ -864,7 +864,6 @@
 
       const maxLookbackDays = 900;
 
-      // Find last rain day (>= threshold)
       for (let i=0; i<=maxLookbackDays; i++){
         const iso = addDaysISO(effectiveToday, -i);
         const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
@@ -877,7 +876,6 @@
 
       const daysSinceLastRain = lastRainISO ? daysBetweenISO(lastRainISO, effectiveToday) : null;
 
-      // Current dry streak ending at effectiveToday
       let currentDryStreakDays = 0;
       for (let i=0; i<=maxLookbackDays; i++){
         const iso = addDaysISO(effectiveToday, -i);
@@ -898,16 +896,7 @@
         sum90 += mm;
       }
 
-      return {
-        calendarToday,
-        effectiveToday,
-        lastRainISO,
-        lastRainMm,
-        daysSinceLastRain,
-        currentDryStreakDays,
-        sum7, sum30, sum90,
-        rainDays30
-      };
+      return { calendarToday, effectiveToday, lastRainISO, lastRainMm, daysSinceLastRain, currentDryStreakDays, sum7, sum30, sum90, rainDays30 };
     }
 
     function getCachedHistoryStats(gaugeId){
@@ -924,9 +913,9 @@
       }catch(e){}
     }
 
-    // For rain-days-only storage:
-    // longest dry streak = biggest gap between consecutive rain-day docs (minus 1),
-    // BUT any missing year (zero docs) breaks streaks (e.g. 1989, 2001).
+    // Longest dry streak for rain-days-only:
+    // biggest gap between consecutive rain-day docs (minus 1),
+    // BUT break across “missing-data years” based on climatology.longTerm coverage (e.g. 1989, 2001).
     async function computeAndCacheHistoryStats(gaugeId){
       setStatus('Computing history stats…');
       insightsContent.innerHTML = `<div class="summary-item">Computing history stats (paged)…</div>`;
@@ -935,8 +924,6 @@
       const idField = firebase.firestore.FieldPath.documentId();
 
       const rainDays = [];
-      const yearsPresent = new Set();
-
       let wettestDayISO = null;
       let wettestDayMm = -1;
 
@@ -957,7 +944,6 @@
 
           const mm = extractMm(doc.data() || {});
           rainDays.push(id);
-          yearsPresent.add(id.slice(0,4));
 
           if (mm > wettestDayMm){
             wettestDayMm = mm;
@@ -979,13 +965,26 @@
       const firstISO = rainDays[0];
       const lastISO  = rainDays[rainDays.length - 1];
 
-      const minYear = parseInt(firstISO.slice(0,4),10);
-      const maxYear = parseInt(lastISO.slice(0,4),10);
+      // Missing-data years come from climatology coverage if available (best signal you have)
+      const lt = climatology?.longTerm || null;
+      const baseFrom = Number(lt?.basePeriod?.from);
+      const baseTo = Number(lt?.basePeriod?.to);
+      const yearsAvailableArr = Array.isArray(lt?.yearsAvailable) ? lt.yearsAvailable : null;
 
       const missingYears = new Set();
-      for (let y=minYear; y<=maxYear; y++){
-        const ys = String(y);
-        if (!yearsPresent.has(ys)) missingYears.add(y);
+      if (Number.isFinite(baseFrom) && Number.isFinite(baseTo) && yearsAvailableArr && yearsAvailableArr.length){
+        const availSet = new Set(yearsAvailableArr.map(Number));
+        for (let y=baseFrom; y<=baseTo; y++){
+          if (!availSet.has(y)) missingYears.add(y);
+        }
+      }else{
+        // fallback: infer missing years only inside observed range
+        const minYear = parseInt(firstISO.slice(0,4),10);
+        const maxYear = parseInt(lastISO.slice(0,4),10);
+        const yearsPresent = new Set(rainDays.map(id=>parseInt(id.slice(0,4),10)));
+        for (let y=minYear; y<=maxYear; y++){
+          if (!yearsPresent.has(y)) missingYears.add(y);
+        }
       }
 
       function gapCrossesMissingYear(startISO, endISO){
@@ -1007,7 +1006,7 @@
         const a = rainDays[i];
         const b = rainDays[i+1];
 
-        // Break streaks across unknown years (1989, 2001, etc.)
+        // Break streaks across missing-data years (1989, 2001 etc.)
         if (gapCrossesMissingYear(a, b)) continue;
 
         const diff = daysBetweenISO(a, b);
@@ -1065,9 +1064,9 @@
 
       html += `<div class="summary-item">
         <strong>Recent totals</strong>
-        <div>Last 7 rain-days: ${fmtInsight1(recent.sum7)} mm</div>
-        <div>Last 30 rain-days: ${fmtInsight1(recent.sum30)} mm</div>
-        <div>Last 90 rain-days: ${fmtInsight1(recent.sum90)} mm</div>
+        <div>Last 7 days: ${fmtInsight1(recent.sum7)} mm</div>
+        <div>Last 30 days: ${fmtInsight1(recent.sum30)} mm</div>
+        <div>Last 90 days: ${fmtInsight1(recent.sum90)} mm</div>
         <div>Rain days (30): ${fmtInsight0(recent.rainDays30)}</div>
       </div>`;
 
@@ -1096,7 +1095,7 @@
 
         if (cached.missingYears && cached.missingYears.length){
           html += `<div class="summary-item">
-            <strong>Missing years (break streaks)</strong>
+            <strong>Missing-data years (break streaks)</strong>
             <div>${cached.missingYears.join(', ')}</div>
           </div>`;
         }
@@ -1110,8 +1109,8 @@
 
       html += `<div class="summary-item">
         <strong>Year labels</strong>
-        <div>Years marked “(no record)” have zero daily docs in Firestore.</div>
-        <div class="muted small">These years also break record streaks.</div>
+        <div>“(no record)” means no daily docs for that year in Firestore.</div>
+        <div class="muted small">Missing-data years also break record streaks.</div>
       </div>`;
 
       insightsContent.innerHTML = html;
