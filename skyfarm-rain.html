@@ -798,6 +798,7 @@ if (!has){
   continue;
 }
 
+if (!mmByISO.has(iso)) continue; // skip unknown day
 const mm = Number(mmByISO.get(iso) || 0);
 
         if (i === 0){
