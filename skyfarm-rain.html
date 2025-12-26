@@ -691,22 +691,26 @@
 
       // Your current file shape (supported):
       // lt.annual (number), lt.monthly (array), lt.monthlyRainDays (array), lt.years (array), lt.rainDayThresholdMm
-      const ltaAnnualMm = (typeof lt.annual === 'number') ? lt.annual : null;
+     const ltaAnnualMm =
+  (typeof lt?.annual?.meanMm === 'number') ? lt.annual.meanMm :
+  (typeof lt?.annual === 'number') ? lt.annual :
+  null;
+
+const ltaAnnualRainDays =
+  (typeof lt?.annual?.meanRainDays === 'number') ? lt.annual.meanRainDays :
+  (typeof lt?.annualRainDays === 'number') ? lt.annualRainDays :
+  null;
      const ltaMonthlyMm =
   Array.isArray(lt?.monthly?.meanMm) ? lt.monthly.meanMm : [];
 
 const ltaMonthlyRainDays =
   Array.isArray(lt?.monthly?.meanRainDays) ? lt.monthly.meanRainDays : [];
 
-      // Average rain days per year (from monthly avg rain days if present)
-      const ltaAnnualRainDays = (ltaMonthlyRainDays.length === 12)
-        ? ltaMonthlyRainDays.reduce((a,b)=>a+(Number(b)||0),0)
-        : null;
 
       const yearPct = (ltaAnnualMm && ltaAnnualMm > 0) ? (thisYearTotal / ltaAnnualMm * 100) : null;
-      const yearsArr = Array.isArray(lt.years) ? lt.years : null;
-      const baseFrom = yearsArr?.length ? yearsArr[0] : null;
-      const baseTo   = yearsArr?.length ? yearsArr[yearsArr.length - 1] : null;
+      const baseFrom = lt?.basePeriod?.from ?? null;
+const baseTo   = lt?.basePeriod?.to ?? null;
+const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : null;
 
       let html = '';
 
@@ -717,7 +721,7 @@ const ltaMonthlyRainDays =
         <div>Year vs avg: ${fmtPct(yearPct)}</div>
         <div>This year rain days: ${fmt0(thisYearRainDays)}</div>
         <div>Avg rain days/year: ${fmt1(ltaAnnualRainDays)}</div>
-        ${(baseFrom && baseTo) ? `<div class="muted small">Base period: ${baseFrom}–${baseTo} (${yearsArr.length} yrs)</div>` : ''}
+        ${(baseFrom && baseTo) ? `<div class="muted small">Base period: ${baseFrom}–${baseTo}${usedCount ? ` (${usedCount} yrs)` : ''}</div>` : ''}
         ${knownNoRecordYears.has(year) ? `<div class="muted small">Marked: no record</div>` : ''}
       </div>`;
 
