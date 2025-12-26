@@ -782,7 +782,23 @@
 
       for (let i=0; i<=maxLookbackDays; i++){
         const iso = addDaysISO(today, -i);
-        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
+        const has = mmByISO.has(iso);
+if (!has){
+  // Unknown day (no record). Break any running streak and don't count it.
+  if (curDryDays > longestDryDays){
+    longestDryDays = curDryDays;
+    longestDryStart = curDryStart;
+    longestDryEnd = addDaysISO(iso, -1);
+  }
+  curDryDays = 0;
+  curDryStart = null;
+
+  if (iso === lastISO) break;
+  iso = addDaysISO(iso, 1);
+  continue;
+}
+
+const mm = Number(mmByISO.get(iso) || 0);
 
         if (i === 0){
           if (mm < RAIN_DAY_THRESHOLD_MM){
