@@ -152,7 +152,7 @@
       <div class="row" style="justify-content:space-between;gap:10px;">
         <div class="muted small">Quick insights for the selected gauge.</div>
         <div class="summary-actions">
-          <button id="refreshHistoryBtn" class="btn" type="button" title="Reads all rainfall docs for this gauge and caches results in this browser.">
+          <button id="refreshHistoryBtn" class="btn" type="button" title="Reads rainfall docs for this gauge in pages and caches results in this browser.">
             Refresh history stats
           </button>
         </div>
@@ -242,6 +242,9 @@
     let allowEditRain = false;
     let climatology   = null;
 
+    // year label info
+    let knownNoRecordYears = new Set();
+
     function setStatus(msg, warn){
       statusEl.textContent = msg || '';
       statusEl.classList.toggle('status-warn', !!warn);
@@ -303,7 +306,7 @@
       if (user){
         allowEditRain = true;
         showOverlay(false);
-        knownNoRecordYears = new Set(); // reset so label refresh is accurate
+        knownNoRecordYears = new Set();
         try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
         await initPage();
       }else{
@@ -394,8 +397,6 @@
     }
 
     // ---------- Year dropdown from data + "no record" labels ----------
-    let knownNoRecordYears = new Set();
-
     async function getGaugeYearBounds(gaugeId){
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
@@ -425,19 +426,33 @@
       }
     }
 
-    async function getYearsWithAnyDocs(gaugeId){
+    async function getYearsWithAnyDocsPaged(gaugeId){
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
-      const snap = await col.orderBy(idField, 'asc').get();
 
       const years = new Set();
-      snap.forEach(doc=>{
-        const id = doc.id;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(id)){
-          years.add(id.slice(0,4));
-        }
-      });
-      return years;
+      let lastDoc = null;
+      let page = 0;
+
+      while (true){
+        let q = col.orderBy(idField, 'asc').limit(500);
+        if (lastDoc) q = q.startAfter(lastDoc);
+        const snap = await q.get();
+        page++;
+        if (snap.empty) break;
+
+        snap.forEach(doc=>{
+          const id = doc.id;
+          if (/^\d{4}-\d{2}-\d{2}$/.test(id)){
+            years.add(id.slice(0,4));
+          }
+        });
+
+        lastDoc = snap.docs[snap.docs.length - 1];
+        if (page > 2000) break;
+      }
+
+      return years; // Set of "YYYY"
     }
 
     function markMissingYearsInDropdown(yearsWithDocs){
@@ -458,11 +473,7 @@
 
       setStatus('Loading years…');
       let bounds = null;
-      try{
-        bounds = await getGaugeYearBounds(currentGauge.id);
-      }catch(e){
-        console.error(e);
-      }
+      try{ bounds = await getGaugeYearBounds(currentGauge.id); }catch(e){ console.error(e); }
 
       const now = new Date();
       const thisYear = now.getFullYear();
@@ -470,10 +481,10 @@
       if (bounds){
         buildYears(bounds.minYear, bounds.maxYear);
         try{
-          const yearsWithDocs = await getYearsWithAnyDocs(currentGauge.id);
+          const yearsWithDocs = await getYearsWithAnyDocsPaged(currentGauge.id);
           markMissingYearsInDropdown(yearsWithDocs);
         }catch(e){
-          console.error(e);
+          console.error('Failed to label missing years', e);
         }
       }else{
         buildYears(thisYear - 40, thisYear);
@@ -681,7 +692,6 @@
       const yearPct = (ltaAnnual && ltaAnnual>0) ? (thisYearTotal / ltaAnnual * 100) : null;
 
       const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
       const fmt1 = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(1);
       const fmtPct = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(0) + '%';
 
@@ -753,7 +763,7 @@
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
 
-      const snap = await col.orderBy(idField, 'desc').limit(500).get();
+      const snap = await col.orderBy(idField, 'desc').limit(800).get();
       const mmByISO = new Map();
       snap.forEach(doc=>{
         const id = doc.id;
@@ -767,7 +777,7 @@
       let lastRainISO = null;
       let lastRainMm = null;
 
-      const maxLookbackDays = 500;
+      const maxLookbackDays = 800;
       let currentDryStreakDays = 0;
 
       for (let i=0; i<=maxLookbackDays; i++){
@@ -826,25 +836,41 @@
       }catch(e){}
     }
 
+    // FIXED: Paged history scan (no single massive get())
     async function computeAndCacheHistoryStats(gaugeId){
       setStatus('Computing history stats…');
-      insightsContent.innerHTML = `<div class="summary-item">Computing history stats (reads all rainfall docs for this gauge)…</div>`;
+      insightsContent.innerHTML = `<div class="summary-item">Computing history stats (paged)…</div>`;
 
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
-      const snap = await col.orderBy(idField, 'asc').get();
 
       const mmByISO = new Map();
       let firstISO = null;
       let lastISO = null;
 
-      snap.forEach(doc=>{
-        const id = doc.id;
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
-        mmByISO.set(id, extractMm(doc.data() || {}));
-        if (!firstISO) firstISO = id;
-        lastISO = id;
-      });
+      let lastDoc = null;
+      let pages = 0;
+
+      while (true){
+        let q = col.orderBy(idField, 'asc').limit(500);
+        if (lastDoc) q = q.startAfter(lastDoc);
+
+        const snap = await q.get();
+        pages++;
+        if (snap.empty) break;
+
+        snap.forEach(doc=>{
+          const id = doc.id;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
+          const mm = extractMm(doc.data() || {});
+          mmByISO.set(id, mm);
+          if (!firstISO) firstISO = id;
+          lastISO = id;
+        });
+
+        lastDoc = snap.docs[snap.docs.length - 1];
+        if (pages > 5000) throw new Error('Paging safety stop hit');
+      }
 
       if (!firstISO || !lastISO){
         setCachedHistoryStats(gaugeId, null);
@@ -973,9 +999,9 @@
       }
 
       html += `<div class="summary-item">
-        <strong>Data notes</strong>
-        <div>Years marked “no record” are years with zero daily docs in Firestore.</div>
-        <div class="muted small">This is automatic based on your stored data.</div>
+        <strong>Year labels</strong>
+        <div>Years marked “(no record)” have zero daily docs in Firestore.</div>
+        <div class="muted small">This is automatic.</div>
       </div>`;
 
       insightsContent.innerHTML = html;
