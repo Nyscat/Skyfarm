@@ -152,7 +152,8 @@
       <div class="row" style="justify-content:space-between;gap:10px;">
         <div class="muted small">Quick insights for the selected gauge.</div>
         <div class="summary-actions">
-          <button id="refreshHistoryBtn" class="btn" type="button" title="Reads rainfall docs for this gauge in pages and caches results in this browser.">
+          <button id="refreshHistoryBtn" class="btn" type="button"
+                  title="Reads rainfall docs for this gauge in pages and caches results in this browser.">
             Refresh history stats
           </button>
         </div>
@@ -208,6 +209,7 @@
     firebase.initializeApp(firebaseConfig);
     const db   = firebase.firestore();
     const auth = firebase.auth();
+
     try { window.SkyFarmHeader && SkyFarmHeader.mount(); } catch(e){ console.warn(e); }
 
     const $ = s => document.querySelector(s);
@@ -232,7 +234,7 @@
     const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
     const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
 
-    // You asked for 0.5mm rain day threshold
+    // You asked for 0.5mm threshold
     const RAIN_DAY_THRESHOLD_MM = 0.5;
 
     const APP_TIMEZONE = 'Australia/Brisbane';
@@ -405,7 +407,6 @@
 
       const firstSnap = await col.orderBy(idField, 'asc').limit(1).get();
       const lastSnap  = await col.orderBy(idField, 'desc').limit(1).get();
-
       if (firstSnap.empty || lastSnap.empty) return null;
 
       const firstId = firstSnap.docs[0].id;
@@ -434,24 +435,19 @@
 
       const years = new Set();
       let lastDoc = null;
-      let page = 0;
 
       while (true){
         let q = col.orderBy(idField, 'asc').limit(500);
         if (lastDoc) q = q.startAfter(lastDoc);
         const snap = await q.get();
-        page++;
         if (snap.empty) break;
 
         snap.forEach(doc=>{
           const id = doc.id;
-          if (/^\d{4}-\d{2}-\d{2}$/.test(id)){
-            years.add(id.slice(0,4));
-          }
+          if (/^\d{4}-\d{2}-\d{2}$/.test(id)) years.add(id.slice(0,4));
         });
 
         lastDoc = snap.docs[snap.docs.length - 1];
-        if (page > 2000) break;
       }
 
       return years; // Set of "YYYY"
@@ -552,12 +548,7 @@
         const startId = `${year}-01-01`;
         const endId   = `${year}-12-31`;
 
-        const snap = await col
-          .orderBy(idField)
-          .startAt(startId)
-          .endAt(endId)
-          .get();
-
+        const snap = await col.orderBy(idField).startAt(startId).endAt(endId).get();
         const grid = makeEmptyYear();
 
         snap.forEach(doc=>{
@@ -672,18 +663,18 @@
 
     // ---------- Summary (climatology) ----------
     function updateSummary(year, stats){
+      if (!summaryContent) return;
+
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
       const monthTotalsThisYear = stats?.monthTotals || [];
       const rainDaysThisYear = stats?.monthRainDays || [];
-
       const thisYearTotal = monthTotalsThisYear.reduce((a,b)=>a+(b||0),0);
       const thisYearRainDays = rainDaysThisYear.reduce((a,b)=>a+(b||0),0);
 
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       const fmt1 = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(1);
       const fmt0 = v => (v==null||!Number.isFinite(v)) ? '—' : String(Math.round(Number(v)));
       const fmtPct = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(0) + '%';
-
-      if (!summaryContent) return;
 
       if (!climatology || !climatology.longTerm){
         summaryContent.innerHTML = `<div class="summary-item">
@@ -691,40 +682,28 @@
           <div class="muted">No climatology file found (consentes-house-rain.json).</div>
           <div>Total: ${fmt1(thisYearTotal)} mm</div>
           <div>Rain days (≥${RAIN_DAY_THRESHOLD_MM} mm): ${fmt0(thisYearRainDays)}</div>
-          ${knownNoRecordYears.has(year) ? `<div class="muted">Marked: no record</div>` : ''}
+          ${knownNoRecordYears.has(year) ? `<div class="muted small">Marked: no record</div>` : ''}
         </div>`;
         return;
       }
 
       const lt = climatology.longTerm || {};
 
-      // Support BOTH shapes:
-      // Old: lt.annual (number), lt.monthly (array), lt.monthlyRainDays (array)
-      // New: lt.annual.meanMm, lt.annual.meanRainDays, lt.monthly.meanMm, lt.monthly.meanRainDays
-      const ltaAnnualMm =
-        (typeof lt?.annual?.meanMm === 'number') ? lt.annual.meanMm :
-        (typeof lt?.annual === 'number') ? lt.annual :
-        null;
+      // Your current file shape (supported):
+      // lt.annual (number), lt.monthly (array), lt.monthlyRainDays (array), lt.years (array), lt.rainDayThresholdMm
+      const ltaAnnualMm = (typeof lt.annual === 'number') ? lt.annual : null;
+      const ltaMonthlyMm = Array.isArray(lt.monthly) ? lt.monthly : [];
+      const ltaMonthlyRainDays = Array.isArray(lt.monthlyRainDays) ? lt.monthlyRainDays : [];
 
-      const ltaAnnualRainDays =
-        (typeof lt?.annual?.meanRainDays === 'number') ? lt.annual.meanRainDays :
-        (typeof lt?.annualRainDays === 'number') ? lt.annualRainDays :
-        null;
-
-      const ltaMonthlyMm =
-        Array.isArray(lt?.monthly?.meanMm) ? lt.monthly.meanMm :
-        Array.isArray(lt?.monthly) ? lt.monthly :
-        [];
-
-      const ltaMonthlyRainDays =
-        Array.isArray(lt?.monthly?.meanRainDays) ? lt.monthly.meanRainDays :
-        Array.isArray(lt?.monthlyRainDays) ? lt.monthlyRainDays :
-        [];
+      // Average rain days per year (from monthly avg rain days if present)
+      const ltaAnnualRainDays = (ltaMonthlyRainDays.length === 12)
+        ? ltaMonthlyRainDays.reduce((a,b)=>a+(Number(b)||0),0)
+        : null;
 
       const yearPct = (ltaAnnualMm && ltaAnnualMm > 0) ? (thisYearTotal / ltaAnnualMm * 100) : null;
-      const baseFrom = lt?.basePeriod?.from;
-      const baseTo = lt?.basePeriod?.to;
-      const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : (Array.isArray(lt?.years) ? lt.years.length : null);
+      const yearsArr = Array.isArray(lt.years) ? lt.years : null;
+      const baseFrom = yearsArr?.length ? yearsArr[0] : null;
+      const baseTo   = yearsArr?.length ? yearsArr[yearsArr.length - 1] : null;
 
       let html = '';
 
@@ -735,7 +714,7 @@
         <div>Year vs avg: ${fmtPct(yearPct)}</div>
         <div>This year rain days: ${fmt0(thisYearRainDays)}</div>
         <div>Avg rain days/year: ${fmt1(ltaAnnualRainDays)}</div>
-        ${(baseFrom && baseTo) ? `<div class="muted small">Base period: ${baseFrom}–${baseTo}${usedCount ? ` (${usedCount} yrs)` : ''}</div>` : ''}
+        ${(baseFrom && baseTo) ? `<div class="muted small">Base period: ${baseFrom}–${baseTo} (${yearsArr.length} yrs)</div>` : ''}
         ${knownNoRecordYears.has(year) ? `<div class="muted small">Marked: no record</div>` : ''}
       </div>`;
 
@@ -767,8 +746,8 @@
     }
 
     // ---------- Insights ----------
-    const fmt1 = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(1);
-    const fmt0 = v => (v==null||!Number.isFinite(v)) ? '—' : String(Math.round(Number(v)));
+    const fmtInsight1 = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(1);
+    const fmtInsight0 = v => (v==null||!Number.isFinite(v)) ? '—' : String(Math.round(Number(v)));
 
     async function loadRainAndInsights(){
       await loadRain();
@@ -799,7 +778,7 @@
       return { year, total, rainDays, wettestDayISO: best.iso, wettestDayMm: best.mm >= 0 ? best.mm : null };
     }
 
-    // Recent: we assume missing doc means 0mm (normal, because you are not storing all-zero days)
+    // Recent: missing doc => 0mm (normal for your storage model)
     async function computeRecentInsights(gaugeId){
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
@@ -820,7 +799,6 @@
 
       const maxLookbackDays = 800;
 
-      // Find last rain day (>= threshold). Missing doc treated as 0mm.
       for (let i=0; i<=maxLookbackDays; i++){
         const iso = addDaysISO(today, -i);
         const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
@@ -833,7 +811,6 @@
 
       const daysSinceLastRain = lastRainISO ? daysBetweenISO(lastRainISO, today) : null;
 
-      // Current dry streak from today backwards (missing doc treated as 0mm)
       let currentDryStreakDays = 0;
       for (let i=0; i<=maxLookbackDays; i++){
         const iso = addDaysISO(today, -i);
@@ -842,7 +819,6 @@
         else break;
       }
 
-      // Rolling totals
       let sum7=0,sum30=0,sum90=0,rainDays30=0;
       for (let i=0; i<90; i++){
         const iso = addDaysISO(today, -i);
@@ -872,200 +848,97 @@
       }catch(e){}
     }
 
+    // FAST history stats for "rain-days-only" storage:
+    // longest dry streak = biggest gap between consecutive rain-day docs (minus 1),
+    // BUT any missing year (zero docs) breaks streaks.
     async function computeAndCacheHistoryStats(gaugeId){
-  setStatus('Computing history stats…');
-  insightsContent.innerHTML = `<div class="summary-item">Computing history stats (paged)…</div>`;
+      setStatus('Computing history stats…');
+      insightsContent.innerHTML = `<div class="summary-item">Computing history stats (paged)…</div>`;
 
-  const col = db.collection('gauges').doc(gaugeId).collection('daily');
-  const idField = firebase.firestore.FieldPath.documentId();
+      const col = db.collection('gauges').doc(gaugeId).collection('daily');
+      const idField = firebase.firestore.FieldPath.documentId();
 
-  // Collect rain-day docs (IDs only), and which years exist at all
-  const rainDays = []; // sorted later
-  const yearsPresent = new Set();
+      const rainDays = [];
+      const yearsPresent = new Set();
 
-  let lastDoc = null;
-  let pages = 0;
-
-  while (true){
-    let q = col.orderBy(idField, 'asc').limit(500);
-    if (lastDoc) q = q.startAfter(lastDoc);
-
-    const snap = await q.get();
-    pages++;
-    if (snap.empty) break;
-
-    snap.forEach(doc=>{
-      const id = doc.id;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
-      rainDays.push(id);
-      yearsPresent.add(id.slice(0,4));
-    });
-
-    lastDoc = snap.docs[snap.docs.length - 1];
-    if (pages > 5000) throw new Error('Paging safety stop hit');
-  }
-
-  if (rainDays.length === 0){
-    setCachedHistoryStats(gaugeId, null);
-    setStatus('No history found', true);
-    return null;
-  }
-
-  // Already ordered by doc id asc, but keep safe:
-  rainDays.sort();
-
-  const firstISO = rainDays[0];
-  const lastISO  = rainDays[rainDays.length - 1];
-
-  // Wettest day on record (only among rain days, which is fine)
-  let wettestDayISO = null;
-  let wettestDayMm = -1;
-
-  // We only need mm for wettest day; page again but keep it simple:
-  // (If you want, we can compute wettest during the first paging loop instead.)
-  lastDoc = null;
-  pages = 0;
-  while (true){
-    let q = col.orderBy(idField, 'asc').limit(500);
-    if (lastDoc) q = q.startAfter(lastDoc);
-    const snap = await q.get();
-    pages++;
-    if (snap.empty) break;
-
-    snap.forEach(doc=>{
-      const id = doc.id;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
-      const mm = extractMm(doc.data() || {});
-      if (mm > wettestDayMm){
-        wettestDayMm = mm;
-        wettestDayISO = id;
-      }
-    });
-
-    lastDoc = snap.docs[snap.docs.length - 1];
-    if (pages > 5000) throw new Error('Paging safety stop hit');
-  }
-
-  // Build set of missing years within the covered range
-  const minYear = parseInt(firstISO.slice(0,4),10);
-  const maxYear = parseInt(lastISO.slice(0,4),10);
-  const missingYears = new Set();
-  for (let y=minYear; y<=maxYear; y++){
-    const ys = String(y);
-    if (!yearsPresent.has(ys)) missingYears.add(y);
-  }
-
-  function gapCrossesMissingYear(startISO, endISO){
-    const y1 = parseInt(startISO.slice(0,4),10);
-    const y2 = parseInt(endISO.slice(0,4),10);
-    if (!Number.isFinite(y1) || !Number.isFinite(y2)) return false;
-    const a = Math.min(y1,y2), b = Math.max(y1,y2);
-    for (let y=a; y<=b; y++){
-      if (missingYears.has(y)) return true;
-    }
-    return false;
-  }
-
-  // Longest dry streak = biggest gap between consecutive rain days (minus the rain days themselves)
-  let longestDryDays = 0;
-  let longestDryStart = null;
-  let longestDryEnd = null;
-
-  for (let i=0; i<rainDays.length-1; i++){
-    const a = rainDays[i];
-    const b = rainDays[i+1];
-
-    // If this span includes a missing year (1989, 2001), ignore it completely (break streak)
-    if (gapCrossesMissingYear(a, b)) continue;
-
-    const diff = daysBetweenISO(a, b);
-    if (diff == null) continue;
-
-    const dryDays = Math.max(0, diff - 1);
-    if (dryDays > longestDryDays){
-      longestDryDays = dryDays;
-      longestDryStart = addDaysISO(a, 1);
-      longestDryEnd   = addDaysISO(b, -1);
-    }
-  }
-
-  const out = {
-    firstISO, lastISO,
-    wettestDayISO,
-    wettestDayMm: wettestDayMm >= 0 ? wettestDayMm : null,
-    longestDryDays,
-    longestDryStart,
-    longestDryEnd,
-    missingYears: [...missingYears].sort((x,y)=>x-y),
-    cachedAt: new Date().toISOString()
-  };
-
-  setCachedHistoryStats(gaugeId, out);
-  setStatus('History stats updated');
-  return out;
-}
-
-      // Wettest day: only compare days that exist in data.
       let wettestDayISO = null;
       let wettestDayMm = -1;
-      for (const [iso, mm] of mmByISO.entries()){
-        if (mm > wettestDayMm){
-          wettestDayMm = mm;
-          wettestDayISO = iso;
-        }
+
+      let lastDoc = null;
+      while (true){
+        let q = col.orderBy(idField, 'asc').limit(500);
+        if (lastDoc) q = q.startAfter(lastDoc);
+
+        const snap = await q.get();
+        if (snap.empty) break;
+
+        snap.forEach(doc=>{
+          const id = doc.id;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
+
+          const mm = extractMm(doc.data() || {});
+          rainDays.push(id);
+          yearsPresent.add(id.slice(0,4));
+
+          if (mm > wettestDayMm){
+            wettestDayMm = mm;
+            wettestDayISO = id;
+          }
+        });
+
+        lastDoc = snap.docs[snap.docs.length - 1];
       }
 
-      // Longest dry streak: assume missing doc = 0mm EXCEPT for years that have no docs at all.
-      // If a year has no docs at all, treat that year as unknown and break streaks across it.
+      if (rainDays.length === 0){
+        setCachedHistoryStats(gaugeId, null);
+        setStatus('No history found', true);
+        return null;
+      }
+
+      rainDays.sort();
+      const firstISO = rainDays[0];
+      const lastISO  = rainDays[rainDays.length - 1];
+
+      const minYear = parseInt(firstISO.slice(0,4),10);
+      const maxYear = parseInt(lastISO.slice(0,4),10);
+
+      const missingYears = new Set();
+      for (let y=minYear; y<=maxYear; y++){
+        const ys = String(y);
+        if (!yearsPresent.has(ys)) missingYears.add(y);
+      }
+
+      function gapCrossesMissingYear(startISO, endISO){
+        const y1 = parseInt(startISO.slice(0,4),10);
+        const y2 = parseInt(endISO.slice(0,4),10);
+        if (!Number.isFinite(y1) || !Number.isFinite(y2)) return false;
+        const a = Math.min(y1,y2), b = Math.max(y1,y2);
+        for (let y=a; y<=b; y++){
+          if (missingYears.has(y)) return true;
+        }
+        return false;
+      }
+
       let longestDryDays = 0;
       let longestDryStart = null;
       let longestDryEnd = null;
 
-      let curDryDays = 0;
-      let curDryStart = null;
+      for (let i=0; i<rainDays.length-1; i++){
+        const a = rainDays[i];
+        const b = rainDays[i+1];
 
-      let iso = firstISO;
-      while (true){
-        const yStr = iso.slice(0,4);
+        // Break streaks across unknown years (e.g. 1989, 2001)
+        if (gapCrossesMissingYear(a, b)) continue;
 
-        // Unknown year (like 1989) breaks the streak and is not counted.
-        if (!yearsPresent.has(yStr)){
-          if (curDryDays > longestDryDays){
-            longestDryDays = curDryDays;
-            longestDryStart = curDryStart;
-            longestDryEnd = addDaysISO(iso, -1);
-          }
-          curDryDays = 0;
-          curDryStart = null;
+        const diff = daysBetweenISO(a, b);
+        if (diff == null) continue;
 
-          if (iso === lastISO) break;
-          iso = addDaysISO(iso, 1);
-          continue;
+        const dryDays = Math.max(0, diff - 1);
+        if (dryDays > longestDryDays){
+          longestDryDays = dryDays;
+          longestDryStart = addDaysISO(a, 1);
+          longestDryEnd   = addDaysISO(b, -1);
         }
-
-        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
-
-        if (mm < RAIN_DAY_THRESHOLD_MM){
-          if (curDryDays === 0) curDryStart = iso;
-          curDryDays++;
-        }else{
-          if (curDryDays > longestDryDays){
-            longestDryDays = curDryDays;
-            longestDryStart = curDryStart;
-            longestDryEnd = addDaysISO(iso, -1);
-          }
-          curDryDays = 0;
-          curDryStart = null;
-        }
-
-        if (iso === lastISO) break;
-        iso = addDaysISO(iso, 1);
-      }
-
-      if (curDryDays > longestDryDays){
-        longestDryDays = curDryDays;
-        longestDryStart = curDryStart;
-        longestDryEnd = lastISO;
       }
 
       const out = {
@@ -1075,6 +948,7 @@
         longestDryDays,
         longestDryStart,
         longestDryEnd,
+        missingYears: [...missingYears].sort((x,y)=>x-y),
         cachedAt: new Date().toISOString()
       };
 
@@ -1103,32 +977,32 @@
 
       html += `<div class="summary-item">
         <strong>Since last rain</strong>
-        <div>Days since last rain: ${recent.daysSinceLastRain != null ? fmt0(recent.daysSinceLastRain) : '—'}</div>
-        <div>Last rain: ${recent.lastRainISO || '—'} (${recent.lastRainMm != null ? fmt1(recent.lastRainMm)+' mm' : '—'})</div>
-        <div>Current dry streak: ${recent.currentDryStreakDays != null ? fmt0(recent.currentDryStreakDays)+' days' : '—'}</div>
+        <div>Days since last rain: ${recent.daysSinceLastRain != null ? fmtInsight0(recent.daysSinceLastRain) : '—'}</div>
+        <div>Last rain: ${recent.lastRainISO || '—'} (${recent.lastRainMm != null ? fmtInsight1(recent.lastRainMm)+' mm' : '—'})</div>
+        <div>Current dry streak: ${recent.currentDryStreakDays != null ? fmtInsight0(recent.currentDryStreakDays)+' days' : '—'}</div>
       </div>`;
 
       html += `<div class="summary-item">
         <strong>Recent totals</strong>
-        <div>Last 7 days: ${fmt1(recent.sum7)} mm</div>
-        <div>Last 30 days: ${fmt1(recent.sum30)} mm</div>
-        <div>Last 90 days: ${fmt1(recent.sum90)} mm</div>
-        <div>Rain days (30d): ${fmt0(recent.rainDays30)}</div>
+        <div>Last 7 days: ${fmtInsight1(recent.sum7)} mm</div>
+        <div>Last 30 days: ${fmtInsight1(recent.sum30)} mm</div>
+        <div>Last 90 days: ${fmtInsight1(recent.sum90)} mm</div>
+        <div>Rain days (30d): ${fmtInsight0(recent.rainDays30)}</div>
       </div>`;
 
       if (quick){
         html += `<div class="summary-item">
           <strong>${quick.year} snapshot</strong>
-          <div>Total: ${fmt1(quick.total)} mm</div>
-          <div>Rain days: ${fmt0(quick.rainDays)}</div>
-          <div>Wettest day: ${quick.wettestDayISO || '—'} (${quick.wettestDayMm != null ? fmt1(quick.wettestDayMm)+' mm' : '—'})</div>
+          <div>Total: ${fmtInsight1(quick.total)} mm</div>
+          <div>Rain days: ${fmtInsight0(quick.rainDays)}</div>
+          <div>Wettest day (year): ${quick.wettestDayISO || '—'} (${quick.wettestDayMm != null ? fmtInsight1(quick.wettestDayMm)+' mm' : '—'})</div>
         </div>`;
       }
 
       if (cached){
         html += `<div class="summary-item">
           <strong>Record dry streak</strong>
-          <div>Longest: ${fmt0(cached.longestDryDays)} days</div>
+          <div>Longest: ${fmtInsight0(cached.longestDryDays)} days</div>
           <div>${cached.longestDryStart || '—'} to ${cached.longestDryEnd || '—'}</div>
           <div class="muted small">Cached: ${cached.cachedAt || '—'}</div>
         </div>`;
@@ -1136,8 +1010,15 @@
         html += `<div class="summary-item">
           <strong>Wettest day on record</strong>
           <div>${cached.wettestDayISO || '—'}</div>
-          <div>${cached.wettestDayMm != null ? fmt1(cached.wettestDayMm)+' mm' : '—'}</div>
+          <div>${cached.wettestDayMm != null ? fmtInsight1(cached.wettestDayMm)+' mm' : '—'}</div>
         </div>`;
+
+        if (cached.missingYears && cached.missingYears.length){
+          html += `<div class="summary-item">
+            <strong>Missing years (break streaks)</strong>
+            <div>${cached.missingYears.join(', ')}</div>
+          </div>`;
+        }
       }else{
         html += `<div class="summary-item">
           <strong>All-time records</strong>
@@ -1149,7 +1030,7 @@
       html += `<div class="summary-item">
         <strong>Year labels</strong>
         <div>Years marked “(no record)” have zero daily docs in Firestore.</div>
-        <div class="muted small">This is automatic.</div>
+        <div class="muted small">These years also break record streaks.</div>
       </div>`;
 
       insightsContent.innerHTML = html;
