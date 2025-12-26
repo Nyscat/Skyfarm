@@ -692,8 +692,11 @@
       // Your current file shape (supported):
       // lt.annual (number), lt.monthly (array), lt.monthlyRainDays (array), lt.years (array), lt.rainDayThresholdMm
       const ltaAnnualMm = (typeof lt.annual === 'number') ? lt.annual : null;
-      const ltaMonthlyMm = Array.isArray(lt.monthly) ? lt.monthly : [];
-      const ltaMonthlyRainDays = Array.isArray(lt.monthlyRainDays) ? lt.monthlyRainDays : [];
+     const ltaMonthlyMm =
+  Array.isArray(lt?.monthly?.meanMm) ? lt.monthly.meanMm : [];
+
+const ltaMonthlyRainDays =
+  Array.isArray(lt?.monthly?.meanRainDays) ? lt.monthly.meanRainDays : [];
 
       // Average rain days per year (from monthly avg rain days if present)
       const ltaAnnualRainDays = (ltaMonthlyRainDays.length === 12)
