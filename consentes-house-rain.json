@@ -1,13 +1,162 @@
-{
-  "longTerm": {
-    "years": [
-      2000, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
-      2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016,
-      2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024
-    ],
-    "annual": 497.4,
-    "monthly": [145.2, 129.4, 49.9, 12.1, 7.5, 11.4, 11.4, 1.0, 5.0, 18.0, 32.3, 74.2],
-    "monthlyRainDays": [9.0, 6.2, 3.7, 0.7, 0.3, 0.6, 0.6, 0.1, 0.3, 1.2, 2.7, 5.0],
-    "rainDayThresholdMm": 1.0
-  }
+// build-consentes-house-rain-json.js
+// Rebuilds consentes-house-rain.json from Firestore daily rainfall docs.
+// Rain day threshold: 0.5mm
+// Leap years: normal (we don't require 365/366, just >= minDaysRecordedPerYear)
+// Missing days: treated as unknown (not 0mm)
+
+const fs = require("fs");
+const admin = require("firebase-admin");
+
+const SERVICE_KEY_PATH = "./serviceAccountKey.json";
+
+// --- SETTINGS YOU MAY CHANGE ---
+const GAUGE_ID = "TIrJaj2xgf6V5ieW2Wr0";
+const RAIN_DAY_THRESHOLD_MM = 0.5;
+const MIN_DAYS_RECORDED_PER_YEAR = 30;   // if you find it excludes too many years, drop to 330
+const OUT_FILE = "./consentes-house-rain.json";
+// -------------------------------
+
+function isDateDocId(id) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(id);
 }
+function yearFromId(id) { return parseInt(id.slice(0, 4), 10); }
+function monthFromId(id) { return parseInt(id.slice(5, 7), 10); } // 1-12
+function safeNum(x) {
+  const n = Number(x);
+  return Number.isFinite(n) ? n : 0;
+}
+
+async function main() {
+  const serviceAccount = require(SERVICE_KEY_PATH);
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  const db = admin.firestore();
+  const col = db.collection("gauges").doc(GAUGE_ID).collection("daily");
+
+  let lastDoc = null;
+  const pageSize = 500;
+
+  // yearStats[year] = { daysRecorded, totalMm, rainDays, monthlyTotalMm[12], monthlyRainDays[12], monthlyDaysRecorded[12] }
+  const yearStats = new Map();
+
+  console.log("Reading daily docs from Firestore…");
+
+  while (true) {
+    let q = col.orderBy(admin.firestore.FieldPath.documentId()).limit(pageSize);
+    if (lastDoc) q = q.startAfter(lastDoc);
+
+    const snap = await q.get();
+    if (snap.empty) break;
+
+    for (const doc of snap.docs) {
+      const id = doc.id;
+      if (!isDateDocId(id)) continue;
+
+      const y = yearFromId(id);
+      const m = monthFromId(id); // 1-12
+
+      const data = doc.data() || {};
+      const mm = safeNum(data.mm);
+
+      if (!yearStats.has(y)) {
+        yearStats.set(y, {
+          daysRecorded: 0,
+          totalMm: 0,
+          rainDays: 0,
+          monthlyTotalMm: Array(12).fill(0),
+          monthlyRainDays: Array(12).fill(0),
+          monthlyDaysRecorded: Array(12).fill(0),
+        });
+      }
+
+      const ys = yearStats.get(y);
+      ys.daysRecorded += 1;
+      ys.totalMm += mm;
+      ys.monthlyTotalMm[m - 1] += mm;
+      ys.monthlyDaysRecorded[m - 1] += 1;
+
+      if (mm >= RAIN_DAY_THRESHOLD_MM) {
+        ys.rainDays += 1;
+        ys.monthlyRainDays[m - 1] += 1;
+      }
+    }
+
+    lastDoc = snap.docs[snap.docs.length - 1];
+  }
+
+  const yearsAvailable = [...yearStats.keys()].sort((a, b) => a - b);
+  if (yearsAvailable.length === 0) throw new Error("No daily docs found for this gauge.");
+
+  const yearsUsed = yearsAvailable.filter(
+    y => yearStats.get(y).daysRecorded >= MIN_DAYS_RECORDED_PER_YEAR
+  );
+
+  const baseFrom = yearsAvailable[0];
+  const baseTo = yearsAvailable[yearsAvailable.length - 1];
+
+  console.log("Years available:", yearsAvailable.length, `(${baseFrom}-${baseTo})`);
+  console.log("Years used (>= " + MIN_DAYS_RECORDED_PER_YEAR + " days recorded):", yearsUsed.length);
+
+  if (yearsUsed.length === 0) {
+    throw new Error("No years meet MIN_DAYS_RECORDED_PER_YEAR. Lower it (e.g. 330) or import more data.");
+  }
+
+  // Means over yearsUsed (each year weighted equally)
+  let annualMmSum = 0;
+  let annualRainDaysSum = 0;
+  const monthlyMmSum = Array(12).fill(0);
+  const monthlyRainDaysSum = Array(12).fill(0);
+
+  for (const y of yearsUsed) {
+    const ys = yearStats.get(y);
+    annualMmSum += ys.totalMm;
+    annualRainDaysSum += ys.rainDays;
+
+    for (let i = 0; i < 12; i++) {
+      monthlyMmSum[i] += ys.monthlyTotalMm[i];
+      monthlyRainDaysSum[i] += ys.monthlyRainDays[i];
+    }
+  }
+
+  const n = yearsUsed.length;
+
+  const out = {
+    longTerm: {
+      basePeriod: { from: baseFrom, to: baseTo },
+      yearsAvailable,
+      yearsUsed,
+      rainDayThresholdMm: RAIN_DAY_THRESHOLD_MM,
+      minDaysRecordedPerYear: MIN_DAYS_RECORDED_PER_YEAR,
+
+      annual: {
+        meanMm: Number((annualMmSum / n).toFixed(1)),
+        meanRainDays: Number((annualRainDaysSum / n).toFixed(1))
+      },
+
+      monthly: {
+        meanMm: monthlyMmSum.map(v => Number((v / n).toFixed(1))),
+        meanRainDays: monthlyRainDaysSum.map(v => Number((v / n).toFixed(1)))
+      },
+
+      notes: [
+        "Computed from Firestore gauges/{gaugeId}/daily docs with docId YYYY-MM-DD",
+        "Missing days are treated as unknown (not 0mm)",
+        `Rain day defined as >= ${RAIN_DAY_THRESHOLD_MM} mm`,
+        `Years used in averages require >= ${MIN_DAYS_RECORDED_PER_YEAR} recorded days`
+      ]
+    }
+  };
+
+  fs.writeFileSync(OUT_FILE, JSON.stringify(out, null, 2), "utf8");
+  console.log("Wrote:", OUT_FILE);
+  console.log("Annual mean (mm):", out.longTerm.annual.meanMm);
+  console.log("Annual mean rain days:", out.longTerm.annual.meanRainDays);
+}
+
+main().catch(err => {
+  console.error("\nFAILED:");
+  console.error(err && err.message ? err.message : err);
+  process.exit(1);
+});
