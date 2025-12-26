@@ -195,7 +195,6 @@
     </div>
   </div>
 
-  <!-- Shared header script -->
   <script src="skyfarm-header.js"></script>
 
   <script>
@@ -304,6 +303,7 @@
       if (user){
         allowEditRain = true;
         showOverlay(false);
+        knownNoRecordYears = new Set(); // reset so label refresh is accurate
         try{ await db.enablePersistence({synchronizeTabs:true}); }catch(e){}
         await initPage();
       }else{
@@ -393,7 +393,9 @@
       }
     }
 
-    // ---------- Year dropdown from data ----------
+    // ---------- Year dropdown from data + "no record" labels ----------
+    let knownNoRecordYears = new Set();
+
     async function getGaugeYearBounds(gaugeId){
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
@@ -403,7 +405,7 @@
 
       if (firstSnap.empty || lastSnap.empty) return null;
 
-      const firstId = firstSnap.docs[0].id; // YYYY-MM-DD
+      const firstId = firstSnap.docs[0].id;
       const lastId  = lastSnap.docs[0].id;
 
       const y1 = parseInt(firstId.slice(0,4),10);
@@ -423,6 +425,34 @@
       }
     }
 
+    async function getYearsWithAnyDocs(gaugeId){
+      const col = db.collection('gauges').doc(gaugeId).collection('daily');
+      const idField = firebase.firestore.FieldPath.documentId();
+      const snap = await col.orderBy(idField, 'asc').get();
+
+      const years = new Set();
+      snap.forEach(doc=>{
+        const id = doc.id;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(id)){
+          years.add(id.slice(0,4));
+        }
+      });
+      return years;
+    }
+
+    function markMissingYearsInDropdown(yearsWithDocs){
+      knownNoRecordYears = new Set();
+      [...yearSel.options].forEach(opt=>{
+        const y = String(opt.value);
+        if (!yearsWithDocs.has(y)){
+          opt.textContent = `${y} (no record)`;
+          knownNoRecordYears.add(parseInt(y,10));
+        }else{
+          opt.textContent = y;
+        }
+      });
+    }
+
     async function rebuildYearsFromDataAndLoad(){
       if (!currentGauge) return;
 
@@ -439,12 +469,16 @@
 
       if (bounds){
         buildYears(bounds.minYear, bounds.maxYear);
+        try{
+          const yearsWithDocs = await getYearsWithAnyDocs(currentGauge.id);
+          markMissingYearsInDropdown(yearsWithDocs);
+        }catch(e){
+          console.error(e);
+        }
       }else{
-        // fallback: last 40 years
         buildYears(thisYear - 40, thisYear);
       }
 
-      // restore saved year if in range
       const savedYear = parseInt(localStorage.getItem(ACTIVE_YEAR_KEY) || '',10);
       const minY = parseInt(yearSel.lastElementChild?.value || '',10);
       const maxY = parseInt(yearSel.firstElementChild?.value || '',10);
@@ -514,7 +548,7 @@
         const grid = makeEmptyYear();
 
         snap.forEach(doc=>{
-          const id = doc.id; // YYYY-MM-DD
+          const id = doc.id;
           const m = id.match(/^(\d{4})-(\d{2})-(\d{2})$/);
           if (!m) return;
           const mm = extractMm(doc.data() || {});
@@ -628,10 +662,12 @@
       if (!summaryContent) return;
 
       if (!climatology || !climatology.longTerm){
+        const total = (stats?.monthTotals||[]).reduce((a,b)=>a+(b||0),0);
         summaryContent.innerHTML = `<div class="summary-item">
           <strong>${year}</strong>
           <div class="muted">No climatology file found (consentes-house-rain.json).</div>
-          <div>Total: ${(stats?.monthTotals||[]).reduce((a,b)=>a+(b||0),0).toFixed(1)} mm</div>
+          <div>Total: ${total.toFixed(1)} mm</div>
+          ${knownNoRecordYears.has(year) ? `<div class="muted">Marked: no record</div>` : ''}
         </div>`;
         return;
       }
@@ -655,6 +691,7 @@
         <div>This year: ${fmt1(thisYearTotal)} mm</div>
         <div>Long-term annual: ${fmt1(ltaAnnual)} mm</div>
         <div>Year vs avg: ${fmtPct(yearPct)}</div>
+        ${knownNoRecordYears.has(year) ? `<div class="muted small">Marked: no record</div>` : ''}
       </div>`;
 
       for (let m=0; m<12; m++){
@@ -716,7 +753,6 @@
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
 
-      // Pull last 500 docs (latest rainfall days) and treat missing days as 0 for rolling totals.
       const snap = await col.orderBy(idField, 'desc').limit(500).get();
       const mmByISO = new Map();
       snap.forEach(doc=>{
@@ -728,7 +764,6 @@
 
       const today = todayISO();
 
-      // last rain
       let lastRainISO = null;
       let lastRainMm = null;
 
@@ -939,8 +974,8 @@
 
       html += `<div class="summary-item">
         <strong>Data notes</strong>
-        <div>Known missing years: 1989, 2001 (no record)</div>
-        <div class="muted small">Left blank intentionally, not back-filled.</div>
+        <div>Years marked “no record” are years with zero daily docs in Firestore.</div>
+        <div class="muted small">This is automatic based on your stored data.</div>
       </div>`;
 
       insightsContent.innerHTML = html;
@@ -959,13 +994,11 @@
     };
 
     // ---------- UI events ----------
-    async function onGaugeOrYearChanged(){
+    async function onGaugeChanged(){
       if (!gaugeSel.value) return;
       localStorage.setItem(ACTIVE_GAUGE_KEY, gaugeSel.value);
       currentGauge = gauges.find(g=>g.id === gaugeSel.value) || null;
       updateGaugeInfo();
-
-      // if gauge changed, rebuild years from data
       await rebuildYearsFromDataAndLoad();
     }
 
@@ -975,7 +1008,7 @@
       await loadRainAndInsights();
     };
 
-    gaugeSel.onchange = onGaugeOrYearChanged;
+    gaugeSel.onchange = onGaugeChanged;
 
     yearSel.onchange = async ()=>{
       const y = parseInt(yearSel.value,10);
