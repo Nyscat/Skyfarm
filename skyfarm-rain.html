@@ -234,9 +234,7 @@
     const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
     const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
 
-    // You asked for 0.5mm threshold
     const RAIN_DAY_THRESHOLD_MM = 0.5;
-
     const APP_TIMEZONE = 'Australia/Brisbane';
 
     let propertiesById = new Map();
@@ -246,7 +244,6 @@
     let allowEditRain = false;
     let climatology   = null;
 
-    // year label info
     let knownNoRecordYears = new Set();
 
     function setStatus(msg, warn){
@@ -391,6 +388,7 @@
 
     async function loadClimatology(){
       try{
+        // MUST be valid JSON at this URL
         const resp = await fetch('consentes-house-rain.json', {cache:'no-store'});
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         climatology = await resp.json();
@@ -450,7 +448,7 @@
         lastDoc = snap.docs[snap.docs.length - 1];
       }
 
-      return years; // Set of "YYYY"
+      return years;
     }
 
     function markMissingYearsInDropdown(yearsWithDocs){
@@ -589,7 +587,7 @@
       const monthRainDays = new Array(12).fill(0);
 
       function fmt(v){
-        if (v == null || !Number.isFinite(v)) return '';
+        if (v == null || !Number.isFinite(Number(v))) return '';
         const n = Number(v);
         return (Math.abs(n % 1) < 0.001) ? n.toFixed(0) : n.toFixed(1);
       }
@@ -672,9 +670,18 @@
       const thisYearTotal = monthTotalsThisYear.reduce((a,b)=>a+(b||0),0);
       const thisYearRainDays = rainDaysThisYear.reduce((a,b)=>a+(b||0),0);
 
-      const fmt1 = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(1);
-      const fmt0 = v => (v==null||!Number.isFinite(v)) ? '—' : String(Math.round(Number(v)));
-      const fmtPct = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(0) + '%';
+      const fmt1 = v => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n.toFixed(1) : '—';
+      };
+      const fmt0 = v => {
+        const n = Number(v);
+        return Number.isFinite(n) ? String(Math.round(n)) : '—';
+      };
+      const fmtPct = v => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n.toFixed(0) + '%' : '—';
+      };
 
       if (!climatology || !climatology.longTerm){
         summaryContent.innerHTML = `<div class="summary-item">
@@ -689,28 +696,34 @@
 
       const lt = climatology.longTerm || {};
 
-      // Your current file shape (supported):
-      // lt.annual (number), lt.monthly (array), lt.monthlyRainDays (array), lt.years (array), lt.rainDayThresholdMm
-     const ltaAnnualMm =
-  (typeof lt?.annual?.meanMm === 'number') ? lt.annual.meanMm :
-  (typeof lt?.annual === 'number') ? lt.annual :
-  null;
+      // Supports BOTH shapes:
+      // Old: lt.annual (number), lt.monthly (array)
+      // New (your generator): lt.annual.meanMm, lt.annual.meanRainDays, lt.monthly.meanMm, lt.monthly.meanRainDays
+      const ltaAnnualMm =
+        (typeof lt?.annual?.meanMm === 'number') ? lt.annual.meanMm :
+        (typeof lt?.annual === 'number') ? lt.annual :
+        null;
 
-const ltaAnnualRainDays =
-  (typeof lt?.annual?.meanRainDays === 'number') ? lt.annual.meanRainDays :
-  (typeof lt?.annualRainDays === 'number') ? lt.annualRainDays :
-  null;
-     const ltaMonthlyMm =
-  Array.isArray(lt?.monthly?.meanMm) ? lt.monthly.meanMm : [];
+      const ltaAnnualRainDays =
+        (typeof lt?.annual?.meanRainDays === 'number') ? lt.annual.meanRainDays :
+        (typeof lt?.annualRainDays === 'number') ? lt.annualRainDays :
+        null;
 
-const ltaMonthlyRainDays =
-  Array.isArray(lt?.monthly?.meanRainDays) ? lt.monthly.meanRainDays : [];
+      const ltaMonthlyMm =
+        Array.isArray(lt?.monthly?.meanMm) ? lt.monthly.meanMm :
+        Array.isArray(lt?.monthly) ? lt.monthly :
+        [];
 
+      const ltaMonthlyRainDays =
+        Array.isArray(lt?.monthly?.meanRainDays) ? lt.monthly.meanRainDays :
+        Array.isArray(lt?.monthlyRainDays) ? lt.monthlyRainDays :
+        [];
 
-      const yearPct = (ltaAnnualMm && ltaAnnualMm > 0) ? (thisYearTotal / ltaAnnualMm * 100) : null;
+      const yearPct = (Number(ltaAnnualMm) > 0) ? (thisYearTotal / Number(ltaAnnualMm) * 100) : null;
+
       const baseFrom = lt?.basePeriod?.from ?? null;
-const baseTo   = lt?.basePeriod?.to ?? null;
-const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : null;
+      const baseTo   = lt?.basePeriod?.to ?? null;
+      const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : null;
 
       let html = '';
 
@@ -728,7 +741,7 @@ const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : null;
       for (let m=0; m<12; m++){
         const thisM = monthTotalsThisYear[m] || 0;
         const avgM  = (typeof ltaMonthlyMm[m] === 'number') ? ltaMonthlyMm[m] : null;
-        const pct   = (avgM && avgM>0) ? (thisM / avgM * 100) : null;
+        const pct   = (Number(avgM) > 0) ? (thisM / Number(avgM) * 100) : null;
 
         const thisRD = rainDaysThisYear[m] || 0;
         const avgRD  = (typeof ltaMonthlyRainDays[m] === 'number') ? ltaMonthlyRainDays[m] : null;
@@ -753,8 +766,14 @@ const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : null;
     }
 
     // ---------- Insights ----------
-    const fmtInsight1 = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(1);
-    const fmtInsight0 = v => (v==null||!Number.isFinite(v)) ? '—' : String(Math.round(Number(v)));
+    const fmtInsight1 = v => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n.toFixed(1) : '—';
+    };
+    const fmtInsight0 = v => {
+      const n = Number(v);
+      return Number.isFinite(n) ? String(Math.round(n)) : '—';
+    };
 
     async function loadRainAndInsights(){
       await loadRain();
@@ -785,7 +804,6 @@ const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : null;
       return { year, total, rainDays, wettestDayISO: best.iso, wettestDayMm: best.mm >= 0 ? best.mm : null };
     }
 
-    // Recent: missing doc => 0mm (normal for your storage model)
     async function computeRecentInsights(gaugeId){
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
@@ -855,9 +873,6 @@ const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : null;
       }catch(e){}
     }
 
-    // FAST history stats for "rain-days-only" storage:
-    // longest dry streak = biggest gap between consecutive rain-day docs (minus 1),
-    // BUT any missing year (zero docs) breaks streaks.
     async function computeAndCacheHistoryStats(gaugeId){
       setStatus('Computing history stats…');
       insightsContent.innerHTML = `<div class="summary-item">Computing history stats (paged)…</div>`;
@@ -933,8 +948,6 @@ const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : null;
       for (let i=0; i<rainDays.length-1; i++){
         const a = rainDays[i];
         const b = rainDays[i+1];
-
-        // Break streaks across unknown years (e.g. 1989, 2001)
         if (gapCrossesMissingYear(a, b)) continue;
 
         const diff = daysBetweenISO(a, b);
