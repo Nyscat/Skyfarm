@@ -174,6 +174,13 @@
       border-color:#f97316;
       background:#fff7ed;
     }
+    .summary-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+      justify-content:flex-end;
+    }
 
     /* Auth overlay */
     #authOverlay{
@@ -183,7 +190,7 @@
       align-items:center;
       justify-content:center;
       background:rgba(15,23,42,.08);
-      z-index:2000; /* higher than header */
+      z-index:2000;
     }
     #authCard{
       width:min(520px,92vw);
@@ -234,7 +241,8 @@
     <div id="importCard" class="card" style="display:none;">
       <h2 style="margin-top:0;font-size:1rem;">Historic rainfall import</h2>
       <p class="muted small">
-        Admin only. Select <strong>Consentes House - Rainfall.xlsx</strong> then import into the selected gauge.
+        Admin only. Select <strong>Consentes House - Rainfall.xlsx</strong>. This importer expects one sheet per year,
+        with day numbers down column A and months across columns B–M.
       </p>
       <div class="row">
         <div>
@@ -247,6 +255,9 @@
         </div>
         <span id="importStatus" class="muted small"></span>
       </div>
+      <p class="muted small" style="margin:8px 0 0;">
+        Tip: Import is idempotent. It writes docs as <code>YYYY-MM-DD</code>. Existing docs get merged.
+      </p>
     </div>
 
     <!-- Main table -->
@@ -258,6 +269,23 @@
             <tr><td colspan="13">Loading…</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Insights -->
+    <div id="insights" class="summary">
+      <div class="row" style="justify-content:space-between;gap:10px;">
+        <div class="muted small">
+          Quick insights for the selected gauge.
+        </div>
+        <div class="summary-actions">
+          <button id="refreshHistoryBtn" class="btn" type="button" title="Reads all rainfall docs for this gauge and caches results in this browser.">
+            Refresh history stats
+          </button>
+        </div>
+      </div>
+      <div id="insightsContent" class="summary-grid small">
+        <div>Loading insights…</div>
       </div>
     </div>
 
@@ -312,7 +340,7 @@
     const db   = firebase.firestore();
     const auth = firebase.auth();
 
-    // Mount shared header AFTER firebase exists (prevents "Checking sign-in..." sticking)
+    // Mount shared header AFTER firebase exists
     try { window.SkyFarmHeader && SkyFarmHeader.mount(); } catch(e){ console.warn(e); }
 
     const $ = s => document.querySelector(s);
@@ -322,6 +350,8 @@
     const rainBody        = $('#rainBody');
     const summaryContent  = $('#summaryContent');
     const gaugeInfo       = $('#gaugeInfo');
+    const insightsContent = $('#insightsContent');
+    const refreshHistoryBtn = $('#refreshHistoryBtn');
 
     const authOverlay     = $('#authOverlay');
     const signInBtn       = $('#signInBtn');
@@ -341,6 +371,12 @@
     const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
     const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
 
+    // Threshold for a "rain day"
+    const RAIN_DAY_THRESHOLD_MM = 0.1;
+
+    // Brisbane timezone for "today"
+    const APP_TIMEZONE = 'Australia/Brisbane';
+
     let propertiesById = new Map();
     let gauges = [];
     let currentGauge = null;
@@ -354,6 +390,40 @@
     }
     function setImportStatus(msg){ if (importStatus) importStatus.textContent = msg || ''; }
     function showOverlay(show){ authOverlay.style.display = show ? 'flex' : 'none'; }
+
+    // ---------- Date helpers ----------
+    function pad2(n){ return String(n).padStart(2,'0'); }
+
+    function todayISO(){
+      // Get "today" in Brisbane.
+      const fmt = new Intl.DateTimeFormat('en-AU', {
+        timeZone: APP_TIMEZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const parts = fmt.formatToParts(new Date());
+      const y = parts.find(p=>p.type==='year')?.value;
+      const m = parts.find(p=>p.type==='month')?.value;
+      const d = parts.find(p=>p.type==='day')?.value;
+      return `${y}-${m}-${d}`;
+    }
+
+    function isoToUTCDate(iso){
+      // Parse YYYY-MM-DD to Date at UTC midnight for safe day-diff math
+      const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return null;
+      return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+    }
+
+    function daysBetweenISO(aIso, bIso){
+      // b - a in days
+      const a = isoToUTCDate(aIso);
+      const b = isoToUTCDate(bIso);
+      if (!a || !b) return null;
+      const ms = b.getTime() - a.getTime();
+      return Math.floor(ms / 86400000);
+    }
 
     // Auth events
     signInBtn.onclick = async ()=>{
@@ -399,7 +469,7 @@
       initYears();
       await loadClimatology();
       setStatus('Ready');
-      if (gaugeSel.value) await loadRain();
+      if (gaugeSel.value) await loadRainAndInsights();
     }
 
     async function loadProperties(){
@@ -535,6 +605,12 @@
       }
     }
 
+    async function loadRainAndInsights(){
+      await loadRain();
+      await loadInsightsForGauge();
+    }
+
+    // ---------- Fast year-only load ----------
     async function loadRain(){
       if (!currentGauge){ setStatus('No gauge selected', true); return; }
       const year = parseInt(yearSel.value,10);
@@ -547,7 +623,15 @@
 
       try{
         const baseRef = db.collection('gauges').doc(currentGauge.id).collection('daily');
-        const snap = await baseRef.get();
+
+        const startId = `${year}-01-01`;
+        const endId   = `${year}-12-31`;
+
+        const snap = await baseRef
+          .where('dateISO', '>=', startId)
+          .where('dateISO', '<=', endId)
+          .get();
+
         const grid = makeEmptyYear();
 
         snap.forEach(doc=>{
@@ -564,6 +648,9 @@
         const stats = renderTable(grid);
         setStatus('Loaded');
         updateSummary(year, stats);
+        // Store latest year grid stats so insights can use it too
+        window.__sf_lastYearGrid = grid;
+        window.__sf_lastYearStats = stats;
       }catch(e){
         console.error(e);
         rainBody.innerHTML = '<tr><td colspan="13">Error loading rainfall.</td></tr>';
@@ -598,7 +685,7 @@
           const v = grid[d][m];
           if (v != null && Number.isFinite(v)){
             monthTotals[m] += v;
-            if (v >= 0.1) monthRainDays[m] += 1;
+            if (v >= RAIN_DAY_THRESHOLD_MM) monthRainDays[m] += 1;
           }
           const mmText = fmt(v);
           const cls = canEdit ? ' class="rain-cell-editable"' : '';
@@ -617,7 +704,7 @@
       for (let m=0; m<12; m++) bodyHtml += `<td>${fmt(cum[m])}</td>`;
       bodyHtml += '</tr>';
 
-      bodyHtml += '<tr><td>Rain days (>=0.1 mm)</td>';
+      bodyHtml += `<tr><td>Rain days (≥${RAIN_DAY_THRESHOLD_MM} mm)</td>`;
       for (let m=0; m<12; m++) bodyHtml += `<td>${monthRainDays[m] || ''}</td>`;
       bodyHtml += '</tr>';
 
@@ -647,7 +734,7 @@
                 if (!Number.isFinite(n) || n < 0){ alert('Enter a non-negative number (mm).'); return; }
                 await updateRainDoc(gaugeId, year, month, day, n);
               }
-              await loadRain();
+              await loadRainAndInsights();
             }catch(e){
               console.error(e);
               alert('Failed to save rainfall entry. Please try again.');
@@ -762,6 +849,337 @@
       summaryContent.innerHTML = html;
     }
 
+    // ---------- Insights (days since last rain, streaks, history records) ----------
+    function fmt1(v){ return (v == null || !Number.isFinite(v)) ? '—' : Number(v).toFixed(1); }
+    function fmt0(v){ return (v == null || !Number.isFinite(v)) ? '—' : String(Math.round(Number(v))); }
+
+    async function loadInsightsForGauge(){
+      if (!insightsContent) return;
+
+      if (!currentGauge){
+        insightsContent.innerHTML = `<div class="summary-item">Select a gauge.</div>`;
+        return;
+      }
+
+      // Always show something immediately using the currently loaded year grid
+      const year = parseInt(yearSel.value,10) || null;
+      const grid = window.__sf_lastYearGrid || null;
+      const stats = window.__sf_lastYearStats || null;
+
+      const quick = computeQuickYearInsights(year, grid, stats);
+      const recent = await computeRecentInsights(currentGauge.id);
+      const cachedHistory = getCachedHistoryStats(currentGauge.id);
+
+      let html = '';
+
+      html += `<div class="summary-item">
+        <strong>Today</strong>
+        <div>Date: ${todayISO()}</div>
+        <div>Rain day threshold: ≥${RAIN_DAY_THRESHOLD_MM} mm</div>
+      </div>`;
+
+      html += `<div class="summary-item">
+        <strong>Since last rain</strong>
+        <div>Days since last rain: ${recent.daysSinceLastRain != null ? fmt0(recent.daysSinceLastRain) : '—'}</div>
+        <div>Last rain: ${recent.lastRainISO ? recent.lastRainISO : '—'} (${recent.lastRainMm != null ? fmt1(recent.lastRainMm) + ' mm' : '—'})</div>
+        <div>Current dry streak: ${recent.currentDryStreakDays != null ? fmt0(recent.currentDryStreakDays) + ' days' : '—'}</div>
+      </div>`;
+
+      html += `<div class="summary-item">
+        <strong>Recent totals</strong>
+        <div>Last 7 days: ${fmt1(recent.sum7)} mm</div>
+        <div>Last 30 days: ${fmt1(recent.sum30)} mm</div>
+        <div>Last 90 days: ${fmt1(recent.sum90)} mm</div>
+        <div>Rain days (30d): ${fmt0(recent.rainDays30)}</div>
+      </div>`;
+
+      if (quick){
+        html += `<div class="summary-item">
+          <strong>${year} snapshot</strong>
+          <div>Total: ${fmt1(quick.total)} mm</div>
+          <div>Rain days: ${fmt0(quick.rainDays)}</div>
+          <div>Wettest day: ${quick.wettestDayISO || '—'} (${quick.wettestDayMm != null ? fmt1(quick.wettestDayMm) + ' mm' : '—'})</div>
+        </div>`;
+      }
+
+      if (cachedHistory){
+        html += `<div class="summary-item">
+          <strong>All-time dry record</strong>
+          <div>Longest dry streak: ${fmt0(cachedHistory.longestDryDays)} days</div>
+          <div>${cachedHistory.longestDryStart || '—'} to ${cachedHistory.longestDryEnd || '—'}</div>
+          <div class="muted small">Cached: ${cachedHistory.cachedAt || '—'}</div>
+        </div>`;
+
+        html += `<div class="summary-item">
+          <strong>All-time wettest day</strong>
+          <div>${cachedHistory.wettestDayISO || '—'}</div>
+          <div>${cachedHistory.wettestDayMm != null ? fmt1(cachedHistory.wettestDayMm) + ' mm' : '—'}</div>
+          <div class="muted small">Tip: hit "Refresh history stats" after big imports.</div>
+        </div>`;
+      }else{
+        html += `<div class="summary-item">
+          <strong>All-time records</strong>
+          <div class="muted">Not cached yet on this device.</div>
+          <div>Click "Refresh history stats" to compute longest dry streak and records.</div>
+        </div>`;
+      }
+
+      // Known missing record years for Consentes dataset, keep it visible but not intrusive
+      html += `<div class="summary-item">
+        <strong>Data notes</strong>
+        <div>Known missing years: 1989, 2001 (no record)</div>
+        <div class="muted small">These are intentionally left blank, not back-filled.</div>
+      </div>`;
+
+      insightsContent.innerHTML = html;
+    }
+
+    function computeQuickYearInsights(year, grid, stats){
+      if (!year || !grid || !stats) return null;
+
+      const total = (stats.monthTotals || []).reduce((a,b)=>a+(b||0),0);
+      const rainDays = (stats.monthRainDays || []).reduce((a,b)=>a+(b||0),0);
+
+      // Wettest day in the loaded year grid
+      let best = { mm: -1, iso: null };
+      for (let m=1; m<=12; m++){
+        for (let d=1; d<=31; d++){
+          const v = grid[d-1]?.[m-1];
+          if (v == null || !Number.isFinite(v)) continue;
+          if (v > best.mm){
+            best.mm = v;
+            best.iso = `${year}-${pad2(m)}-${pad2(d)}`;
+          }
+        }
+      }
+
+      return {
+        total,
+        rainDays,
+        wettestDayISO: best.iso,
+        wettestDayMm: best.mm >= 0 ? best.mm : null
+      };
+    }
+
+    async function computeRecentInsights(gaugeId){
+      // Pull last ~400 days docs and compute last rain and rolling sums.
+      // Missing days are treated as 0 for rolling sums.
+      const baseRef = db.collection('gauges').doc(gaugeId).collection('daily');
+
+      // Fetch recent docs by dateISO descending
+      const snap = await baseRef.orderBy('dateISO', 'desc').limit(500).get();
+
+      const today = todayISO();
+
+      // Map for quick lookup of mm by dateISO
+      const mmByISO = new Map();
+      let lastSeenISO = null;
+
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        const iso = d.dateISO || doc.id;
+        if (typeof iso === 'string' && iso.match(/^\d{4}-\d{2}-\d{2}$/)){
+          mmByISO.set(iso, extractMm(d));
+          if (!lastSeenISO) lastSeenISO = iso;
+        }
+      });
+
+      // Find last rain day within fetched window
+      let lastRainISO = null;
+      let lastRainMm = null;
+
+      // We need to walk backward from today to find a rain day, because
+      // there may be missing days with no docs (assume 0).
+      const maxLookbackDays = 500; // enough for "days since last rain" in practice
+      let currentDryStreakDays = 0;
+
+      for (let i=0; i<=maxLookbackDays; i++){
+        const iso = addDaysISO(today, -i);
+        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
+
+        if (i === 0){
+          // determine current dry streak starting today
+          if (mm < RAIN_DAY_THRESHOLD_MM){
+            currentDryStreakDays = 1;
+            for (let j=1; j<=maxLookbackDays; j++){
+              const iso2 = addDaysISO(today, -j);
+              const mm2 = mmByISO.has(iso2) ? Number(mmByISO.get(iso2) || 0) : 0;
+              if (mm2 < RAIN_DAY_THRESHOLD_MM) currentDryStreakDays++;
+              else break;
+            }
+          }else{
+            currentDryStreakDays = 0;
+          }
+        }
+
+        if (mm >= RAIN_DAY_THRESHOLD_MM){
+          lastRainISO = iso;
+          lastRainMm = mm;
+          break;
+        }
+      }
+
+      const daysSinceLastRain = lastRainISO ? daysBetweenISO(lastRainISO, today) : null;
+
+      // Rolling sums (7/30/90) + rain days in last 30
+      let sum7 = 0, sum30 = 0, sum90 = 0, rainDays30 = 0;
+      for (let i=0; i<90; i++){
+        const iso = addDaysISO(today, -i);
+        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
+        if (i < 7) sum7 += mm;
+        if (i < 30){
+          sum30 += mm;
+          if (mm >= RAIN_DAY_THRESHOLD_MM) rainDays30 += 1;
+        }
+        sum90 += mm;
+      }
+
+      return {
+        lastRainISO,
+        lastRainMm,
+        daysSinceLastRain,
+        currentDryStreakDays,
+        sum7,
+        sum30,
+        sum90,
+        rainDays30
+      };
+    }
+
+    function addDaysISO(iso, deltaDays){
+      const d = isoToUTCDate(iso);
+      if (!d) return iso;
+      const out = new Date(d.getTime() + deltaDays * 86400000);
+      const y = out.getUTCFullYear();
+      const m = pad2(out.getUTCMonth() + 1);
+      const da = pad2(out.getUTCDate());
+      return `${y}-${m}-${da}`;
+    }
+
+    function getCachedHistoryStats(gaugeId){
+      try{
+        const key = `sf.rainHistoryStats.${gaugeId}`;
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        return parsed;
+      }catch(e){
+        return null;
+      }
+    }
+
+    function setCachedHistoryStats(gaugeId, stats){
+      try{
+        const key = `sf.rainHistoryStats.${gaugeId}`;
+        localStorage.setItem(key, JSON.stringify(stats));
+      }catch(e){}
+    }
+
+    async function computeAndCacheHistoryStats(gaugeId){
+      // Warning: reads every rainfall doc for this gauge.
+      setStatus('Computing history stats…');
+      insightsContent.innerHTML = `<div class="summary-item">Computing history stats. This reads all rainfall docs for the gauge.</div>`;
+
+      const baseRef = db.collection('gauges').doc(gaugeId).collection('daily');
+      const snap = await baseRef.orderBy('dateISO', 'asc').get();
+
+      // Map dateISO -> mm, and detect range
+      const mmByISO = new Map();
+      let firstISO = null;
+      let lastISO = null;
+
+      snap.forEach(doc=>{
+        const d = doc.data() || {};
+        const iso = d.dateISO || doc.id;
+        if (typeof iso !== 'string' || !iso.match(/^\d{4}-\d{2}-\d{2}$/)) return;
+        const mm = extractMm(d);
+        mmByISO.set(iso, mm);
+        if (!firstISO) firstISO = iso;
+        lastISO = iso;
+      });
+
+      if (!firstISO || !lastISO){
+        setStatus('No rainfall history found', true);
+        setCachedHistoryStats(gaugeId, null);
+        return null;
+      }
+
+      // Walk day by day across full range, treating missing days as 0
+      let longestDryDays = 0;
+      let longestDryStart = null;
+      let longestDryEnd = null;
+
+      let curDryDays = 0;
+      let curDryStart = null;
+
+      let wettestDayISO = null;
+      let wettestDayMm = -1;
+
+      let iso = firstISO;
+      while (true){
+        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
+
+        if (mm > wettestDayMm){
+          wettestDayMm = mm;
+          wettestDayISO = iso;
+        }
+
+        if (mm < RAIN_DAY_THRESHOLD_MM){
+          if (curDryDays === 0) curDryStart = iso;
+          curDryDays += 1;
+        }else{
+          if (curDryDays > longestDryDays){
+            longestDryDays = curDryDays;
+            longestDryStart = curDryStart;
+            longestDryEnd = addDaysISO(iso, -1);
+          }
+          curDryDays = 0;
+          curDryStart = null;
+        }
+
+        if (iso === lastISO) break;
+        iso = addDaysISO(iso, 1);
+      }
+
+      // If the series ended during a dry streak, close it
+      if (curDryDays > longestDryDays){
+        longestDryDays = curDryDays;
+        longestDryStart = curDryStart;
+        longestDryEnd = lastISO;
+      }
+
+      const cachedAt = new Date().toISOString();
+
+      const out = {
+        longestDryDays,
+        longestDryStart,
+        longestDryEnd,
+        wettestDayISO,
+        wettestDayMm: wettestDayMm >= 0 ? wettestDayMm : null,
+        firstISO,
+        lastISO,
+        cachedAt
+      };
+
+      setCachedHistoryStats(gaugeId, out);
+      setStatus('History stats updated');
+      return out;
+    }
+
+    refreshHistoryBtn.onclick = async ()=>{
+      if (!currentGauge) return;
+      try{
+        await computeAndCacheHistoryStats(currentGauge.id);
+        await loadInsightsForGauge();
+      }catch(e){
+        console.error(e);
+        setStatus('Failed to compute history stats', true);
+        alert('Failed to compute history stats. Check console for details.');
+      }
+    };
+
+    // ---------- UI events ----------
     reloadBtn.onclick = async ()=>{
       if (!gaugeSel.value) return;
       const year = parseInt(yearSel.value,10);
@@ -769,27 +1187,49 @@
       localStorage.setItem(ACTIVE_GAUGE_KEY, gaugeSel.value);
       currentGauge = gauges.find(g=>g.id === gaugeSel.value) || null;
       updateGaugeInfo();
-      await loadRain();
+      await loadRainAndInsights();
     };
     gaugeSel.onchange = ()=> reloadBtn.click();
     yearSel.onchange  = ()=> reloadBtn.click();
     printBtn.onclick  = ()=> window.print();
 
+    // ---------- Importer (year sheets with day rows and month columns) ----------
     if (importBtn){
       importBtn.onclick = async ()=>{
         const file = importFile.files[0];
         if (!file){ setImportStatus('Choose an .xlsx file first.'); return; }
         if (!currentGauge){ setImportStatus('Select a gauge to import into.'); return; }
+
         try{
           setImportStatus('Reading workbook…');
           const data = await file.arrayBuffer();
           const wb = XLSX.read(data, {type:'array'});
-          const sheet = wb.Sheets[wb.SheetNames[0]];
-          if (!sheet) throw new Error('No first sheet found.');
-          const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
-          await importWorkbookRows(currentGauge.id, rows);
-          setImportStatus('Import complete. Reload to see new totals.');
-          await loadRain();
+
+          const gaugeId = currentGauge.id;
+          let totalWrites = 0;
+          let totalSheets = 0;
+
+          // Prefer sheets that look like years (e.g. "1968", "2025")
+          const yearSheets = wb.SheetNames
+            .map(name=>({name, year: parseInt(String(name).trim(),10)}))
+            .filter(x=>Number.isFinite(x.year) && x.year >= 1900 && x.year <= 3000)
+            .sort((a,b)=>a.year - b.year);
+
+          if (!yearSheets.length){
+            throw new Error('No year-named sheets found (e.g. "1968").');
+          }
+
+          for (const s of yearSheets){
+            const sheet = wb.Sheets[s.name];
+            if (!sheet) continue;
+            setImportStatus(`Importing sheet ${s.name}…`);
+            const writes = await importYearSheetGrid(gaugeId, s.year, sheet);
+            totalWrites += writes;
+            totalSheets += 1;
+          }
+
+          setImportStatus(`Import complete: ${totalWrites} day entries written across ${totalSheets} sheets.`);
+          await loadRainAndInsights();
         }catch(e){
           console.error(e);
           setImportStatus('Import failed: ' + (e && e.message ? e.message : e));
@@ -797,45 +1237,98 @@
       };
     }
 
-    async function importWorkbookRows(gaugeId, rows){
-      const headerRow = rows[0] || [];
-      const yearIndex  = headerRow.findIndex(c=>String(c).toLowerCase().includes('year'));
-      const monthIndex = headerRow.findIndex(c=>String(c).toLowerCase().includes('month'));
-      const dayIndex   = headerRow.findIndex(c=>String(c).toLowerCase().includes('day'));
-      const mmIndex    = headerRow.findIndex(c=>String(c).toLowerCase().includes('rain'));
+    async function importYearSheetGrid(gaugeId, year, sheet){
+      // Expected layout (like your workbook):
+      // Row 1: [blank, January, February, ... December]
+      // Col A: day number 1..31
+      // Cols B..M: rainfall values (mm), blanks allowed
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true});
+      if (!rows || rows.length < 2) return 0;
 
-      if (yearIndex < 0 || monthIndex < 0 || dayIndex < 0 || mmIndex < 0){
-        throw new Error('Could not find Year / Month / Day / Rain columns in header row.');
+      // Detect month columns from header row 0
+      const header = rows[0] || [];
+      const monthMap = detectMonthColumns(header);
+      // monthMap: array of {month:1..12, colIndex}
+
+      if (monthMap.length < 6){
+        // Fallback: assume B..M
+        monthMap.length = 0;
+        for (let m=1; m<=12; m++) monthMap.push({month:m, colIndex:m}); // 1->B etc
       }
 
       const baseRef = db.collection('gauges').doc(gaugeId).collection('daily');
+
       let batch = db.batch();
-      let imported = 0;
+      let writes = 0;
 
-      for (let i=1; i<rows.length; i++){
-        const r = rows[i] || [];
-        const year  = Number(r[yearIndex]);
-        const month = Number(r[monthIndex]);
-        const day   = Number(r[dayIndex]);
-        const mm    = Number(r[mmIndex]);
-        if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(mm)) continue;
-        if (year < 1900 || year > 3000) continue;
-        if (month < 1 || month > 12) continue;
-        if (day < 1 || day > 31) continue;
+      for (let r=1; r<rows.length; r++){
+        const row = rows[r] || [];
+        const day = Number(row[0]);
+        if (!Number.isFinite(day) || day < 1 || day > 31) continue;
 
-        const dStr = String(day).padStart(2,'0');
-        const mStr = String(month).padStart(2,'0');
-        const docId = `${year}-${mStr}-${dStr}`;
-        const ref = baseRef.doc(docId);
+        for (const mc of monthMap){
+          const raw = row[mc.colIndex];
+          if (raw == null || raw === '') continue;
 
-        batch.set(ref, { mm, dateISO: docId, source:'excelImport' }, {merge:true});
-        imported++;
-        if (imported % 400 === 0){
-          await batch.commit();
-          batch = db.batch();
+          const mm = Number(raw);
+          if (!Number.isFinite(mm) || mm < 0) continue;
+
+          const iso = `${year}-${pad2(mc.month)}-${pad2(day)}`;
+          const ref = baseRef.doc(iso);
+
+          batch.set(ref, {
+            mm,
+            dateISO: iso,
+            source: 'excelImport',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, {merge:true});
+
+          writes++;
+          if (writes % 450 === 0){
+            await batch.commit();
+            batch = db.batch();
+          }
         }
       }
-      if (imported > 0) await batch.commit();
+
+      if (writes % 450 !== 0){
+        await batch.commit();
+      }
+
+      return writes;
+    }
+
+    function detectMonthColumns(headerRow){
+      const months = [
+        {m:1, names:['jan','january']},
+        {m:2, names:['feb','february']},
+        {m:3, names:['mar','march']},
+        {m:4, names:['apr','april']},
+        {m:5, names:['may']},
+        {m:6, names:['jun','june']},
+        {m:7, names:['jul','july']},
+        {m:8, names:['aug','august']},
+        {m:9, names:['sep','sept','september']},
+        {m:10, names:['oct','october']},
+        {m:11, names:['nov','november']},
+        {m:12, names:['dec','december']}
+      ];
+
+      const out = [];
+      for (let c=0; c<headerRow.length; c++){
+        const cell = String(headerRow[c] ?? '').trim().toLowerCase();
+        if (!cell) continue;
+        for (const mm of months){
+          if (mm.names.some(n=>cell.includes(n))){
+            out.push({month:mm.m, colIndex:c});
+            break;
+          }
+        }
+      }
+
+      // Sort by month
+      out.sort((a,b)=>a.month - b.month);
+      return out;
     }
   </script>
 </body>
