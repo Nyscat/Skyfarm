@@ -232,7 +232,9 @@
     const ACTIVE_GAUGE_KEY = 'sf.activeGaugeId';
     const ACTIVE_YEAR_KEY  = 'sf.activeRainYear';
 
-    const RAIN_DAY_THRESHOLD_MM = 0.1;
+    // You asked for 0.5mm rain day threshold
+    const RAIN_DAY_THRESHOLD_MM = 0.5;
+
     const APP_TIMEZONE = 'Australia/Brisbane';
 
     let propertiesById = new Map();
@@ -668,46 +670,82 @@
       return { monthTotals, monthRainDays };
     }
 
-    // ---------- Summary (optional climatology) ----------
+    // ---------- Summary (climatology) ----------
     function updateSummary(year, stats){
+      const monthTotalsThisYear = stats?.monthTotals || [];
+      const rainDaysThisYear = stats?.monthRainDays || [];
+
+      const thisYearTotal = monthTotalsThisYear.reduce((a,b)=>a+(b||0),0);
+      const thisYearRainDays = rainDaysThisYear.reduce((a,b)=>a+(b||0),0);
+
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const fmt1 = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(1);
+      const fmt0 = v => (v==null||!Number.isFinite(v)) ? '—' : String(Math.round(Number(v)));
+      const fmtPct = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(0) + '%';
+
       if (!summaryContent) return;
 
       if (!climatology || !climatology.longTerm){
-        const total = (stats?.monthTotals||[]).reduce((a,b)=>a+(b||0),0);
         summaryContent.innerHTML = `<div class="summary-item">
           <strong>${year}</strong>
           <div class="muted">No climatology file found (consentes-house-rain.json).</div>
-          <div>Total: ${total.toFixed(1)} mm</div>
+          <div>Total: ${fmt1(thisYearTotal)} mm</div>
+          <div>Rain days (≥${RAIN_DAY_THRESHOLD_MM} mm): ${fmt0(thisYearRainDays)}</div>
           ${knownNoRecordYears.has(year) ? `<div class="muted">Marked: no record</div>` : ''}
         </div>`;
         return;
       }
 
-      const lt = climatology.longTerm;
-      const ltaMonthly = Array.isArray(lt.monthly) ? lt.monthly : [];
-      const ltaAnnual  = (typeof lt.annual === 'number') ? lt.annual : null;
+      const lt = climatology.longTerm || {};
 
-      const monthTotalsThisYear = stats?.monthTotals || [];
-      const thisYearTotal = monthTotalsThisYear.reduce((a,b)=>a+(b||0),0);
-      const yearPct = (ltaAnnual && ltaAnnual>0) ? (thisYearTotal / ltaAnnual * 100) : null;
+      // Support BOTH shapes:
+      // Old: lt.annual (number), lt.monthly (array), lt.monthlyRainDays (array)
+      // New: lt.annual.meanMm, lt.annual.meanRainDays, lt.monthly.meanMm, lt.monthly.meanRainDays
+      const ltaAnnualMm =
+        (typeof lt?.annual?.meanMm === 'number') ? lt.annual.meanMm :
+        (typeof lt?.annual === 'number') ? lt.annual :
+        null;
 
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const fmt1 = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(1);
-      const fmtPct = v => (v==null||!Number.isFinite(v)) ? '—' : Number(v).toFixed(0) + '%';
+      const ltaAnnualRainDays =
+        (typeof lt?.annual?.meanRainDays === 'number') ? lt.annual.meanRainDays :
+        (typeof lt?.annualRainDays === 'number') ? lt.annualRainDays :
+        null;
+
+      const ltaMonthlyMm =
+        Array.isArray(lt?.monthly?.meanMm) ? lt.monthly.meanMm :
+        Array.isArray(lt?.monthly) ? lt.monthly :
+        [];
+
+      const ltaMonthlyRainDays =
+        Array.isArray(lt?.monthly?.meanRainDays) ? lt.monthly.meanRainDays :
+        Array.isArray(lt?.monthlyRainDays) ? lt.monthlyRainDays :
+        [];
+
+      const yearPct = (ltaAnnualMm && ltaAnnualMm > 0) ? (thisYearTotal / ltaAnnualMm * 100) : null;
+      const baseFrom = lt?.basePeriod?.from;
+      const baseTo = lt?.basePeriod?.to;
+      const usedCount = Array.isArray(lt?.yearsUsed) ? lt.yearsUsed.length : (Array.isArray(lt?.years) ? lt.years.length : null);
 
       let html = '';
+
       html += `<div class="summary-item">
         <strong>${year} total</strong>
         <div>This year: ${fmt1(thisYearTotal)} mm</div>
-        <div>Long-term annual: ${fmt1(ltaAnnual)} mm</div>
+        <div>Long-term annual: ${fmt1(ltaAnnualMm)} mm</div>
         <div>Year vs avg: ${fmtPct(yearPct)}</div>
+        <div>This year rain days: ${fmt0(thisYearRainDays)}</div>
+        <div>Avg rain days/year: ${fmt1(ltaAnnualRainDays)}</div>
+        ${(baseFrom && baseTo) ? `<div class="muted small">Base period: ${baseFrom}–${baseTo}${usedCount ? ` (${usedCount} yrs)` : ''}</div>` : ''}
         ${knownNoRecordYears.has(year) ? `<div class="muted small">Marked: no record</div>` : ''}
       </div>`;
 
       for (let m=0; m<12; m++){
         const thisM = monthTotalsThisYear[m] || 0;
-        const avgM  = (typeof ltaMonthly[m] === 'number') ? ltaMonthly[m] : null;
+        const avgM  = (typeof ltaMonthlyMm[m] === 'number') ? ltaMonthlyMm[m] : null;
         const pct   = (avgM && avgM>0) ? (thisM / avgM * 100) : null;
+
+        const thisRD = rainDaysThisYear[m] || 0;
+        const avgRD  = (typeof ltaMonthlyRainDays[m] === 'number') ? ltaMonthlyRainDays[m] : null;
 
         let cls = '';
         if (pct != null){
@@ -720,6 +758,8 @@
           <div>This year: ${fmt1(thisM)} mm</div>
           <div>Average: ${fmt1(avgM)} mm</div>
           <div>Pct of avg: ${fmtPct(pct)}</div>
+          <div>Rain days this year: ${fmt0(thisRD)}</div>
+          <div>Avg rain days: ${fmt1(avgRD)}</div>
         </div>`;
       }
 
@@ -759,11 +799,12 @@
       return { year, total, rainDays, wettestDayISO: best.iso, wettestDayMm: best.mm >= 0 ? best.mm : null };
     }
 
+    // Recent: we assume missing doc means 0mm (normal, because you are not storing all-zero days)
     async function computeRecentInsights(gaugeId){
       const col = db.collection('gauges').doc(gaugeId).collection('daily');
       const idField = firebase.firestore.FieldPath.documentId();
 
-      const snap = await col.orderBy(idField, 'desc').limit(800).get();
+      const snap = await col.orderBy(idField, 'desc').limit(1200).get();
       const mmByISO = new Map();
       snap.forEach(doc=>{
         const id = doc.id;
@@ -778,43 +819,11 @@
       let lastRainMm = null;
 
       const maxLookbackDays = 800;
-      let currentDryStreakDays = 0;
 
+      // Find last rain day (>= threshold). Missing doc treated as 0mm.
       for (let i=0; i<=maxLookbackDays; i++){
         const iso = addDaysISO(today, -i);
-        const has = mmByISO.has(iso);
-if (!has){
-  // Unknown day (no record). Break any running streak and don't count it.
-  if (curDryDays > longestDryDays){
-    longestDryDays = curDryDays;
-    longestDryStart = curDryStart;
-    longestDryEnd = addDaysISO(iso, -1);
-  }
-  curDryDays = 0;
-  curDryStart = null;
-
-  if (iso === lastISO) break;
-  iso = addDaysISO(iso, 1);
-  continue;
-}
-
-if (!mmByISO.has(iso)) continue; // skip unknown day
-const mm = Number(mmByISO.get(iso) || 0);
-
-        if (i === 0){
-          if (mm < RAIN_DAY_THRESHOLD_MM){
-            currentDryStreakDays = 1;
-            for (let j=1; j<=maxLookbackDays; j++){
-              const iso2 = addDaysISO(today, -j);
-              const mm2 = mmByISO.has(iso2) ? Number(mmByISO.get(iso2) || 0) : 0;
-              if (mm2 < RAIN_DAY_THRESHOLD_MM) currentDryStreakDays++;
-              else break;
-            }
-          }else{
-            currentDryStreakDays = 0;
-          }
-        }
-
+        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
         if (mm >= RAIN_DAY_THRESHOLD_MM){
           lastRainISO = iso;
           lastRainMm = mm;
@@ -824,6 +833,16 @@ const mm = Number(mmByISO.get(iso) || 0);
 
       const daysSinceLastRain = lastRainISO ? daysBetweenISO(lastRainISO, today) : null;
 
+      // Current dry streak from today backwards (missing doc treated as 0mm)
+      let currentDryStreakDays = 0;
+      for (let i=0; i<=maxLookbackDays; i++){
+        const iso = addDaysISO(today, -i);
+        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
+        if (mm < RAIN_DAY_THRESHOLD_MM) currentDryStreakDays++;
+        else break;
+      }
+
+      // Rolling totals
       let sum7=0,sum30=0,sum90=0,rainDays30=0;
       for (let i=0; i<90; i++){
         const iso = addDaysISO(today, -i);
@@ -853,7 +872,7 @@ const mm = Number(mmByISO.get(iso) || 0);
       }catch(e){}
     }
 
-    // FIXED: Paged history scan (no single massive get())
+    // History: treat entire missing years as UNKNOWN so they do not create fake mega droughts.
     async function computeAndCacheHistoryStats(gaugeId){
       setStatus('Computing history stats…');
       insightsContent.innerHTML = `<div class="summary-item">Computing history stats (paged)…</div>`;
@@ -862,6 +881,8 @@ const mm = Number(mmByISO.get(iso) || 0);
       const idField = firebase.firestore.FieldPath.documentId();
 
       const mmByISO = new Map();
+      const yearsPresent = new Set();
+
       let firstISO = null;
       let lastISO = null;
 
@@ -881,6 +902,7 @@ const mm = Number(mmByISO.get(iso) || 0);
           if (!/^\d{4}-\d{2}-\d{2}$/.test(id)) return;
           const mm = extractMm(doc.data() || {});
           mmByISO.set(id, mm);
+          yearsPresent.add(id.slice(0,4));
           if (!firstISO) firstISO = id;
           lastISO = id;
         });
@@ -895,9 +917,18 @@ const mm = Number(mmByISO.get(iso) || 0);
         return null;
       }
 
+      // Wettest day: only compare days that exist in data.
       let wettestDayISO = null;
       let wettestDayMm = -1;
+      for (const [iso, mm] of mmByISO.entries()){
+        if (mm > wettestDayMm){
+          wettestDayMm = mm;
+          wettestDayISO = iso;
+        }
+      }
 
+      // Longest dry streak: assume missing doc = 0mm EXCEPT for years that have no docs at all.
+      // If a year has no docs at all, treat that year as unknown and break streaks across it.
       let longestDryDays = 0;
       let longestDryStart = null;
       let longestDryEnd = null;
@@ -907,12 +938,24 @@ const mm = Number(mmByISO.get(iso) || 0);
 
       let iso = firstISO;
       while (true){
-        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
+        const yStr = iso.slice(0,4);
 
-        if (mm > wettestDayMm){
-          wettestDayMm = mm;
-          wettestDayISO = iso;
+        // Unknown year (like 1989) breaks the streak and is not counted.
+        if (!yearsPresent.has(yStr)){
+          if (curDryDays > longestDryDays){
+            longestDryDays = curDryDays;
+            longestDryStart = curDryStart;
+            longestDryEnd = addDaysISO(iso, -1);
+          }
+          curDryDays = 0;
+          curDryStart = null;
+
+          if (iso === lastISO) break;
+          iso = addDaysISO(iso, 1);
+          continue;
         }
+
+        const mm = mmByISO.has(iso) ? Number(mmByISO.get(iso) || 0) : 0;
 
         if (mm < RAIN_DAY_THRESHOLD_MM){
           if (curDryDays === 0) curDryStart = iso;
